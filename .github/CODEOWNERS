@@ -21,7 +21,7 @@
 /.github/                 @cslmn
 /.husky/                  @cslmn
 /package.json             @cslmn
-/eslint.config.js         @cslmn
+/eslint.config.mjs        @cslmn
 /tsconfig.base.json       @cslmn
 
 # Feature areas (add co-founders here as each person takes ownership).

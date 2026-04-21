@@ -81,7 +81,7 @@ This is the iPhone / Android app that lets you run Venn on your phone while you 
 
 ```bash
 cd ~                                         # pick wherever you want it to live
-gh repo clone cslmn/venn                     # this is our repo
+gh repo clone venn-social/venn                     # this is our repo
 cd venn
 ```
 

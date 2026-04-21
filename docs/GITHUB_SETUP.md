@@ -16,7 +16,7 @@ git init
 git add .
 git commit -m "chore: initial scaffold"
 git branch -M main
-git remote add origin https://github.com/cslmn/venn.git
+git remote add origin https://github.com/venn-social/venn.git
 git push -u origin main
 ```
 
@@ -35,7 +35,7 @@ The `prepare` script in `package.json` runs `husky` on install, which wires up t
 
 ## 3. Set up branch protection on `main`
 
-Go to: **github.com/cslmn/venn → Settings → Branches → Add branch ruleset**.
+Go to: **github.com/venn-social/venn → Settings → Branches → Add branch ruleset**.
 
 Create a ruleset with these settings:
 
