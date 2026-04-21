@@ -1,8 +1,8 @@
 ---
 name: Bug report
 about: Something is broken or behaving unexpectedly.
-title: "[Bug] "
-labels: ["bug"]
+title: '[Bug] '
+labels: ['bug']
 ---
 
 ## What happened?

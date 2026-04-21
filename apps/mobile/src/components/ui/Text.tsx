@@ -2,8 +2,9 @@
  * Text — a typed wrapper around React Native's Text.
  * Forces callers to pick a typography variant instead of hand-setting fontSize.
  */
-import type { TextProps as RNTextProps } from 'react-native';
 import { Text as RNText, StyleSheet } from 'react-native';
+
+import type { TextProps as RNTextProps } from 'react-native';
 
 import { colors, typography, type TypographyVariant } from '@/constants/theme';
 
@@ -12,13 +13,7 @@ interface TextProps extends RNTextProps {
   readonly color?: keyof typeof colors;
 }
 
-export function Text({
-  variant = 'body',
-  color = 'text',
-  style,
-  children,
-  ...rest
-}: TextProps) {
+export function Text({ variant = 'body', color = 'text', style, children, ...rest }: TextProps) {
   return (
     <RNText
       style={[typography[variant] as RNTextProps['style'], { color: colors[color] }, style]}

@@ -76,7 +76,9 @@ Delete it. Git remembers. Commented-out code rots: in three months, nobody knows
 ```tsx
 // Bad — deriving state in useEffect.
 const [fullName, setFullName] = useState('');
-useEffect(() => { setFullName(`${first} ${last}`); }, [first, last]);
+useEffect(() => {
+  setFullName(`${first} ${last}`);
+}, [first, last]);
 
 // Good — derive it.
 const fullName = `${first} ${last}`;
@@ -88,11 +90,11 @@ const fullName = `${first} ${last}`;
 
 ```tsx
 // Worse — re-created on every render, no lint checks.
-<View style={{ flex: 1, padding: 16 }} />
+<View style={{ flex: 1, padding: 16 }} />;
 
 // Better
 const styles = StyleSheet.create({ root: { flex: 1, padding: spacing.md } });
-<View style={styles.root} />
+<View style={styles.root} />;
 ```
 
 `StyleSheet.create` allows React Native to optimize and lets ESLint catch unused styles.
@@ -101,11 +103,13 @@ const styles = StyleSheet.create({ root: { flex: 1, padding: spacing.md } });
 
 ```ts
 // Bad
-const post = posts.find(p => p.id === id)!;
+const post = posts.find((p) => p.id === id)!;
 
 // Good
-const post = posts.find(p => p.id === id);
-if (post === undefined) { throw new Error(`Post ${id} not found`); }
+const post = posts.find((p) => p.id === id);
+if (post === undefined) {
+  throw new Error(`Post ${id} not found`);
+}
 ```
 
 `!` lies to the compiler. When the assumption fails in production, the crash is cryptic. Check and throw a clear error instead.
@@ -114,10 +118,14 @@ if (post === undefined) { throw new Error(`Post ${id} not found`); }
 
 ```ts
 // Bad
-function likePost(post: Post) { post.likeCount += 1; }
+function likePost(post: Post) {
+  post.likeCount += 1;
+}
 
 // Good
-function likePost(post: Post): Post { return { ...post, likeCount: post.likeCount + 1 }; }
+function likePost(post: Post): Post {
+  return { ...post, likeCount: post.likeCount + 1 };
+}
 ```
 
 React compares references. Mutating in place makes your UI not update.
@@ -178,11 +186,11 @@ throw new Error('invalid');
 // Good
 throw new Error(
   `Missing required env var: EXPO_PUBLIC_SUPABASE_URL. ` +
-  `Copy apps/mobile/.env.example to apps/mobile/.env and fill in the values.`,
+    `Copy apps/mobile/.env.example to apps/mobile/.env and fill in the values.`,
 );
 ```
 
-A good error message tells you where the problem is *and* how to fix it.
+A good error message tells you where the problem is _and_ how to fix it.
 
 ## File structure inside a module
 

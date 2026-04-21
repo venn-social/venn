@@ -4,13 +4,13 @@
  * Wrap the root of the app in <AuthProvider>. Anywhere deeper in the tree,
  * call `useAuth()` to read `{ user, session, isLoading }`.
  */
-import type { PropsWithChildren } from 'react';
 import { createContext, useEffect, useMemo, useState } from 'react';
-
-import { supabase } from '@/lib/supabase';
 
 import type { AuthContextValue } from '@/features/auth/auth.types';
 import type { Session, User } from '@supabase/supabase-js';
+import type { PropsWithChildren } from 'react';
+
+import { supabase } from '@/lib/supabase';
 
 export const AuthContext = createContext<AuthContextValue | null>(null);
 

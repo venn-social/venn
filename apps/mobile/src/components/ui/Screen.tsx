@@ -3,9 +3,10 @@
  * Handles safe areas, default padding, and background color so every screen
  * looks consistent without every screen re-solving the same problems.
  */
-import type { PropsWithChildren } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
+import type { PropsWithChildren } from 'react';
 
 import { colors, spacing } from '@/constants/theme';
 

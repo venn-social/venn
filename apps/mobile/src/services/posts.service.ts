@@ -4,9 +4,9 @@
  * Keep these functions pure wrappers around Supabase: they take plain params,
  * return plain domain types, and throw on errors. No React, no UI, no state.
  */
-import { supabase } from '@/lib/supabase';
-
 import type { Post } from '@/types';
+
+import { supabase } from '@/lib/supabase';
 
 interface PostRow {
   id: string;

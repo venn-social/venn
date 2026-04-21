@@ -1,6 +1,6 @@
 # Git + PR Workflow
 
-This is the detailed version of the workflow summarized in [`CONTRIBUTING.md`](../CONTRIBUTING.md). If you want to understand *why* we do each step, read this.
+This is the detailed version of the workflow summarized in [`CONTRIBUTING.md`](../CONTRIBUTING.md). If you want to understand _why_ we do each step, read this.
 
 ## The mental model
 

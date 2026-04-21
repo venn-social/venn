@@ -1,5 +1,5 @@
-import { StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
+import { StyleSheet, View } from 'react-native';
 
 import { Button, Screen, Text } from '@/components/ui';
 import { spacing } from '@/constants/theme';

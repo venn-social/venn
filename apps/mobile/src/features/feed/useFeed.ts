@@ -5,9 +5,9 @@
  */
 import { useEffect, useState } from 'react';
 
-import { fetchFeed } from '@/services/posts.service';
-
 import type { Loadable, Post } from '@/types';
+
+import { fetchFeed } from '@/services/posts.service';
 
 export function useFeed(): Loadable<Post[]> {
   const [state, setState] = useState<Loadable<Post[]>>({ status: 'idle' });
