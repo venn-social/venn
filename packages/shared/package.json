@@ -11,6 +11,6 @@
     "test": "echo \"No tests in @venn/shared yet\" && exit 0"
   },
   "devDependencies": {
-    "typescript": "^5.7.2"
+    "typescript": "^6.0.3"
   }
 }
