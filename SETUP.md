@@ -47,8 +47,8 @@ Git is how you save, share, and collaborate on code.
 Then configure your name and email (use the same email you use for GitHub):
 
 ```bash
-git config --global user.name "Charles Salomon"
-git config --global user.email "chmsalomon@gmail.com"
+git config --global user.name "[NAME]"
+git config --global user.email "[EMAIL]"
 git config --global init.defaultBranch main
 ```
 

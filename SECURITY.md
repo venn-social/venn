@@ -2,7 +2,7 @@
 
 ## Reporting a vulnerability
 
-If you believe you've found a security vulnerability in Venn, please **do not** open a public issue or PR. Instead, email chmsalomon@gmail.com with:
+If you believe you've found a security vulnerability in Venn, please **do not** open a public issue or PR. Instead, email [EMAIL] with:
 
 - A description of the issue.
 - Steps to reproduce.

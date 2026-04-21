@@ -99,4 +99,4 @@ Per-app (from `apps/mobile`): `npm run start`, `npm run lint`, `npm run typechec
 
 ## Who's here
 
-Project owner: Charles Salomon (`@cslmn`, chmsalomon@gmail.com). Other co-founders will be added as GitHub collaborators and wired into `.github/CODEOWNERS` as they join.
+Project owner: [NAME] (`@cslmn`, [EMAIL]). Other co-founders will be added as GitHub collaborators and wired into `.github/CODEOWNERS` as they join.
