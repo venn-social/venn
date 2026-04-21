@@ -24,7 +24,7 @@ Examples of unacceptable behavior:
 
 ## Enforcement
 
-Incidents may be reported to the founders at chmsalomon@gmail.com. All complaints will be reviewed and investigated and will result in a response appropriate to the circumstances.
+Incidents may be reported to the founders at [EMAIL]. All complaints will be reviewed and investigated and will result in a response appropriate to the circumstances.
 
 ## Attribution
 
