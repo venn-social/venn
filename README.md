@@ -1,6 +1,6 @@
 # Venn
 
-A social media app for iOS and Android, built the way Meta, Discord, and Shopify build mobile apps: one codebase in TypeScript + React Native, shipped to both platforms.
+A social media app for iOS and Android: one codebase in TypeScript + React Native, shipped to both platforms.
 
 ## For first-time contributors
 
