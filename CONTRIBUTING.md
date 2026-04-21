@@ -78,7 +78,7 @@ npm run format
 
 - **Small.** Under ~400 lines changed is ideal. Huge PRs don't get reviewed well.
 - **One thing.** If you find yourself writing "also fixed X and Y," split the PR.
-- **Described.** Fill out the PR template. Say *what* and *why*, not *how*.
+- **Described.** Fill out the PR template. Say _what_ and _why_, not _how_.
 - **Tested.** New logic gets a unit test. UI changes get a screenshot or screen recording.
 - **Self-reviewed.** Before requesting review, re-read your own diff on GitHub. You'll catch half the issues yourself.
 

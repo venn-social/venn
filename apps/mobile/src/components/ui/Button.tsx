@@ -49,10 +49,7 @@ export function Button({
       {loading ? (
         <ActivityIndicator color={variant === 'primary' ? colors.textInverse : colors.text} />
       ) : (
-        <Text
-          variant="bodyBold"
-          color={variant === 'primary' ? 'textInverse' : 'text'}
-        >
+        <Text variant="bodyBold" color={variant === 'primary' ? 'textInverse' : 'text'}>
           {label}
         </Text>
       )}

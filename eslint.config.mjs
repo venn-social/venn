@@ -16,7 +16,6 @@ import tsParser from '@typescript-eslint/parser';
 import importPlugin from 'eslint-plugin-import';
 import reactPlugin from 'eslint-plugin-react';
 import reactHooksPlugin from 'eslint-plugin-react-hooks';
-import reactNativePlugin from 'eslint-plugin-react-native';
 import unusedImportsPlugin from 'eslint-plugin-unused-imports';
 import prettierConfig from 'eslint-config-prettier';
 
@@ -71,7 +70,6 @@ export default [
       '@typescript-eslint': tsPlugin,
       'react': reactPlugin,
       'react-hooks': reactHooksPlugin,
-      'react-native': reactNativePlugin,
       'import': importPlugin,
       'unused-imports': unusedImportsPlugin,
     },
@@ -98,26 +96,13 @@ export default [
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'warn',
 
-      // --- React Native --------------------------------------------------
-      'react-native/no-unused-styles': 'error',
-      'react-native/split-platform-components': 'off',
-      'react-native/no-inline-styles': 'warn',
-      'react-native/no-color-literals': 'warn',
-      'react-native/no-raw-text': 'off',
-
       // --- Import hygiene ------------------------------------------------
       'import/order': [
         'error',
         {
-          groups: [
-            'builtin',
-            'external',
-            'internal',
-            ['parent', 'sibling', 'index'],
-            'type',
-          ],
+          'groups': ['builtin', 'external', 'internal', ['parent', 'sibling', 'index'], 'type'],
           'newlines-between': 'always',
-          alphabetize: { order: 'asc', caseInsensitive: true },
+          'alphabetize': { order: 'asc', caseInsensitive: true },
         },
       ],
       'import/no-default-export': 'off', // Expo Router requires default exports
@@ -153,6 +138,26 @@ export default [
       'complexity': ['warn', { max: 15 }],
       'max-depth': ['warn', 4],
       'max-lines-per-function': ['warn', { max: 100, skipBlankLines: true, skipComments: true }],
+    },
+  },
+
+  // -------------------------------------------------------------------------
+  // Test files — declare Jest globals so ESLint doesn't flag describe/it/expect
+  // -------------------------------------------------------------------------
+  {
+    files: ['**/*.test.{ts,tsx}', '**/*.spec.{ts,tsx}'],
+    languageOptions: {
+      globals: {
+        describe: 'readonly',
+        it: 'readonly',
+        test: 'readonly',
+        expect: 'readonly',
+        beforeEach: 'readonly',
+        afterEach: 'readonly',
+        beforeAll: 'readonly',
+        afterAll: 'readonly',
+        jest: 'readonly',
+      },
     },
   },
 

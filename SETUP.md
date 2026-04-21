@@ -198,18 +198,21 @@ export NVM_DIR="$HOME/.nvm"
 ```
 
 Save and open a new terminal.
+
 </details>
 
 <details>
 <summary><strong>The QR code scans but the app hangs on "Downloading JavaScript bundle…"</strong></summary>
 
 Your phone and laptop must be on the same Wi-Fi network. Corporate Wi-Fi often blocks the connection. If that's the case, run `npm run mobile -- --tunnel` instead; it routes through Expo's servers and works on any network.
+
 </details>
 
 <details>
 <summary><strong>"Missing required environment variable: EXPO_PUBLIC_SUPABASE_URL"</strong></summary>
 
 You skipped Step 4. Go back and create `apps/mobile/.env` from the example.
+
 </details>
 
 <details>
@@ -221,13 +224,15 @@ You probably ran it with `sudo` at some point and broke the permissions on `~/.n
 sudo chown -R $(whoami) ~/.npm
 ```
 
-Then delete `node_modules` and re-run `npm install` *without* sudo.
+Then delete `node_modules` and re-run `npm install` _without_ sudo.
+
 </details>
 
 <details>
 <summary><strong>"Husky isn't running on commit"</strong></summary>
 
 Run `npm install` again. Husky installs itself via the `prepare` script, but only when you install from the repo root.
+
 </details>
 
 ---
@@ -236,6 +241,6 @@ Run `npm install` again. Husky installs itself via the `prepare` script, but onl
 
 - Read [`CONTRIBUTING.md`](./CONTRIBUTING.md) for the day-to-day workflow.
 - Read [`docs/WORKFLOW.md`](./docs/WORKFLOW.md) for the detailed branch/PR/review process.
-- Read [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) to understand *why* the code is organized this way.
+- Read [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) to understand _why_ the code is organized this way.
 - Skim [`docs/CODING_STANDARDS.md`](./docs/CODING_STANDARDS.md) to see the patterns and anti-patterns we watch for.
 - If you're a repo owner, do [`docs/GITHUB_SETUP.md`](./docs/GITHUB_SETUP.md) once to lock down branch protection.

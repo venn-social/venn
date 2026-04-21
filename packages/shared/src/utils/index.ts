@@ -4,7 +4,7 @@
  * or similar, it belongs in the app's own utils instead.
  */
 
-import { LIMITS } from '@venn/shared/constants';
+import { LIMITS } from '../constants';
 
 export function isValidUsername(value: string): boolean {
   if (value.length < LIMITS.USERNAME_MIN || value.length > LIMITS.USERNAME_MAX) {

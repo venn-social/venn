@@ -41,4 +41,4 @@ src/
 └── utils/            Pure helper functions + their tests.
 ```
 
-See `docs/ARCHITECTURE.md` in the repo root for *why* it's shaped this way.
+See `docs/ARCHITECTURE.md` in the repo root for _why_ it's shaped this way.

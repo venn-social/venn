@@ -43,17 +43,17 @@ Every major decision behind this layout is documented in [`docs/ARCHITECTURE.md`
 
 ## Tech stack
 
-| Layer              | Choice                                   | Why                                                   |
-| ------------------ | ---------------------------------------- | ----------------------------------------------------- |
-| Mobile framework   | React Native + Expo                      | Meta's own stack; one codebase ships iOS + Android.   |
-| Language           | TypeScript (strict mode)                 | Catches bugs at compile time, not in production.      |
-| Navigation         | Expo Router (file-based)                 | Next.js-style routing for mobile.                     |
-| State (server)     | Supabase JS + feature hooks              | Auth, Postgres, storage, realtime — all managed.      |
-| State (client)     | Zustand (as needed)                      | Simpler than Redux. Add only when React state hurts.  |
-| Testing            | Jest + React Native Testing Library      | The standard.                                         |
-| Lint / format      | ESLint (strict) + Prettier               | Auto-fix on save, enforced in CI.                     |
-| Git hooks          | Husky + lint-staged                      | Can't commit broken code.                             |
-| CI                 | GitHub Actions                           | Free for public repos, easy to extend.                |
+| Layer            | Choice                              | Why                                                  |
+| ---------------- | ----------------------------------- | ---------------------------------------------------- |
+| Mobile framework | React Native + Expo                 | Meta's own stack; one codebase ships iOS + Android.  |
+| Language         | TypeScript (strict mode)            | Catches bugs at compile time, not in production.     |
+| Navigation       | Expo Router (file-based)            | Next.js-style routing for mobile.                    |
+| State (server)   | Supabase JS + feature hooks         | Auth, Postgres, storage, realtime — all managed.     |
+| State (client)   | Zustand (as needed)                 | Simpler than Redux. Add only when React state hurts. |
+| Testing          | Jest + React Native Testing Library | The standard.                                        |
+| Lint / format    | ESLint (strict) + Prettier          | Auto-fix on save, enforced in CI.                    |
+| Git hooks        | Husky + lint-staged                 | Can't commit broken code.                            |
+| CI               | GitHub Actions                      | Free for public repos, easy to extend.               |
 
 ## License
 

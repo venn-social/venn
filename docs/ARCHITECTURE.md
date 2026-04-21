@@ -1,6 +1,6 @@
 # Architecture
 
-This doc explains *why* the code is shaped the way it is. The short version: we've organized it the way well-run engineering teams organize their code, because the habits pay off as the team grows.
+This doc explains _why_ the code is shaped the way it is. The short version: we've organized it the way well-run engineering teams organize their code, because the habits pay off as the team grows.
 
 ## The layering
 
@@ -23,7 +23,7 @@ This doc explains *why* the code is shaped the way it is. The short version: we'
 
 Layers only call downward. A screen calls a hook, a hook calls a service, a service calls infra. The infra never calls a screen. This one-way dependency graph keeps things easy to reason about and test.
 
-## Why folders, and why *these* folders
+## Why folders, and why _these_ folders
 
 ### `apps/mobile/src/app/` — one file per screen
 
