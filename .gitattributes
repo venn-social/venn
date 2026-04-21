@@ -1,0 +1,38 @@
+# =============================================================================
+# .gitattributes — normalize line endings and mark binary files.
+# =============================================================================
+# Without this, Windows contributors commit CRLF line endings and break diffs
+# for Mac/Linux contributors. With this, git auto-normalizes to LF.
+# =============================================================================
+
+# Default: auto-detect text files, normalize to LF on commit.
+* text=auto eol=lf
+
+# Explicit text files
+*.js       text eol=lf
+*.jsx      text eol=lf
+*.ts       text eol=lf
+*.tsx      text eol=lf
+*.json     text eol=lf
+*.md       text eol=lf
+*.yml      text eol=lf
+*.yaml     text eol=lf
+*.css      text eol=lf
+*.html     text eol=lf
+*.svg      text eol=lf
+
+# Binary files — never diff, never try to merge
+*.png      binary
+*.jpg      binary
+*.jpeg     binary
+*.gif      binary
+*.ico      binary
+*.webp     binary
+*.mp4      binary
+*.mov      binary
+*.pdf      binary
+*.ttf      binary
+*.otf      binary
+*.woff     binary
+*.woff2    binary
+*.zip      binary

@@ -1,0 +1,29 @@
+# =============================================================================
+# CODEOWNERS — who gets auto-requested as a reviewer when files change.
+# =============================================================================
+# Syntax:  <path pattern>   @github-username-or-team
+#
+# The last matching line wins. So put the most-specific rules at the bottom.
+# Whoever is listed here is automatically requested to review any PR that
+# touches the matching files. Combine this with "Require review from
+# CODEOWNERS" in branch protection to make sure nothing merges without the
+# right eyes on it.
+#
+# TODO: Replace `@cslmn` below with the GitHub usernames of each co-founder.
+# Add more rules as you specialize (e.g., a `/ios` owner once you add native
+# iOS code).
+# =============================================================================
+
+# Default — every PR asks this user (or team) for review.
+*                         @cslmn
+
+# Critical infra — only owners should touch these.
+/.github/                 @cslmn
+/.husky/                  @cslmn
+/package.json             @cslmn
+/eslint.config.js         @cslmn
+/tsconfig.base.json       @cslmn
+
+# Feature areas (add co-founders here as each person takes ownership).
+# /apps/mobile/src/features/auth/     @cslmn @cofounder-username
+# /apps/mobile/src/features/feed/     @cslmn @cofounder-username

@@ -1,0 +1,16 @@
+{
+  "name": "@venn/shared",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Shared types, constants, and pure utilities used across Venn apps.",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "lint": "eslint src --max-warnings=0",
+    "typecheck": "tsc --noEmit",
+    "test": "echo \"No tests in @venn/shared yet\" && exit 0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2"
+  }
+}

@@ -1,0 +1,22 @@
+# Dependabot keeps dependencies up to date automatically by opening PRs when
+# upgrades are available. Security updates open immediately; regular updates
+# are batched weekly so we're not drowning in PRs.
+
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      dev-dependencies:
+        dependency-type: development
+      expo:
+        patterns: ['expo', 'expo-*', '@expo/*', 'react-native', 'react-native-*']
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

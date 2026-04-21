@@ -1,0 +1,10 @@
+#!/usr/bin/env sh
+# Runs before every `git commit`. If it fails, the commit is aborted.
+#
+# What it does:
+#   - lint-staged: runs ESLint + Prettier on *only* the files being committed.
+#     Much faster than linting the whole repo on every commit.
+#
+# Skip (emergencies only): `git commit --no-verify`. Prefer fixing the issue.
+
+npx lint-staged

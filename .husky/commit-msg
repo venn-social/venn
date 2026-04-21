@@ -1,0 +1,5 @@
+#!/usr/bin/env sh
+# Runs against every commit message. Rejects messages that don't follow
+# Conventional Commits (see commitlint.config.js).
+
+npx --no -- commitlint --edit "$1"

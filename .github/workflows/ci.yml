@@ -1,0 +1,77 @@
+# =============================================================================
+# CI — runs on every pull request and on every push to `main`.
+# =============================================================================
+# If any of these jobs fail, the PR cannot be merged.
+#
+# Jobs:
+#   - lint       : ESLint catches bugs and anti-patterns.
+#   - format     : Prettier confirms every file is formatted consistently.
+#   - typecheck  : TypeScript compiler catches type errors.
+#   - test       : Jest runs unit tests.
+#
+# Why multiple jobs instead of one?
+#   Running them in parallel is faster. Also, when something breaks, you
+#   immediately see *which* check broke rather than one giant pile of logs.
+# =============================================================================
+
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# Cancel in-flight runs when the same PR gets a new commit.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+
+  format:
+    name: Format check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run format:check
+
+  typecheck:
+    name: Type check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run test

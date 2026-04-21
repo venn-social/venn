@@ -1,0 +1,17 @@
+{
+  "//": "Recommended VS Code extensions. When a teammate opens this repo, VS Code will prompt them to install these. Say yes.",
+  "recommendations": [
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "editorconfig.editorconfig",
+    "expo.vscode-expo-tools",
+    "bradlc.vscode-tailwindcss",
+    "christian-kohler.npm-intellisense",
+    "christian-kohler.path-intellisense",
+    "yoavbls.pretty-ts-errors",
+    "streetsidesoftware.code-spell-checker",
+    "eamodio.gitlens",
+    "github.vscode-pull-request-github",
+    "orta.vscode-jest"
+  ]
+}

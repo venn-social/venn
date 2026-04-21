@@ -1,0 +1,29 @@
+{
+  "expo": {
+    "name": "Venn",
+    "slug": "venn",
+    "version": "0.0.1",
+    "orientation": "portrait",
+    "scheme": "venn",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.venn.app"
+    },
+    "android": {
+      "package": "com.venn.app"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

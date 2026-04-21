@@ -1,0 +1,22 @@
+# =============================================================================
+# .editorconfig — consistent formatting across editors (VS Code, Cursor, Vim…).
+# Every modern editor reads this file automatically (or via a plugin).
+# =============================================================================
+
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+# Markdown files: keep trailing whitespace (it's sometimes meaningful).
+[*.md]
+trim_trailing_whitespace = false
+
+# Makefiles: must use tabs.
+[Makefile]
+indent_style = tab
