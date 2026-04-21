@@ -58,3 +58,4 @@ Every major decision behind this layout is documented in [`docs/ARCHITECTURE.md`
 ## License
 
 MIT — see [`LICENSE`](./LICENSE).
+
