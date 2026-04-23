@@ -4,14 +4,28 @@
     "dbaeumer.vscode-eslint",
     "esbenp.prettier-vscode",
     "editorconfig.editorconfig",
+
+    "yoavbls.pretty-ts-errors",
+    "dsznajder.es7-react-js-snippets",
+    "usernamehw.errorlens",
+
     "expo.vscode-expo-tools",
-    "bradlc.vscode-tailwindcss",
+    "msjsdiag.vscode-react-native",
+
     "christian-kohler.npm-intellisense",
     "christian-kohler.path-intellisense",
-    "yoavbls.pretty-ts-errors",
-    "streetsidesoftware.code-spell-checker",
+    "wix.vscode-import-cost",
+
     "eamodio.gitlens",
     "github.vscode-pull-request-github",
-    "orta.vscode-jest"
+    "github.vscode-github-actions",
+
+    "orta.vscode-jest",
+
+    "mikestead.dotenv",
+    "streetsidesoftware.code-spell-checker",
+    "ms-vsliveshare.vsliveshare",
+    "naumovs.color-highlight",
+    "formulahendry.auto-rename-tag"
   ]
 }
