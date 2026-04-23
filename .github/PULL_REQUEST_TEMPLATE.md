@@ -9,7 +9,7 @@ A good PR description makes review 10x faster — and reviewers 10x friendlier.
 
 ## Why?
 
-<!-- The motivation. Link the issue if there is one. e.g. Closes #42 -->
+<!-- The motivation. -->
 
 ## How does it work?
 
@@ -24,6 +24,6 @@ A good PR description makes review 10x faster — and reviewers 10x friendlier.
 - [ ] I wrote the code in a new branch, not `main`.
 - [ ] Commit messages follow Conventional Commits (`feat:`, `fix:`, etc.).
 - [ ] `npm run verify` passes locally (lint + format + typecheck + test).
-- [ ] I added tests for new logic (or noted why tests aren't needed).
+- [ ] I added tests for new logic (or noted why tests weren't needed).
 - [ ] I updated docs (`README.md`, `docs/*`) if behavior changed.
 - [ ] I did not commit any secrets (API keys, tokens, `.env` files).
