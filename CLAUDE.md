@@ -46,7 +46,9 @@ The "why" behind this layout is in [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.
 ## Non-negotiable rules
 
 1. **Never push to `main`.** Always work on a branch → PR → review → squash merge.
-2. **Every task starts and ends in Notion.** When a coding task begins, Claude creates or finds the corresponding task in the [venn tasks DB](https://notion.so/34ac60c854a2800ca903ef85907bec3e) with `Task type = Tech` and a description of what needs to be done and why. After the PR is opened, Claude updates that task's `PR Link` field with the GitHub PR URL. Notion is the source of truth — GitHub does not need to reference Notion.
+2. **Every task starts and ends in Notion.** When a coding task begins, Claude creates or finds the corresponding task in the [venn tasks DB](https://notion.so/34ac60c854a2800ca903ef85907bec3e) with `Task type = Tech` and a brief description. After the PR is opened, Claude updates that task's `PR Link` field with the GitHub PR URL. Notion is the source of truth — GitHub does not need to reference Notion.
+   - Task name format: lowercase, short, action-oriented — e.g. `add auth screen`, `fix feed crash`, `set up ci`. No caps, no punctuation.
+   - Fill: `Task type` (tech), `Status`, `Priority`, brief `Description`. Leave `Effort level` and `Assignee` empty.
 3. **Commits follow [Conventional Commits](https://www.conventionalcommits.org/)**: `feat(auth): add sign-in with Apple`. Types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert.
 4. **`npm run verify` must pass before any PR.** It runs lint + format + typecheck + test.
 5. **Never hardcode** colors, spacing, font sizes — use tokens from `src/constants/theme.ts`.
