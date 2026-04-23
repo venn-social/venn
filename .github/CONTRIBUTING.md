@@ -1,6 +1,6 @@
 # Contributing to Venn
 
-This doc is for people who've already finished [SETUP.md](./SETUP.md) and want to ship code.
+This doc is for people who've already finished [SETUP.md](../docs/SETUP.md) and want to ship code.
 
 ## The short version
 

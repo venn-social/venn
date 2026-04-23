@@ -113,7 +113,7 @@ cp .env.example .env
 
 Now open `apps/mobile/.env` in your editor and fill in the Supabase URL and anon key. (The project owner sets up the Supabase project once and shares those values over a secure channel — Slack DM, 1Password, etc. Never paste them into a public chat or commit them to git.)
 
-> **Don't have Supabase set up yet?** See [`docs/SUPABASE_SETUP.md`](./docs/SUPABASE_SETUP.md) for the 5-minute guide to creating the project.
+> **Don't have Supabase set up yet?** See [`docs/SUPABASE_SETUP.md`](./SUPABASE_SETUP.md) for the 5-minute guide to creating the project.
 
 ---
 
@@ -239,8 +239,8 @@ Run `npm install` again. Husky installs itself via the `prepare` script, but onl
 
 ## What's next
 
-- Read [`CONTRIBUTING.md`](./CONTRIBUTING.md) for the day-to-day workflow.
-- Read [`docs/WORKFLOW.md`](./docs/WORKFLOW.md) for the detailed branch/PR/review process.
-- Read [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) to understand _why_ the code is organized this way.
-- Skim [`docs/CODING_STANDARDS.md`](./docs/CODING_STANDARDS.md) to see the patterns and anti-patterns we watch for.
-- If you're a repo owner, do [`docs/GITHUB_SETUP.md`](./docs/GITHUB_SETUP.md) once to lock down branch protection.
+- Read [`CONTRIBUTING.md`](../.github/CONTRIBUTING.md) for the day-to-day workflow.
+- Read [`docs/WORKFLOW.md`](./WORKFLOW.md) for the detailed branch/PR/review process.
+- Read [`docs/ARCHITECTURE.md`](./ARCHITECTURE.md) to understand _why_ the code is organized this way.
+- Skim [`docs/CODING_STANDARDS.md`](./CODING_STANDARDS.md) to see the patterns and anti-patterns we watch for.
+- If you're a repo owner, do [`docs/GITHUB_SETUP.md`](./GITHUB_SETUP.md) once to lock down branch protection.

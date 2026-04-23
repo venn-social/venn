@@ -4,9 +4,9 @@ A social media app for iOS and Android: one codebase in TypeScript + React Nativ
 
 ## For first-time contributors
 
-Start with **[SETUP.md](./SETUP.md)** — it walks you through installing every tool you need (Node.js, Git, Expo, Xcode or Android Studio), cloning the repo, and opening your first pull request. Even if you've never written code before, that guide takes you from "empty laptop" to "app running on my phone."
+Start with **[docs/SETUP.md](./docs/SETUP.md)** — it walks you through installing every tool you need (Node.js, Git, Expo, Xcode or Android Studio), cloning the repo, and opening your first pull request. Even if you've never written code before, that guide takes you from "empty laptop" to "app running on my phone."
 
-Then read **[CONTRIBUTING.md](./CONTRIBUTING.md)** for the day-to-day workflow (branch → commit → PR → review → merge).
+Then read **[.github/CONTRIBUTING.md](./.github/CONTRIBUTING.md)** for the day-to-day workflow (branch → commit → PR → review → merge).
 
 ## For people who already know what they're doing
 
