@@ -1,6 +1,8 @@
 # Venn
 
-A social media app for iOS and Android: one codebase in TypeScript + React Native, shipped to both platforms.
+A social app where people log what they consume — movies, music, books, restaurants, games — in one place, and share their favorites with friends. Every profile shows a Venn diagram of where your tastes overlap with the person you're looking at. iOS first, TestFlight target December 2026. Built in TypeScript + React Native so the codebase already targets both iOS and Android; we just won't publish to Play Store at launch.
+
+See the [product vision](https://www.notion.so/product-vision-34bc60c854a28109939dd2d83bb135a4) in Notion for the what and the why. The rest of this README is about the how — if you're here to contribute.
 
 ## For first-time contributors
 
