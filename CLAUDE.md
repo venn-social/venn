@@ -6,7 +6,9 @@ This file is read automatically when Claude Code starts in this repo. It's the "
 
 ## What this repo is
 
-**venn** — a social media mobile app for iOS and Android. The founding team is small and non-technical. The codebase is being treated like a professional, Meta-grade engineering project from day one, even though we're starting from scratch.
+**venn** — a social app where people log what they consume (movies, music, books, restaurants, games) in one place, and share their favorites with friends. Every profile shows a Venn diagram of where your tastes overlap with the person you're viewing; that overlap primitive is the whole point. iOS first, TestFlight target **December 2026**. React Native so the codebase is cross-platform; we just won't publish to Play Store at launch.
+
+The founding team is small and non-technical. The codebase is being treated like a professional, Meta-grade engineering project from day one. For the full product vision (MVP scope, what's in and what's out, phasing), see the [product vision](https://www.notion.so/product-vision-34bc60c854a28109939dd2d83bb135a4) page in Notion.
 
 ## Tech stack (locked in)
 
@@ -46,7 +48,7 @@ The "why" behind this layout is in [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.
 ## Non-negotiable rules
 
 1. **Never push to `main`.** Always work on a branch → PR → review → squash merge.
-2. **Every task starts and ends in Notion.** When a coding task begins, Claude creates or finds the corresponding task in the [venn tasks DB](https://notion.so/34ac60c854a2800ca903ef85907bec3e) with `Task type = Tech` and a description of what needs to be done and why. After the PR is opened, Claude updates that task's `PR Link` field with the GitHub PR URL. Notion is the source of truth — GitHub does not need to reference Notion.
+2. **Every task starts and ends in Notion.** When a coding task begins, Claude creates or finds the corresponding task in the [venn tasks DB](https://notion.so/34ac60c854a2800ca903ef85907bec3e) with `Task type = tech` and a description of what needs to be done and why. After the PR is opened, Claude updates that task's `PR Link` field with the GitHub PR URL. Notion is the source of truth — GitHub does not need to reference Notion.
 3. **Commits follow [Conventional Commits](https://www.conventionalcommits.org/)**: `feat(auth): add sign-in with Apple`. Types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert.
 4. **`npm run verify` must pass before any PR.** It runs lint + format + typecheck + test.
 5. **Never hardcode** colors, spacing, font sizes — use tokens from `src/constants/theme.ts`.
@@ -84,12 +86,11 @@ Per-app (from `apps/mobile`): `npm run start`, `npm run lint`, `npm run typechec
 
 ## Project management (Notion)
 
-All tasks, meetings, decisions, and OKRs live in the [venn Notion HQ](https://notion.so/349c60c854a280c4b084cb76aadd19e2).
+All tasks and meetings live in the [venn Notion HQ](https://notion.so/HQ-34ac60c854a2805fa3b9cc6da0380285).
 
-- [Tasks](https://notion.so/34ac60c854a2815db7d9cf2731c67ed4) — every ticket with owner, priority, status, and PR link
-- [Projects](https://notion.so/34ac60c854a2810cae65d96103ca319c) — workstreams by phase
-- [Meetings](https://notion.so/34ac60c854a281bc81d6cfc64e0707e3) — weekly syncs and notes
-- [Decisions Log](https://notion.so/34ac60c854a281a19a9fd565e4c99fe3) — key decisions with rationale
+- [Tasks](https://notion.so/34ac60c854a2800ca903ef85907bec3e) — every ticket with owner, priority, status, and PR link. Properties: Task name, Status (Not started / In progress / Done), Task type (strategy / tech / branding), Priority (low / medium / high), Effort level, Due date, Assignee, Description, PR Link.
+- [Meetings](https://notion.so/34ac60c854a2801cb5eff8a694dba2d4) — weekly syncs and notes.
+- [Product vision](https://www.notion.so/product-vision-34bc60c854a28109939dd2d83bb135a4) — the current MVP scope, phasing, and what's explicitly out.
 
 When opening a PR, always link the corresponding Notion task URL in the PR description.
 
