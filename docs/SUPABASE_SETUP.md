@@ -22,52 +22,20 @@ Project settings → API → copy:
 - **Do NOT** paste them in Slack, email, or any file inside the repo.
 - The anon key is technically "safe" to expose, but keep it out of public channels anyway.
 
-## 4. Create the starter tables
+## 4. Apply the schema (via migrations)
 
-SQL Editor → New query → paste and run:
+The schema lives in [`supabase/migrations/`](../supabase/migrations/) and is applied through the Supabase CLI rather than pasted into the dashboard. The full workflow (linking the project, applying migrations, generating TypeScript types) is in [`docs/DATABASE.md`](./DATABASE.md). The short version:
 
-```sql
--- Profiles (extends Supabase's built-in auth.users)
-create table public.profiles (
-  id uuid primary key references auth.users(id) on delete cascade,
-  username text unique not null,
-  display_name text,
-  avatar_url text,
-  bio text,
-  created_at timestamptz not null default now()
-);
-
--- Posts
-create table public.posts (
-  id uuid primary key default gen_random_uuid(),
-  author_id uuid not null references public.profiles(id) on delete cascade,
-  caption text not null,
-  media_url text,
-  like_count integer not null default 0,
-  comment_count integer not null default 0,
-  created_at timestamptz not null default now()
-);
-
-create index posts_created_at_idx on public.posts (created_at desc);
-create index posts_author_id_idx on public.posts (author_id);
-
--- Row-level security: the golden rule of Supabase.
-alter table public.profiles enable row level security;
-alter table public.posts enable row level security;
-
--- Anyone can read profiles and posts.
-create policy "profiles_select_all" on public.profiles for select using (true);
-create policy "posts_select_all" on public.posts for select using (true);
-
--- Users can only insert/update their own profile.
-create policy "profiles_insert_own" on public.profiles for insert with check (auth.uid() = id);
-create policy "profiles_update_own" on public.profiles for update using (auth.uid() = id);
-
--- Users can only insert posts as themselves, and only edit/delete their own.
-create policy "posts_insert_own" on public.posts for insert with check (auth.uid() = author_id);
-create policy "posts_update_own" on public.posts for update using (auth.uid() = author_id);
-create policy "posts_delete_own" on public.posts for delete using (auth.uid() = author_id);
+```bash
+npx supabase login
+npx supabase link --project-ref hpnpcwndxyhpazgkmxdy
+npm run db:push    # applies all pending migrations to the linked remote
+npm run db:types   # regenerates packages/shared/src/database.types.ts
 ```
+
+The first migration ([`supabase/migrations/20260425120000_init.sql`](../supabase/migrations/20260425120000_init.sql)) creates the `profiles` and `posts` tables, sets up Row-Level Security, and adds CHECK constraints that mirror the sanitization bounds in `apps/mobile/src/utils/sanitize.ts`. It's idempotent — safe to apply against a project that was already initialized through the dashboard.
+
+**Going forward**, never paste SQL into the Supabase dashboard's SQL editor for production changes. Every schema change is a migration file in a PR — see [`docs/DATABASE.md`](./DATABASE.md).
 
 ## 5. Test it
 
