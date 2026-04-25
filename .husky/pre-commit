@@ -4,7 +4,9 @@
 # What it does:
 #   - lint-staged: runs ESLint + Prettier on *only* the files being committed.
 #     Much faster than linting the whole repo on every commit.
+#   - typecheck: runs `tsc --noEmit` across all workspaces. Catches type
+#     errors locally instead of waiting for CI to fail.
 #
 # Skip (emergencies only): `git commit --no-verify`. Prefer fixing the issue.
 
-npx lint-staged
+npx lint-staged && npm run typecheck
