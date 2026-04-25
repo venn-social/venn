@@ -52,11 +52,13 @@ The "why" behind this layout is in [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.
 3. **Commits follow [Conventional Commits](https://www.conventionalcommits.org/)**: `feat(auth): add sign-in with Apple`. Types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert.
 4. **`npm run verify` must pass before any PR.** It runs lint + format + typecheck + test.
 5. **Never hardcode** colors, spacing, font sizes — use tokens from `src/constants/theme.ts`.
-6. **Never commit secrets.** `.env` is gitignored. Use `apps/mobile/.env.example` as a template.
-7. **Imports at the top**, in groups (external → internal `@/...` → `@venn/shared` → relative), alphabetized. ESLint enforces.
-8. **Services wrap Supabase.** Screens call feature hooks, hooks call services, services call Supabase. One direction only.
-9. **No `any`, no `==`, no `!` non-null assertions, no inline styles, no commented-out code.** ESLint enforces most of these; reviewers enforce the rest.
-10. **Functions small and pure where possible.** Max 100 lines per function is a lint warning. Prefer composition over giant procedures.
+6. **Never expose API keys.** All secrets are read from `.env` via the typed helper in [`src/lib/env.ts`](./apps/mobile/src/lib/env.ts). Don't hardcode a key in source even temporarily — the gitleaks CI scan will catch you, and any commit history is forever. The mobile app only ever sees `EXPO_PUBLIC_*` keys; anything else (service-role keys, third-party server tokens) lives only on the server. Use [`apps/mobile/.env.example`](./apps/mobile/.env.example) as your template.
+7. **Sanitize every user input.** Anything a user can type — usernames, display names, bios, captions, search queries, comments — goes through a Zod schema in [`src/utils/sanitize.ts`](./apps/mobile/src/utils/sanitize.ts) before it touches a service or the UI. Don't write one-off validation in screens; extend the shared schemas. Postgres CHECK constraints (added per migration) are the final line of defense — these schemas are the first.
+8. **Rate-limit at the API boundary.** Every Supabase Edge Function and RPC we add must enforce a sliding-window rate limit (see the SQL pattern in [`docs/CODING_STANDARDS.md`](./docs/CODING_STANDARDS.md#rate-limiting)). The client-side limiter in [`src/utils/rateLimit.ts`](./apps/mobile/src/utils/rateLimit.ts) is UX feedback only — it does NOT count as security; anything in JS on the user's device can be bypassed.
+9. **Imports at the top**, in groups (external → internal `@/...` → `@venn/shared` → relative), alphabetized. ESLint enforces.
+10. **Services wrap Supabase.** Screens call feature hooks, hooks call services, services call Supabase. One direction only.
+11. **No `any`, no `==`, no `!` non-null assertions, no inline styles, no commented-out code.** ESLint enforces most of these; reviewers enforce the rest.
+12. **Functions small and pure where possible.** Max 100 lines per function is a lint warning. Prefer composition over giant procedures.
 
 ## Path aliases
 
