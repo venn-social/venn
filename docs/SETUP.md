@@ -117,6 +117,18 @@ Now open `apps/mobile/.env` in your editor and fill in the Supabase URL and anon
 
 ---
 
+## Step 4b — Sanity-check your environment
+
+Before running the app, verify everything is wired correctly:
+
+```bash
+npm run doctor
+```
+
+This checks your Node version, that git's commit hooks are installed, and that your `.env` is filled in. If anything is wrong it tells you exactly what to do. Run this any time you suspect the environment is in a weird state — it's also part of `npm run verify`.
+
+---
+
 ## Step 5 — Run the app
 
 From the repo root:
@@ -231,7 +243,7 @@ Then delete `node_modules` and re-run `npm install` _without_ sudo.
 <details>
 <summary><strong>"Husky isn't running on commit"</strong></summary>
 
-Run `npm install` again. Husky installs itself via the `prepare` script, but only when you install from the repo root.
+Run `npm run doctor` — it'll tell you exactly what's wrong. The fix is almost always `npm run prepare` (or `npm install` from the repo root), which re-wires the git hooks. If `git config --get core.hooksPath` returns nothing, the hooks aren't installed.
 
 </details>
 

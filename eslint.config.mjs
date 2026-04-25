@@ -142,6 +142,25 @@ export default [
   },
 
   // -------------------------------------------------------------------------
+  // Node scripts (scripts/**) — declare Node globals (process, console, etc.)
+  // -------------------------------------------------------------------------
+  {
+    files: ['scripts/**/*.{js,mjs,cjs}'],
+    languageOptions: {
+      globals: {
+        console: 'readonly',
+        process: 'readonly',
+        Buffer: 'readonly',
+        __dirname: 'readonly',
+        __filename: 'readonly',
+      },
+    },
+    rules: {
+      'no-console': 'off', // dev scripts print to stdout; that's the point
+    },
+  },
+
+  // -------------------------------------------------------------------------
   // Test files — declare Jest globals so ESLint doesn't flag describe/it/expect
   // -------------------------------------------------------------------------
   {
