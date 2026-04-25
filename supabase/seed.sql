@@ -1,0 +1,14 @@
+-- =============================================================================
+-- seed.sql — local-dev seed data.
+-- =============================================================================
+-- Runs after migrations on `npm run db:reset`. Use this to populate a fresh
+-- local database with test data so screens have something to render.
+--
+-- Rules:
+--   - Don't put production-realistic data here. This file is committed.
+--   - Don't put secrets here.
+--   - Keep it minimal — heavy fixtures slow down `db:reset` for everyone.
+--   - Local-only: this never runs against production.
+-- =============================================================================
+
+-- Empty for now. Add seed data here as features land.

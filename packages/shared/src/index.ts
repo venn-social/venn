@@ -6,3 +6,4 @@
 export * from './types';
 export * from './constants';
 export * from './utils';
+export type { Database } from './database.types';

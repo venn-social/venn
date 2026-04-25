@@ -26,6 +26,14 @@
     "doctor": "node scripts/doctor.mjs",
     "setup": "npm install && npm run doctor",
     "verify": "npm run doctor && npm run lint && npm run format:check && npm run typecheck && npm run test",
+    "db:start": "supabase start",
+    "db:stop": "supabase stop",
+    "db:reset": "supabase db reset",
+    "db:diff": "supabase db diff -f",
+    "db:new": "supabase migration new",
+    "db:push": "supabase db push",
+    "db:pull": "supabase db pull",
+    "db:types": "supabase gen types typescript --linked --schema public > packages/shared/src/database.types.ts && npx prettier --write packages/shared/src/database.types.ts",
     "clean": "npm run clean --workspaces --if-present && rm -rf node_modules"
   },
   "devDependencies": {
@@ -44,6 +52,7 @@
     "lint-staged": "^15.3.0",
     "prettier": "^3.4.2",
     "prettier-plugin-tailwindcss": "^0.6.9",
+    "supabase": "2.95.3",
     "typescript": "^5.7.2"
   },
   "lint-staged": {

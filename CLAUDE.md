@@ -59,6 +59,7 @@ The "why" behind this layout is in [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.
 10. **Services wrap Supabase.** Screens call feature hooks, hooks call services, services call Supabase. One direction only.
 11. **No `any`, no `==`, no `!` non-null assertions, no inline styles, no commented-out code.** ESLint enforces most of these; reviewers enforce the rest.
 12. **Functions small and pure where possible.** Max 100 lines per function is a lint warning. Prefer composition over giant procedures.
+13. **Schema changes go through migrations.** Every change to the Supabase schema (new column, new table, new RLS policy, new RPC) is a SQL file in `supabase/migrations/` shipped in a PR alongside the matching `packages/shared/src/database.types.ts` regeneration. Never run SQL directly against production via the dashboard. See [`docs/DATABASE.md`](./docs/DATABASE.md) for the full workflow.
 
 ## Path aliases
 
@@ -103,6 +104,7 @@ When opening a PR, always link the corresponding Notion task URL in the PR descr
 - `docs/WORKFLOW.md` — detailed git/PR flow with troubleshooting.
 - `docs/GITHUB_SETUP.md` — one-time repo-admin steps (branch protection etc.).
 - `docs/SUPABASE_SETUP.md` — backend provisioning + RLS policies.
+- `docs/DATABASE.md` — migrations workflow (never edit the prod DB directly).
 
 ## Things NOT to do without asking
 
