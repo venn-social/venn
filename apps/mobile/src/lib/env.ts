@@ -18,6 +18,12 @@ interface Env {
   readonly SUPABASE_URL: string;
   readonly SUPABASE_ANON_KEY: string;
   readonly APP_ENV: AppEnvironment;
+  /** Sentry DSN. When null, error tracking is disabled (local dev, missing config). */
+  readonly SENTRY_DSN: string | null;
+  /** PostHog API key. When null, analytics is disabled. */
+  readonly POSTHOG_API_KEY: string | null;
+  /** PostHog API host. Defaults to PostHog Cloud (US). */
+  readonly POSTHOG_HOST: string;
 }
 
 function requireString(name: string, value: string | undefined): string {
@@ -28,6 +34,10 @@ function requireString(name: string, value: string | undefined): string {
     );
   }
   return value;
+}
+
+function optionalString(value: string | undefined): string | null {
+  return value !== undefined && value.length > 0 ? value : null;
 }
 
 function parseAppEnv(value: string | undefined): AppEnvironment {
@@ -44,4 +54,7 @@ export const env: Env = {
     process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,
   ),
   APP_ENV: parseAppEnv(process.env.EXPO_PUBLIC_APP_ENV),
+  SENTRY_DSN: optionalString(process.env.EXPO_PUBLIC_SENTRY_DSN),
+  POSTHOG_API_KEY: optionalString(process.env.EXPO_PUBLIC_POSTHOG_API_KEY),
+  POSTHOG_HOST: process.env.EXPO_PUBLIC_POSTHOG_HOST ?? 'https://us.i.posthog.com',
 };
