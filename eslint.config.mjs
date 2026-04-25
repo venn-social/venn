@@ -142,6 +142,17 @@ export default [
   },
 
   // -------------------------------------------------------------------------
+  // Generated files (Supabase types, etc.) — relax rules that fight generators.
+  // -------------------------------------------------------------------------
+  {
+    files: ['**/database.types.ts'],
+    rules: {
+      // Supabase's generator uses `_` as a placeholder type param.
+      'no-unused-vars': 'off',
+    },
+  },
+
+  // -------------------------------------------------------------------------
   // Node scripts (scripts/**) — declare Node globals (process, console, etc.)
   // -------------------------------------------------------------------------
   {
