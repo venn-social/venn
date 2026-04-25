@@ -113,6 +113,7 @@ When opening a PR, always link the corresponding Notion task URL in the PR descr
 - Don't add Redux, MobX, or another state library.
 - Don't edit CI workflows, Husky hooks, ESLint/Prettier configs, or CODEOWNERS without a heads-up — those enforce the team's guarantees.
 - Don't commit to `main` or force-push to anyone's branch.
+- Don't run `npm audit fix --force` in this repo — it would downgrade Expo SDK 52 → 49 and break the entire stack. The current Dependabot alerts are all transitive build-time deps that ship to no user device; see [`docs/DEPENDENCIES.md`](./docs/DEPENDENCIES.md) for the analysis and the plan.
 
 ## Who's here
 
