@@ -219,6 +219,112 @@ const styles = StyleSheet.create({ ... });
 
 This order is not enforced by a tool, but reviewers watch for it.
 
+## Security
+
+Three rules with teeth. Each maps to a non-negotiable rule in [`CLAUDE.md`](../CLAUDE.md). The first two are partly enforced by tooling; the third is enforced by review.
+
+### 1. Secrets — never in source
+
+Every secret value is read from `.env` through the typed helper. Don't hardcode keys, even briefly, even in a file you "won't commit." Git remembers.
+
+```ts
+// Bad — hardcoded.
+const supabaseUrl = 'https://abcd1234.supabase.co';
+const anonKey = 'eyJhbGciOiJIUzI1NiIsIn...';
+
+// Bad — reading process.env directly skips the validation in lib/env.ts.
+const url = process.env.EXPO_PUBLIC_SUPABASE_URL;
+
+// Good — typed, validated, fails loudly if the value is missing or malformed.
+import { env } from '@/lib/env';
+const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY);
+```
+
+The mobile app only sees `EXPO_PUBLIC_*` variables — those are bundled into the iOS/Android binary and shipped to every user's device. Anything else (service-role keys, third-party server tokens) is server-only.
+
+A `Secret scan` GitHub Action runs gitleaks on every PR. If you commit a key by accident, CI blocks the merge. Locally, `git secrets` or just `npm run doctor` is your friend.
+
+### 2. Sanitize every user input
+
+Anything a user can type goes through a Zod schema in [`src/utils/sanitize.ts`](../apps/mobile/src/utils/sanitize.ts) before it hits a service, the database, or another user's screen. Don't sprinkle ad-hoc `if (input.length > 24)` around screens — extend the shared schemas instead.
+
+```ts
+// Bad — validation embedded in the screen, no normalization.
+const handleSignUp = async () => {
+  if (username.length < 3) {
+    setError('username too short');
+    return;
+  }
+  await createAccount(username);
+};
+
+// Good — schema-validated, normalized, lowercased before it ever leaves the screen.
+import { UsernameSchema } from '@/utils/sanitize';
+
+const handleSignUp = async () => {
+  const result = UsernameSchema.safeParse(username);
+  if (!result.success) {
+    setError(result.error.issues[0]?.message ?? 'invalid username');
+    return;
+  }
+  await createAccount(result.data); // already normalized + lowercased
+};
+```
+
+What `normalizeText` strips: zero-width unicode (U+200B-200F, used for spoofing), bidi-override chars (used to disguise filenames or display names), C0/C1 control chars, leading/trailing whitespace, and runs of internal whitespace. It's NFC-normalized and idempotent.
+
+Server-side enforcement (Postgres `CHECK` constraints, length caps, RLS policies) is the final line of defense. Each migration that introduces a user-typed column must include the matching constraint.
+
+### 3. Rate limiting
+
+Every Supabase Edge Function and every RPC we add must include a server-side rate limit. The pattern: a `rate_limits` table keyed by `(user_id, action)` with a sliding window enforced by a Postgres function the edge function calls before doing the real work.
+
+We don't have any edge functions or RPCs yet, so the SQL pattern lives here as a reference for when we add the first one:
+
+```sql
+-- One time, in a migration:
+create table public.rate_limits (
+  user_id uuid not null,
+  action text not null,
+  ts timestamptz not null default now(),
+  primary key (user_id, action, ts)
+);
+create index rate_limits_lookup_idx on public.rate_limits (user_id, action, ts desc);
+
+create or replace function public.check_rate_limit(
+  p_action text,
+  p_max_calls int,
+  p_window_seconds int
+) returns void
+language plpgsql
+security definer
+as $$
+declare
+  call_count int;
+begin
+  delete from public.rate_limits
+   where user_id = auth.uid()
+     and action = p_action
+     and ts < now() - (p_window_seconds || ' seconds')::interval;
+
+  select count(*) into call_count
+    from public.rate_limits
+   where user_id = auth.uid()
+     and action = p_action;
+
+  if call_count >= p_max_calls then
+    raise exception 'rate_limit_exceeded' using errcode = '429';
+  end if;
+
+  insert into public.rate_limits (user_id, action) values (auth.uid(), p_action);
+end;
+$$;
+```
+
+Every new RPC or Edge Function then starts with `select check_rate_limit('post_create', 10, 60);` (or whatever the limits should be) before it does anything else.
+
+The client-side limiter in [`src/utils/rateLimit.ts`](../apps/mobile/src/utils/rateLimit.ts) is for UX only — it stops a user from accidentally double-tapping a "post" button or hammering the search box. It does NOT replace server-side enforcement; anything in JavaScript on a user's device can be bypassed.
+
 ## PR review rubric
 
 When you review, look for:
