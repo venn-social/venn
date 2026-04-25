@@ -105,6 +105,7 @@ When opening a PR, always link the corresponding Notion task URL in the PR descr
 - `docs/GITHUB_SETUP.md` — one-time repo-admin steps (branch protection etc.).
 - `docs/SUPABASE_SETUP.md` — backend provisioning + RLS policies.
 - `docs/DATABASE.md` — migrations workflow (never edit the prod DB directly).
+- `docs/OBSERVABILITY.md` — Sentry (errors) + PostHog (analytics) setup and usage.
 
 ## Things NOT to do without asking
 

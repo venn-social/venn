@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "~1.23.1",
+    "@sentry/react-native": "^8.9.1",
     "@shopify/flash-list": "^2.3.1",
     "@supabase/supabase-js": "^2.47.10",
     "date-fns": "^4.1.0",
@@ -36,6 +37,7 @@
     "expo-splash-screen": "~0.29.18",
     "expo-status-bar": "~2.0.0",
     "expo-system-ui": "~4.0.6",
+    "posthog-react-native": "^4.43.5",
     "react": "18.3.1",
     "react-hook-form": "^7.73.1",
     "react-native": "0.76.5",
