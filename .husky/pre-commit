@@ -1,12 +1,10 @@
 #!/usr/bin/env sh
 # Runs before every `git commit`. If it fails, the commit is aborted.
 #
-# What it does:
-#   - lint-staged: runs ESLint + Prettier on *only* the files being committed.
-#     Much faster than linting the whole repo on every commit.
-#   - typecheck: runs `tsc --noEmit` across all workspaces. Catches type
-#     errors locally instead of waiting for CI to fail.
+# What it does, all via `lint-staged.config.mjs`:
+#   - ESLint + Prettier on the staged files only (fast).
+#   - `npm run typecheck` (project-wide) only when TS files are staged.
 #
 # Skip (emergencies only): `git commit --no-verify`. Prefer fixing the issue.
 
-npx lint-staged && npm run typecheck
+npx lint-staged

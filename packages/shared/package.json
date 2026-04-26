@@ -7,8 +7,7 @@
   "types": "src/index.ts",
   "scripts": {
     "lint": "eslint src --max-warnings=0",
-    "typecheck": "tsc --noEmit",
-    "test": "echo \"No tests in @venn/shared yet\" && exit 0"
+    "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "typescript": "^5.7.2"

@@ -10,6 +10,16 @@ module.exports = {
     '!src/**/index.ts',
     '!src/app/**', // Route files are hard to unit-test; test components instead.
   ],
+  // Threshold only checked when --coverage is passed (it's on by default in
+  // the `test` script). Tighten the bar / add new paths as we add tests.
+  coverageThreshold: {
+    './src/utils/': {
+      statements: 80,
+      branches: 70,
+      functions: 80,
+      lines: 80,
+    },
+  },
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
     '^@venn/shared$': '<rootDir>/../../packages/shared/src',

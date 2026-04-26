@@ -46,7 +46,6 @@
     "eslint-plugin-import": "^2.31.0",
     "eslint-plugin-react": "^7.37.3",
     "eslint-plugin-react-hooks": "^5.1.0",
-    "eslint-plugin-react-native": "^4.1.0",
     "eslint-plugin-unused-imports": "^4.1.4",
     "husky": "^9.1.7",
     "lint-staged": "^15.3.0",
@@ -55,13 +54,5 @@
     "supabase": "2.95.3",
     "typescript": "^5.7.2"
   },
-  "lint-staged": {
-    "*.{ts,tsx,js,jsx}": [
-      "eslint --fix --max-warnings=0",
-      "prettier --write"
-    ],
-    "*.{json,md,yml,yaml}": [
-      "prettier --write"
-    ]
-  }
+  "//": "lint-staged config lives in lint-staged.config.mjs at the repo root."
 }

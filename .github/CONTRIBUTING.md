@@ -110,4 +110,4 @@ npm run format
 
 ## When you're stuck
 
-Read [`docs/CODING_STANDARDS.md`](./docs/CODING_STANDARDS.md) and [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md). Then ask in the team chat.
+Read [`docs/CODING_STANDARDS.md`](../docs/CODING_STANDARDS.md) and [`docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md). Then ask in the team chat.
