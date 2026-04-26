@@ -106,6 +106,7 @@ When opening a PR, always link the corresponding Notion task URL in the PR descr
 - `docs/SUPABASE_SETUP.md` — backend provisioning + RLS policies.
 - `docs/DATABASE.md` — migrations workflow (never edit the prod DB directly).
 - `docs/OBSERVABILITY.md` — Sentry (errors) + PostHog (analytics) setup and usage.
+- `docs/decisions/` — Architectural Decision Records. The "why we did it this way" archive. Read the index in `docs/decisions/README.md` before making a load-bearing technical choice; add a new ADR when you make one yourself.
 
 ## Things NOT to do without asking
 
