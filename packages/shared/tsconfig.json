@@ -4,7 +4,9 @@
     "outDir": "dist",
     "rootDir": "src",
     "composite": true,
-    "jsx": "preserve"
+    "jsx": "preserve",
+    "declaration": true,
+    "declarationMap": true
   },
   "include": ["src/**/*.ts"],
   "exclude": ["node_modules", "dist"]

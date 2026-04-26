@@ -31,8 +31,6 @@
     "noImplicitOverride": true,
 
     "skipLibCheck": true,
-    "declaration": true,
-    "declarationMap": true,
     "sourceMap": true
   },
   "exclude": ["node_modules", "dist", "build", ".expo"]
