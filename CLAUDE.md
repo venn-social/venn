@@ -69,11 +69,19 @@ The "why" behind this layout is in [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.
 ## Common commands (from repo root)
 
 ```bash
-npm install               # first-time or after pulling changes
+npm run setup             # first-time bootstrap: install + npm run doctor
+npm run doctor            # health-check the local env (Node, hooks, .env)
 npm run mobile            # start Expo dev server, scan QR in Expo Go app
-npm run verify            # lint + format + typecheck + tests (run before every PR)
+npm run verify            # doctor + lint + format + typecheck + test (run before every PR)
 npm run lint:fix          # auto-fix lint issues
 npm run format            # auto-fix formatting
+
+# Supabase (see docs/DATABASE.md for the full workflow):
+npm run db:new <name>     # create a new migration file
+npm run db:reset          # wipe local DB, replay migrations + seed
+npm run db:diff <name>    # auto-generate a migration from local-vs-migrations diff
+npm run db:push           # apply pending migrations to the linked remote
+npm run db:types          # regenerate packages/shared/src/database.types.ts
 ```
 
 Per-app (from `apps/mobile`): `npm run start`, `npm run lint`, `npm run typecheck`, `npm run test`.
