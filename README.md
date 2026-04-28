@@ -14,10 +14,12 @@ Then read **[.github/CONTRIBUTING.md](./.github/CONTRIBUTING.md)** for the day-t
 
 ```bash
 nvm use                # Node 20.11
-npm install            # Install everything
+npm run setup          # npm install + verifies your env via npm run doctor
 cd apps/mobile && cp .env.example .env  # Add your Supabase creds
 npm run mobile         # Start the dev server, scan QR on your phone
 ```
+
+Run `npm run doctor` any time things feel off — it surfaces the silent failure modes (wrong Node, missing husky hooks, placeholder `.env`).
 
 ## How this repo is organized
 
