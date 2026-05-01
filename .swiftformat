@@ -1,0 +1,49 @@
+# =============================================================================
+# .swiftformat — Swift formatter configuration.
+# =============================================================================
+# SwiftFormat enforces deterministic formatting. Pre-commit runs it on staged
+# Swift files; CI runs `swiftformat --lint` to fail on unformatted code.
+#
+# Rule docs: https://github.com/nicklockwood/SwiftFormat/blob/main/Rules.md
+# =============================================================================
+
+# Path filtering
+--exclude ios/Venn.xcodeproj,ios/Venn/Resources/GeneratedConfig.xcconfig,.build,DerivedData
+
+# Swift language version (matches IPHONEOS_DEPLOYMENT_TARGET / SWIFT_VERSION).
+--swiftversion 6.0
+
+# Indentation & spacing
+--indent 4
+--maxwidth 120
+--tabwidth 4
+--smarttabs enabled
+
+# Wrapping
+--wraparguments before-first
+--wrapparameters before-first
+--wrapcollections before-first
+--wrapconditions after-first
+--wrapreturntype if-multiline
+--wraptypealiases before-first
+
+# Style
+--self remove
+--selfrequired wait
+--semicolons never
+--trailingcommas always
+--trimwhitespace always
+--ranges no-space
+--operatorfunc spaced
+--patternlet inline
+--redundanttype inferred
+--shortoptionals always
+--stripunusedargs closure-only
+--voidtype void
+
+# Imports & headers
+--header strip
+--importgrouping testable-bottom
+
+# Disable rules that conflict with SwiftUI conventions
+--disable redundantInternal,opaqueGenericParameters

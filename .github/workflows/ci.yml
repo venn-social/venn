@@ -4,14 +4,12 @@
 # If any of these jobs fail, the PR cannot be merged.
 #
 # Jobs:
-#   - lint       : ESLint catches bugs and anti-patterns.
-#   - format     : Prettier confirms every file is formatted consistently.
-#   - typecheck  : TypeScript compiler catches type errors.
-#   - test       : Jest runs unit tests.
+#   - lint           : SwiftLint catches bugs and anti-patterns.
+#   - format-check   : SwiftFormat confirms every Swift file is formatted.
+#   - prettier-check : Prettier confirms Markdown / JSON / YAML are formatted.
+#   - test           : XCTest runs unit + UI tests in the iOS simulator.
 #
-# Why multiple jobs instead of one?
-#   Running them in parallel is faster. Also, when something breaks, you
-#   immediately see *which* check broke rather than one giant pile of logs.
+# Runner: macos-latest (Apple Silicon, ships with current Xcode preinstalled).
 # =============================================================================
 
 name: CI
@@ -27,51 +25,65 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  XCODEGEN_VERSION: 2.45.4
+  SWIFTLINT_VERSION: 0.63.2
+  SWIFTFORMAT_VERSION: 0.61.1
+  XCBEAUTIFY_VERSION: 3.2.1
+
 jobs:
   lint:
     name: Lint
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-node@v4
-        with:
-          node-version-file: .nvmrc
-          cache: npm
-      - run: npm ci
-      - run: npm run lint
+      - name: Install SwiftLint
+        run: brew install swiftlint
+      - run: swiftlint lint --strict
 
-  format:
-    name: Format check
+  format-check:
+    name: Format check (Swift)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install SwiftFormat
+        run: brew install swiftformat
+      - run: swiftformat --lint ios
+
+  prettier-check:
+    name: Format check (docs)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v4
         with:
-          node-version-file: .nvmrc
+          node-version: 20
           cache: npm
       - run: npm ci
       - run: npm run format:check
 
-  typecheck:
-    name: Type check
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v4
-        with:
-          node-version-file: .nvmrc
-          cache: npm
-      - run: npm ci
-      - run: npm run typecheck
-
   test:
     name: Tests
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-node@v4
-        with:
-          node-version-file: .nvmrc
-          cache: npm
-      - run: npm ci
-      - run: npm run test
+      - name: Select latest Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app
+      - name: Show Xcode + Swift versions
+        run: |
+          xcodebuild -version
+          swift --version
+      - name: Install tools
+        run: brew install xcodegen xcbeautify
+      - name: Generate Xcode project
+        run: cd ios && xcodegen generate
+      - name: Run tests
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project ios/Venn.xcodeproj \
+            -scheme Venn \
+            -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=latest' \
+            -derivedDataPath build/DerivedData \
+            -enableCodeCoverage YES \
+            test | xcbeautify --is-ci

@@ -4,17 +4,30 @@
 
 version: 2
 updates:
-  - package-ecosystem: npm
-    directory: /
+  # Swift Package Manager — app-level dependencies (Supabase, Sentry, PostHog, ...).
+  # Tracked via the generated Package.resolved inside the Xcode project.
+  - package-ecosystem: swift
+    directory: /ios
     schedule:
       interval: weekly
       day: monday
     open-pull-requests-limit: 5
     groups:
-      dev-dependencies:
+      observability:
+        patterns: ["sentry-cocoa", "posthog-ios"]
+      supabase:
+        patterns: ["supabase-swift"]
+
+  # Node tooling — only commitlint / husky / prettier live here.
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 3
+    groups:
+      tooling:
         dependency-type: development
-      expo:
-        patterns: ['expo', 'expo-*', '@expo/*', 'react-native', 'react-native-*']
 
   - package-ecosystem: github-actions
     directory: /

@@ -1,10 +1,44 @@
 #!/usr/bin/env sh
 # Runs before every `git commit`. If it fails, the commit is aborted.
 #
-# What it does, all via `lint-staged.config.mjs`:
-#   - ESLint + Prettier on the staged files only (fast).
-#   - `npm run typecheck` (project-wide) only when TS files are staged.
+# What it does:
+#   - SwiftFormat — formats staged Swift files in place; the formatted
+#     versions are re-staged so what you commit matches what was checked.
+#   - SwiftLint   — lints staged Swift files. Errors block the commit.
+#   - Prettier    — formats staged Markdown / JSON / YAML files.
 #
-# Skip (emergencies only): `git commit --no-verify`. Prefer fixing the issue.
+# Tools that aren't installed are skipped with a warning rather than
+# aborting the commit — this keeps fresh clones unblocked until the
+# contributor finishes `make setup`. CI re-checks everything strictly,
+# so nothing slips into `main` unformatted or unlinted.
+#
+# Skip in emergencies: `git commit --no-verify`. Prefer fixing the issue.
 
-npx lint-staged
+set -e
+
+staged_swift=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '\.swift$' || true)
+staged_docs=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '\.(md|json|ya?ml)$' || true)
+
+if [ -n "$staged_swift" ]; then
+  if command -v swiftformat >/dev/null 2>&1; then
+    echo "$staged_swift" | xargs swiftformat --quiet
+    echo "$staged_swift" | xargs git add
+  else
+    echo "warning: swiftformat not installed — skipping. Run 'brew install swiftformat'."
+  fi
+
+  if command -v swiftlint >/dev/null 2>&1; then
+    echo "$staged_swift" | xargs swiftlint lint --quiet --strict
+  else
+    echo "warning: swiftlint not installed — skipping. Run 'brew install swiftlint' (requires full Xcode)."
+  fi
+fi
+
+if [ -n "$staged_docs" ]; then
+  if [ -d node_modules/prettier ]; then
+    echo "$staged_docs" | xargs npx --no -- prettier --write
+    echo "$staged_docs" | xargs git add
+  else
+    echo "warning: prettier not installed — skipping. Run 'npm install'."
+  fi
+fi
