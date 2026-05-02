@@ -20,7 +20,7 @@ help: ## Print this help.
 
 setup: ## Install Homebrew tooling + node dev deps. Run once after cloning.
 	@command -v brew >/dev/null || { echo "Install Homebrew first: https://brew.sh"; exit 1; }
-	brew bundle --no-lock --file=- <<-EOF
+	brew bundle --file=- <<-EOF
 		brew "xcodegen"
 		brew "swiftlint"
 		brew "swiftformat"
