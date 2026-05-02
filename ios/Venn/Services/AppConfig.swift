@@ -61,7 +61,7 @@ final class AppConfig {
         let sentryDSN = (info["SENTRY_DSN"] as? String).flatMap { $0.isEmpty ? nil : $0 }
         let postHogKey = (info["POSTHOG_API_KEY"] as? String).flatMap { $0.isEmpty ? nil : $0 }
         let postHogHostString = (info["POSTHOG_HOST"] as? String) ?? "https://us.i.posthog.com"
-        let postHogHost = URL(string: postHogHostString) ?? URL(string: "https://us.i.posthog.com")!
+        let postHogHost = URL(string: postHogHostString) ?? URL(staticString: "https://us.i.posthog.com")
 
         return AppConfig(
             supabaseURL: url,
@@ -75,11 +75,11 @@ final class AppConfig {
 
     /// Stub for SwiftUI previews and tests.
     static let preview = AppConfig(
-        supabaseURL: URL(string: "https://preview.supabase.co")!,
+        supabaseURL: URL(staticString: "https://preview.supabase.co"),
         supabaseAnonKey: "preview",
         appEnv: .development,
         sentryDSN: nil,
         postHogAPIKey: nil,
-        postHogHost: URL(string: "https://us.i.posthog.com")!
+        postHogHost: URL(staticString: "https://us.i.posthog.com")
     )
 }

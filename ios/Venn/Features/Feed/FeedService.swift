@@ -9,20 +9,30 @@ struct FeedService {
     /// Placeholder for the eventual feed query. Will be expanded once the
     /// schema/policies for posts are settled.
     func recentPosts(limit: Int = 20) async throws -> [PostDTO] {
-        []
+        _ = limit
+        return []
     }
 }
 
-struct PostDTO: Decodable, Identifiable {
+/// Decodable mirror of `public.posts`. See the SQL definition in
+/// `supabase/migrations/20260425120000_init.sql`. Field names match the
+/// Postgres column names via `CodingKeys`.
+struct PostDTO: Decodable, Identifiable, Equatable {
     let id: UUID
     let authorID: UUID
-    let body: String
+    let caption: String
+    let mediaURL: URL?
+    let likeCount: Int
+    let commentCount: Int
     let createdAt: Date
 
     enum CodingKeys: String, CodingKey {
         case id
         case authorID = "author_id"
-        case body
+        case caption
+        case mediaURL = "media_url"
+        case likeCount = "like_count"
+        case commentCount = "comment_count"
         case createdAt = "created_at"
     }
 }
