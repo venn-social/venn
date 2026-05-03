@@ -12,12 +12,13 @@ enum Observability {
                 options.dsn = dsn
                 options.environment = config.appEnv.rawValue
                 options.tracesSampleRate = config.appEnv == .production ? 0.2 : 1.0
-                options.profilesSampleRate = config.appEnv == .production ? 0.1 : 1.0
+                // Profiling is on the new SentryProfileOptions API. Wire it up
+                // when we actually want flame graphs in the dashboard.
             }
         }
 
-        if let apiKey = config.postHogAPIKey {
-            let phConfig = PostHogConfig(apiKey: apiKey, host: config.postHogHost.absoluteString)
+        if let projectToken = config.postHogAPIKey {
+            let phConfig = PostHogConfig(projectToken: projectToken, host: config.postHogHost.absoluteString)
             phConfig.captureApplicationLifecycleEvents = true
             phConfig.captureScreenViews = true
             PostHogSDK.shared.setup(phConfig)
