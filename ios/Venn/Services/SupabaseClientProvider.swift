@@ -9,14 +9,17 @@ import Supabase
 /// calling this client. Views and view-models call services, services call
 /// this provider.
 @Observable
-final class SupabaseClientProvider {
+final class SupabaseClientProvider: @unchecked Sendable {
+    /// @unchecked Sendable: `client` is `let` and SupabaseClient is itself
+    /// Sendable, so instances are safe to share across threads. Swift cannot
+    /// infer Sendable from @Observable on its own.
     let client: SupabaseClient
 
     init(client: SupabaseClient) {
         self.client = client
     }
 
-    static let shared: SupabaseClientProvider = {
+    nonisolated(unsafe) static let shared: SupabaseClientProvider = {
         let config = AppConfig.load()
         let client = SupabaseClient(
             supabaseURL: config.supabaseURL,
@@ -27,7 +30,7 @@ final class SupabaseClientProvider {
 
     /// Used in SwiftUI previews. Points at preview values; never makes a real
     /// network call in a preview because the URL is not real.
-    static let preview: SupabaseClientProvider = {
+    nonisolated(unsafe) static let preview: SupabaseClientProvider = {
         let client = SupabaseClient(
             supabaseURL: AppConfig.preview.supabaseURL,
             supabaseKey: AppConfig.preview.supabaseAnonKey

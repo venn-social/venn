@@ -10,7 +10,10 @@ import Observation
 /// Use this type instead of reading `Bundle.main.infoDictionary` directly so
 /// that screens depend on a typed surface rather than untyped string lookups.
 @Observable
-final class AppConfig {
+final class AppConfig: @unchecked Sendable {
+    // @unchecked Sendable: every stored property is `let` and Sendable, so
+    // instances are immutable after init — safe to share across threads.
+    // Swift cannot infer Sendable from @Observable on its own.
     let supabaseURL: URL
     let supabaseAnonKey: String
     let appEnv: AppEnv
@@ -74,7 +77,7 @@ final class AppConfig {
     }
 
     /// Stub for SwiftUI previews and tests.
-    static let preview = AppConfig(
+    nonisolated(unsafe) static let preview = AppConfig(
         supabaseURL: URL(staticString: "https://preview.supabase.co"),
         supabaseAnonKey: "preview",
         appEnv: .development,

@@ -1,7 +1,8 @@
 import SwiftUI
 
 struct ContentView: View {
-    @Environment(AppConfig.self) private var config
+    @Environment(AppConfig.self)
+    private var config
 
     var body: some View {
         VStack(spacing: 16) {
