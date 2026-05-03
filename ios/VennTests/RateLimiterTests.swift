@@ -3,7 +3,8 @@ import Testing
 @testable import Venn
 
 struct RateLimiterTests {
-    @Test func allowsUpToMaxCallsWithinWindow() async throws {
+    @Test
+    func allowsUpToMaxCallsWithinWindow() async throws {
         let limiter = RateLimiter(limit: .init(maxCalls: 3, windowSeconds: 1))
         let now = Date()
         try await limiter.check(now: now)
@@ -11,7 +12,8 @@ struct RateLimiterTests {
         try await limiter.check(now: now)
     }
 
-    @Test func rejectsAfterLimit() async throws {
+    @Test
+    func rejectsAfterLimit() async throws {
         let limiter = RateLimiter(limit: .init(maxCalls: 2, windowSeconds: 10))
         let now = Date()
         try await limiter.check(now: now)
@@ -22,7 +24,8 @@ struct RateLimiterTests {
         }
     }
 
-    @Test func releasesAfterWindow() async throws {
+    @Test
+    func releasesAfterWindow() async throws {
         let limiter = RateLimiter(limit: .init(maxCalls: 1, windowSeconds: 60))
         let t0 = Date()
         try await limiter.check(now: t0)
@@ -31,7 +34,8 @@ struct RateLimiterTests {
         try await limiter.check(now: later) // window cleared, succeeds
     }
 
-    @Test func reportsRetryAfter() async throws {
+    @Test
+    func reportsRetryAfter() async throws {
         let limiter = RateLimiter(limit: .init(maxCalls: 1, windowSeconds: 10))
         let t0 = Date()
         try await limiter.check(now: t0)
@@ -45,7 +49,8 @@ struct RateLimiterTests {
         }
     }
 
-    @Test func isAllowedDoesNotConsumeBudget() async {
+    @Test
+    func isAllowedDoesNotConsumeBudget() async {
         let limiter = RateLimiter(limit: .init(maxCalls: 2, windowSeconds: 10))
         let now = Date()
         let firstCheck = await limiter.isAllowed(now: now)
@@ -54,7 +59,8 @@ struct RateLimiterTests {
         #expect(secondCheck == true)
     }
 
-    @Test func isAllowedReturnsFalseWhenFull() async throws {
+    @Test
+    func isAllowedReturnsFalseWhenFull() async throws {
         let limiter = RateLimiter(limit: .init(maxCalls: 1, windowSeconds: 10))
         let now = Date()
         try await limiter.check(now: now)
@@ -62,7 +68,8 @@ struct RateLimiterTests {
         #expect(allowed == false)
     }
 
-    @Test func resetClears() async throws {
+    @Test
+    func resetClears() async throws {
         let limiter = RateLimiter(limit: .init(maxCalls: 1, windowSeconds: 60))
         let now = Date()
         try await limiter.check(now: now)

@@ -4,38 +4,46 @@ import Testing
 struct SanitizeTests {
     // MARK: - normalise
 
-    @Test func normaliseTrimsEdges() {
+    @Test
+    func normaliseTrimsEdges() {
         #expect(Sanitize.normalise("   hello   ") == "hello")
     }
 
-    @Test func normaliseCollapsesInternalWhitespace() {
+    @Test
+    func normaliseCollapsesInternalWhitespace() {
         #expect(Sanitize.normalise("a   b\t\tc") == "a b c")
     }
 
-    @Test func normaliseStripsZeroWidthChars() {
+    @Test
+    func normaliseStripsZeroWidthChars() {
         let input = "cha\u{200B}rles"
         #expect(Sanitize.normalise(input) == "charles")
     }
 
-    @Test func normaliseStripsBidiOverride() {
+    @Test
+    func normaliseStripsBidiOverride() {
         let input = "safe\u{202E}txt.exe"
         #expect(Sanitize.normalise(input) == "safetxt.exe")
     }
 
-    @Test func normaliseStripsControlChars() {
+    @Test
+    func normaliseStripsControlChars() {
         let input = "hello\u{0001}\u{0007}world"
         #expect(Sanitize.normalise(input) == "helloworld")
     }
 
-    @Test func normalisePreservesNewlines() {
+    @Test
+    func normalisePreservesNewlines() {
         #expect(Sanitize.normalise("line one\nline two") == "line one\nline two")
     }
 
-    @Test func normaliseCapsConsecutiveBlankLines() {
+    @Test
+    func normaliseCapsConsecutiveBlankLines() {
         #expect(Sanitize.normalise("a\n\n\n\n\nb") == "a\n\nb")
     }
 
-    @Test func normaliseIsIdempotent() {
+    @Test
+    func normaliseIsIdempotent() {
         let input = "  multi   space\u{200B} mixed  "
         let once = Sanitize.normalise(input)
         let twice = Sanitize.normalise(once)
@@ -44,116 +52,140 @@ struct SanitizeTests {
 
     // MARK: - handle
 
-    @Test func handleAcceptsMinLength() {
+    @Test
+    func handleAcceptsMinLength() {
         #expect(Sanitize.handle("ada") == .valid("ada"))
     }
 
-    @Test func handleLowercasesMixedCase() {
+    @Test
+    func handleLowercasesMixedCase() {
         #expect(Sanitize.handle("Charles") == .valid("charles"))
     }
 
-    @Test func handleAcceptsUnderscoresAndHyphens() {
+    @Test
+    func handleAcceptsUnderscoresAndHyphens() {
         #expect(Sanitize.handle("venn_99") == .valid("venn_99"))
         #expect(Sanitize.handle("venn-99") == .valid("venn-99"))
     }
 
-    @Test func handleRejectsTooShort() {
+    @Test
+    func handleRejectsTooShort() {
         #expect(Sanitize.handle("ab") == .invalid(.tooShort))
     }
 
-    @Test func handleRejectsTooLong() {
+    @Test
+    func handleRejectsTooLong() {
         let twentyFive = String(repeating: "a", count: 25)
         #expect(Sanitize.handle(twentyFive) == .invalid(.tooLong))
     }
 
-    @Test func handleRejectsSpaces() {
+    @Test
+    func handleRejectsSpaces() {
         #expect(Sanitize.handle("char les") == .invalid(.invalidCharacters))
     }
 
-    @Test func handleRejectsDots() {
+    @Test
+    func handleRejectsDots() {
         #expect(Sanitize.handle("char.les") == .invalid(.invalidCharacters))
     }
 
-    @Test func handleRejectsAtSymbol() {
+    @Test
+    func handleRejectsAtSymbol() {
         #expect(Sanitize.handle("char@les") == .invalid(.invalidCharacters))
     }
 
     // MARK: - displayName
 
-    @Test func displayNameAcceptsNormal() {
+    @Test
+    func displayNameAcceptsNormal() {
         #expect(Sanitize.displayName("Charles Salomon") == .valid("Charles Salomon"))
     }
 
-    @Test func displayNameNormalisesWhitespace() {
+    @Test
+    func displayNameNormalisesWhitespace() {
         #expect(Sanitize.displayName("  Charles   S  ") == .valid("Charles S"))
     }
 
-    @Test func displayNameRejectsEmpty() {
+    @Test
+    func displayNameRejectsEmpty() {
         #expect(Sanitize.displayName("") == .invalid(.empty))
         #expect(Sanitize.displayName("   ") == .invalid(.empty))
     }
 
-    @Test func displayNameRejectsTooLong() {
+    @Test
+    func displayNameRejectsTooLong() {
         let fortyOne = String(repeating: "a", count: 41)
         #expect(Sanitize.displayName(fortyOne) == .invalid(.tooLong))
     }
 
     // MARK: - bio
 
-    @Test func bioAcceptsEmpty() {
+    @Test
+    func bioAcceptsEmpty() {
         #expect(Sanitize.bio("") == .valid(""))
     }
 
-    @Test func bioRejectsTooLong() {
+    @Test
+    func bioRejectsTooLong() {
         let oneSixtyOne = String(repeating: "a", count: 161)
         #expect(Sanitize.bio(oneSixtyOne) == .invalid(.tooLong))
     }
 
     // MARK: - caption
 
-    @Test func captionAcceptsNormal() {
+    @Test
+    func captionAcceptsNormal() {
         #expect(Sanitize.caption("Just watched Oppenheimer.") == .valid("Just watched Oppenheimer."))
     }
 
-    @Test func captionRejectsEmpty() {
+    @Test
+    func captionRejectsEmpty() {
         #expect(Sanitize.caption("") == .invalid(.empty))
     }
 
-    @Test func captionRejectsWhitespaceOnly() {
+    @Test
+    func captionRejectsWhitespaceOnly() {
         #expect(Sanitize.caption("   ") == .invalid(.empty))
     }
 
-    @Test func captionRejectsTooLong() {
+    @Test
+    func captionRejectsTooLong() {
         let fiveOhOne = String(repeating: "a", count: 501)
         #expect(Sanitize.caption(fiveOhOne) == .invalid(.tooLong))
     }
 
     // MARK: - searchQuery
 
-    @Test func searchQueryStripsSpoofingChars() {
+    @Test
+    func searchQueryStripsSpoofingChars() {
         #expect(Sanitize.searchQuery("inception\u{200B}") == .valid("inception"))
     }
 
-    @Test func searchQueryRejectsTooLong() {
+    @Test
+    func searchQueryRejectsTooLong() {
         let oneOhOne = String(repeating: "a", count: 101)
         #expect(Sanitize.searchQuery(oneOhOne) == .invalid(.tooLong))
     }
 
     // MARK: - httpsURL
 
-    @Test func httpsURLAccepts() {
+    @Test
+    func httpsURLAccepts() {
         #expect(Sanitize.httpsURL("https://example.com") == .valid("https://example.com"))
     }
 
-    @Test func httpsURLRejectsHTTP() {
+    @Test
+    func httpsURLRejectsHTTP() {
         #expect(Sanitize.httpsURL("http://example.com") == .invalid(.invalidFormat))
     }
 
-    @Test func httpsURLRejectsGarbage() {
+    @Test
+    func httpsURLRejectsGarbage() {
         #expect(Sanitize.httpsURL("not a url") == .invalid(.invalidFormat))
     }
 
-    @Test func httpsURLRejectsEmpty() {
+    @Test
+    func httpsURLRejectsEmpty() {
         #expect(Sanitize.httpsURL("") == .invalid(.empty))
     }
 }
