@@ -19,7 +19,7 @@ final class SupabaseClientProvider: @unchecked Sendable {
         self.client = client
     }
 
-    nonisolated(unsafe) static let shared: SupabaseClientProvider = {
+    static let shared: SupabaseClientProvider = {
         let config = AppConfig.load()
         let client = SupabaseClient(
             supabaseURL: config.supabaseURL,
@@ -30,7 +30,7 @@ final class SupabaseClientProvider: @unchecked Sendable {
 
     /// Used in SwiftUI previews. Points at preview values; never makes a real
     /// network call in a preview because the URL is not real.
-    nonisolated(unsafe) static let preview: SupabaseClientProvider = {
+    static let preview: SupabaseClientProvider = {
         let client = SupabaseClient(
             supabaseURL: AppConfig.preview.supabaseURL,
             supabaseKey: AppConfig.preview.supabaseAnonKey

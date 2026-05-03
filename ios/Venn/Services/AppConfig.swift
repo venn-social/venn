@@ -77,7 +77,7 @@ final class AppConfig: @unchecked Sendable {
     }
 
     /// Stub for SwiftUI previews and tests.
-    nonisolated(unsafe) static let preview = AppConfig(
+    static let preview = AppConfig(
         supabaseURL: URL(staticString: "https://preview.supabase.co"),
         supabaseAnonKey: "preview",
         appEnv: .development,
