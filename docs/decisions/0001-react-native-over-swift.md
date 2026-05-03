@@ -1,6 +1,6 @@
 # 0001 — Build venn on React Native + Expo, not native Swift
 
-- **Status:** Accepted
+- **Status:** Superseded by [0002](./0002-swift-over-react-native.md) on 2026-05-01
 - **Date:** 2026-04-26
 - **Deciders:** Charles Salomon
 

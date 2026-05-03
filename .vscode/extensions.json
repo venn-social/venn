@@ -1,31 +1,23 @@
 {
-  "//": "Recommended VS Code extensions. When a teammate opens this repo, VS Code will prompt them to install these. Say yes.",
+  "//": "Recommended VS Code extensions. When a teammate opens this repo, VS Code will prompt them to install these. Say yes. Note: most Swift work happens in Xcode, but VS Code is useful for editing docs, configs, SQL, and quick Swift tweaks.",
   "recommendations": [
-    "dbaeumer.vscode-eslint",
     "esbenp.prettier-vscode",
     "editorconfig.editorconfig",
 
-    "yoavbls.pretty-ts-errors",
-    "dsznajder.es7-react-js-snippets",
+    "sswg.swift-lang",
+    "vknabel.vscode-swiftlint",
+    "vknabel.vscode-swiftformat",
+
     "usernamehw.errorlens",
-
-    "expo.vscode-expo-tools",
-    "msjsdiag.vscode-react-native",
-
-    "christian-kohler.npm-intellisense",
-    "christian-kohler.path-intellisense",
-    "wix.vscode-import-cost",
 
     "eamodio.gitlens",
     "github.vscode-pull-request-github",
     "github.vscode-github-actions",
 
-    "orta.vscode-jest",
-
     "mikestead.dotenv",
     "streetsidesoftware.code-spell-checker",
     "ms-vsliveshare.vsliveshare",
     "naumovs.color-highlight",
-    "formulahendry.auto-rename-tag"
+    "redhat.vscode-yaml"
   ]
 }

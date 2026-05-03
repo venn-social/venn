@@ -46,6 +46,7 @@ Lightweight Nygard style. Five sections:
 
 ## Index
 
-| #                                         | Title                                          | Status   | Date       |
-| ----------------------------------------- | ---------------------------------------------- | -------- | ---------- |
-| [0001](./0001-react-native-over-swift.md) | Build on React Native + Expo, not native Swift | Accepted | 2026-04-26 |
+| #                                         | Title                                          | Status             | Date       |
+| ----------------------------------------- | ---------------------------------------------- | ------------------ | ---------- |
+| [0001](./0001-react-native-over-swift.md) | Build on React Native + Expo, not native Swift | Superseded by 0002 | 2026-04-26 |
+| [0002](./0002-swift-over-react-native.md) | Migrate from React Native to native Swift      | Accepted           | 2026-05-01 |

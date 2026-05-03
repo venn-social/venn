@@ -7,7 +7,7 @@ This doc is for people who've already finished [SETUP.md](../docs/SETUP.md) and 
 1. `git pull` on `main`.
 2. `git checkout -b your-name/what-youre-doing`.
 3. Make changes. Save often.
-4. `npm run verify` passes.
+4. `make verify` passes.
 5. `git commit -m "feat(scope): short imperative summary"`.
 6. `git push -u origin your-name/what-youre-doing`.
 7. `gh pr create --fill`.
@@ -40,7 +40,7 @@ Good:
 - `feat(auth): add sign-in with Apple`
 - `fix(feed): crash when post has no caption`
 - `docs: clarify how to run tests`
-- `chore(deps): bump expo to 52.0.1`
+- `chore(deps): bump supabase-swift to 2.10.0`
 
 Bad (will be rejected by commitlint):
 
@@ -60,16 +60,16 @@ git commit --amend
 Run the full local check:
 
 ```bash
-npm run verify
+make verify
 ```
 
-That runs, in order: `lint` → `format:check` → `typecheck` → `test`. If any of these fail, CI will fail too — fix them locally first. It's faster.
+That runs, in order: `lint` (SwiftLint strict) → `format-check` (SwiftFormat lint mode) → `test` (XCTest + Swift Testing). If any of these fail, CI will fail too — fix them locally first. It's faster.
 
 Most issues auto-fix:
 
 ```bash
-npm run lint:fix
-npm run format
+make format             # rewrites Swift files in place
+npm run format          # rewrites Markdown / JSON / YAML
 ```
 
 ## Pull requests
@@ -103,7 +103,7 @@ npm run format
 ## What not to do
 
 - Don't commit `.env`, API keys, or any other secrets.
-- Don't commit generated files (`node_modules`, `dist`, `build`).
+- Don't commit generated files (`node_modules`, `build/`, `DerivedData/`, `Venn.xcodeproj/`).
 - Don't commit commented-out code. If you're unsure whether to delete something, delete it — git remembers.
 - Don't add libraries without a reason. Every new dependency is a future security update, a larger bundle, and more to debug.
 - Don't use `--no-verify` to skip commit hooks except in a real emergency.

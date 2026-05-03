@@ -6,41 +6,51 @@ This file is read automatically when Claude Code starts in this repo. It's the "
 
 ## What this repo is
 
-**venn** — a social app where people log what they consume (movies, music, books, restaurants, games) in one place, and share their favorites with friends. Every profile shows a Venn diagram of where your tastes overlap with the person you're viewing; that overlap primitive is the whole point. iOS first, TestFlight target **December 2026**. React Native so the codebase is cross-platform; we just won't publish to Play Store at launch.
+**venn** — a social app where people log what they consume (movies, music, books, restaurants, games) in one place, and share their favorites with friends. Every profile shows a Venn diagram of where your tastes overlap with the person you're viewing; that overlap primitive is the whole point. **iOS only**, TestFlight target **December 2026**.
 
 The founding team is small and non-technical. The codebase is being treated like a professional, Meta-grade engineering project from day one. For the full product vision (MVP scope, what's in and what's out, phasing), see the [product vision](https://www.notion.so/product-vision-34bc60c854a28109939dd2d83bb135a4) page in Notion.
 
+> **Migration note (2026-05-01):** the repo migrated from React Native + Expo to native Swift + SwiftUI to unlock Liquid Glass and other Apple-native features. The pre-migration codebase is preserved on the `archive/rn-expo` branch. ADR [`0002-swift-over-react-native.md`](./docs/decisions/0002-swift-over-react-native.md) records the reasoning.
+
 ## Tech stack (locked in)
 
-- **Mobile framework:** React Native + Expo (SDK 52, new architecture enabled). One codebase ships iOS and Android. Expo Router for file-based navigation.
-- **Language:** TypeScript in strict mode. `noImplicitAny`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes` all on. No `any` ever — use `unknown` and narrow.
-- **Backend:** Supabase (Postgres + Auth + Storage + Realtime). All calls go through service wrappers in `src/services/*.service.ts`. Never call `supabase.from(...)` from screens or hooks.
-- **State:** local `useState` first → feature-level React Context (see `features/auth/AuthProvider.tsx`) → Zustand for truly global state. **No Redux.**
-- **Testing:** Jest + React Native Testing Library. Utils and services are unit-tested; screens are not.
-- **Lint/format:** ESLint (strict flat config at repo root) + Prettier. Pre-commit hooks enforce both via Husky + lint-staged.
-- **CI:** GitHub Actions — lint, format check, typecheck, tests, and commit-message check run on every PR.
+- **Language:** Swift 6 in strict concurrency mode. `SWIFT_STRICT_CONCURRENCY=complete`, warnings treated as errors. No force unwraps in production code (SwiftLint blocks them).
+- **UI:** SwiftUI on iOS 26+. The minimum deployment target is **iOS 26.0** so we can use Liquid Glass, the new `@Observable` macro, structured tasks, and other iOS 26 APIs without conditional code.
+- **Project generation:** [XcodeGen](https://github.com/yonaskolb/XcodeGen). The `.xcodeproj` is generated from [`ios/project.yml`](./ios/project.yml) and is gitignored — no more pbxproj merge conflicts. Run `make project` after pulling.
+- **Backend:** Supabase (Postgres + Auth + Storage + Realtime) via [supabase-swift](https://github.com/supabase/supabase-swift). All calls go through service wrappers in `ios/Venn/Services/*.swift` and `ios/Venn/Features/<name>/*Service.swift`. Never call `client.from(...)` from a view.
+- **Dependencies:** Swift Package Manager only (declared in `ios/project.yml`). No CocoaPods, no Carthage.
+- **State:** local `@State` first → `@Observable` view-models scoped to a feature → top-level `@Observable` types injected via `.environment(...)` for cross-feature state. **No Redux-style global stores.**
+- **Testing:** Swift Testing (`import Testing`, `@Test`) for units; XCUITest for UI flows. Services and pure utilities are unit-tested; views are not.
+- **Lint/format:** [SwiftLint](https://github.com/realm/SwiftLint) (strict mode) + [SwiftFormat](https://github.com/nicklockwood/SwiftFormat). Pre-commit hooks enforce both via Husky.
+- **CI:** GitHub Actions on `macos-latest`. Lint, format check, prettier check (for docs), and tests run on every PR.
 
 ## Repo layout
 
-Monorepo using npm workspaces:
-
 ```
 venn/
-├── apps/mobile/                  React Native app
-│   └── src/
-│       ├── app/                  Expo Router screens. (tabs) = bottom-tab group.
-│       ├── components/ui/        Design-system primitives: Button, Screen, Text.
-│       ├── constants/            Theme tokens, routes.
-│       ├── features/<name>/      Self-contained feature slices (auth, feed, …).
-│       ├── hooks/                Cross-feature hooks.
-│       ├── lib/                  Supabase client, env validation.
-│       ├── services/             All backend calls. One *.service.ts per domain.
-│       ├── types/                Cross-feature domain types.
-│       └── utils/                Pure helpers + colocated tests.
-├── packages/shared/              Types/constants/utils shared across apps.
-├── docs/                         WORKFLOW, ARCHITECTURE, CODING_STANDARDS, GITHUB_SETUP, SUPABASE_SETUP.
-├── .github/                      CI workflows, PR + issue templates, CODEOWNERS.
-└── .husky/                       Pre-commit + commit-msg hooks.
+├── ios/                                   Native iOS app
+│   ├── project.yml                        XcodeGen source of truth
+│   ├── Venn.xcodeproj/                    GENERATED — gitignored
+│   ├── Venn/
+│   │   ├── App/                           @main entry, RootView, Info.plist
+│   │   ├── Features/<name>/               Self-contained feature slices.
+│   │   │                                  Each contains a *Service.swift,
+│   │   │                                  *ViewModel.swift, and *View.swift.
+│   │   ├── Components/                    Design-system primitives (Button, Screen, ...)
+│   │   ├── Services/                      AppConfig, SupabaseClientProvider,
+│   │   │                                  Observability, cross-feature wrappers.
+│   │   ├── Models/                        Cross-feature domain types.
+│   │   ├── Resources/                     Assets.xcassets, Config.xcconfig
+│   │   └── Utils/                         Pure helpers + colocated tests.
+│   ├── VennTests/                         Swift Testing unit suites.
+│   └── VennUITests/                       XCUITest UI suites.
+├── supabase/migrations/                   SQL migrations (unchanged from RN era).
+├── docs/                                  WORKFLOW, ARCHITECTURE, CODING_STANDARDS, …
+├── .github/                               CI workflows, PR + issue templates, CODEOWNERS.
+├── .husky/                                Pre-commit + commit-msg hooks.
+├── .swiftlint.yml                         Lint rules.
+├── .swiftformat                           Format rules.
+└── Makefile                               `make help` for the menu.
 ```
 
 The "why" behind this layout is in [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md).
@@ -48,82 +58,77 @@ The "why" behind this layout is in [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.
 ## Non-negotiable rules
 
 1. **Never push to `main`.** Always work on a branch → PR → review → squash merge.
-2. **Every task starts and ends in Notion.** When a coding task begins, Claude creates or finds the corresponding task in the [venn tasks DB](https://notion.so/34ac60c854a2800ca903ef85907bec3e) with `Task type = tech` and a description of what needs to be done and why. After the PR is opened, Claude updates that task's `PR Link` field with the GitHub PR URL. Notion is the source of truth — GitHub does not need to reference Notion.
+2. **Every task starts and ends in Notion.** When a coding task begins, Claude creates or finds the corresponding task in the [venn tasks DB](https://notion.so/34ac60c854a2800ca903ef85907bec3e) with `Task type = tech` and a description of what needs to be done and why. After the PR is opened, Claude updates that task's `PR Link` field with the GitHub PR URL. Notion is the source of truth — GitHub does not need to reference Notion. Task name format: lowercase, short, action-oriented (`add auth screen`, `fix feed crash`).
 3. **Commits follow [Conventional Commits](https://www.conventionalcommits.org/)**: `feat(auth): add sign-in with Apple`. Types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert.
-4. **`npm run verify` must pass before any PR.** It runs lint + format + typecheck + test.
-5. **Never hardcode** colors, spacing, font sizes — use tokens from `src/constants/theme.ts`.
-6. **Never expose API keys.** All secrets are read from `.env` via the typed helper in [`src/lib/env.ts`](./apps/mobile/src/lib/env.ts). Don't hardcode a key in source even temporarily — the gitleaks CI scan will catch you, and any commit history is forever. The mobile app only ever sees `EXPO_PUBLIC_*` keys; anything else (service-role keys, third-party server tokens) lives only on the server. Use [`apps/mobile/.env.example`](./apps/mobile/.env.example) as your template.
-7. **Sanitize every user input.** Anything a user can type — usernames, display names, bios, captions, search queries, comments — goes through a Zod schema in [`src/utils/sanitize.ts`](./apps/mobile/src/utils/sanitize.ts) before it touches a service or the UI. Don't write one-off validation in screens; extend the shared schemas. Postgres CHECK constraints (added per migration) are the final line of defense — these schemas are the first.
-8. **Rate-limit at the API boundary.** Every Supabase Edge Function and RPC we add must enforce a sliding-window rate limit (see the SQL pattern in [`docs/CODING_STANDARDS.md`](./docs/CODING_STANDARDS.md#rate-limiting)). The client-side limiter in [`src/utils/rateLimit.ts`](./apps/mobile/src/utils/rateLimit.ts) is UX feedback only — it does NOT count as security; anything in JS on the user's device can be bypassed.
-9. **Imports at the top**, in groups (external → internal `@/...` → `@venn/shared` → relative), alphabetized. ESLint enforces.
-10. **Services wrap Supabase.** Screens call feature hooks, hooks call services, services call Supabase. One direction only.
-11. **No `any`, no `==`, no `!` non-null assertions, no inline styles, no commented-out code.** ESLint enforces most of these; reviewers enforce the rest.
-12. **Functions small and pure where possible.** Max 100 lines per function is a lint warning. Prefer composition over giant procedures.
-13. **Schema changes go through migrations.** Every change to the Supabase schema (new column, new table, new RLS policy, new RPC) is a SQL file in `supabase/migrations/` shipped in a PR alongside the matching `packages/shared/src/database.types.ts` regeneration. Never run SQL directly against production via the dashboard. See [`docs/DATABASE.md`](./docs/DATABASE.md) for the full workflow.
-
-## Path aliases
-
-- `@/*` → `apps/mobile/src/*` (used only inside `apps/mobile`).
-- `@venn/shared` → `packages/shared/src` (usable from any workspace).
+4. **`make verify` must pass before any PR.** It runs SwiftLint + SwiftFormat (lint mode) + tests.
+5. **Never hardcode** colors, spacing, font sizes — use tokens from `ios/Venn/Resources/Theme.swift` (add it once design starts).
+6. **Never expose API keys.** All secrets are read from `.env` via `AppConfig` ([`ios/Venn/Services/AppConfig.swift`](./ios/Venn/Services/AppConfig.swift)). The build pipeline injects values from `.env` into `Info.plist` at compile time. Don't hardcode a key in source even temporarily — the trufflehog CI scan will catch you.
+7. **Sanitize every user input.** Anything a user can type — usernames, display names, bios, captions, search queries, comments — goes through a validator in `ios/Venn/Utils/Sanitize.swift` before it touches a service or the UI. Postgres CHECK constraints (added per migration) are the final line of defense.
+8. **Rate-limit at the API boundary.** Every Supabase Edge Function and RPC enforces a sliding-window rate limit (see SQL pattern in [`docs/CODING_STANDARDS.md`](./docs/CODING_STANDARDS.md)). The client-side limiter in `ios/Venn/Utils/RateLimit.swift` is UX feedback only — it does NOT count as security; anything on the user's device can be bypassed.
+9. **Imports at the top**, alphabetised, grouped (Foundation/SwiftUI first → SPM packages → internal modules). SwiftFormat enforces.
+10. **Services wrap Supabase.** Views call view-models, view-models call services, services call the Supabase client. One direction only.
+11. **No force unwraps (`!`) outside tests.** Use `guard let` / `if let`. SwiftLint enforces.
+12. **No `try!`, no `as!`** in production code. Handle errors explicitly.
+13. **Functions small and pure where possible.** Max 80 lines per function is a SwiftLint warning. Prefer composition over giant procedures. Use value types (`struct`) over reference types (`class`) unless you genuinely need identity.
+14. **Schema changes go through migrations.** Every change to the Supabase schema (new column, new table, new RLS policy, new RPC) is a SQL file in `supabase/migrations/` shipped in a PR. Never run SQL directly against production via the dashboard. See [`docs/DATABASE.md`](./docs/DATABASE.md).
 
 ## Common commands (from repo root)
 
 ```bash
-npm run setup             # first-time bootstrap: install + npm run doctor
-npm run doctor            # health-check the local env (Node, hooks, .env)
-npm run mobile            # start Expo dev server, scan QR in Expo Go app
-npm run verify            # doctor + lint + format + typecheck + test (run before every PR)
-npm run lint:fix          # auto-fix lint issues
-npm run format            # auto-fix formatting
+make setup                # one-time: install Homebrew tools + node deps + generate project
+make project              # regenerate Venn.xcodeproj from project.yml (after pulling)
+make build                # build for iOS Simulator
+make test                 # run XCTest + Swift Testing suites
+make lint                 # SwiftLint (strict)
+make format               # SwiftFormat in place
+make format-check         # SwiftFormat in lint mode (fails if anything is unformatted)
+make verify               # lint + format-check + test (run before every PR)
+make clean                # nuke DerivedData + generated Xcode project
 
-# Supabase (see docs/DATABASE.md for the full workflow):
+# Supabase (see docs/DATABASE.md):
 npm run db:new <name>     # create a new migration file
 npm run db:reset          # wipe local DB, replay migrations + seed
 npm run db:diff <name>    # auto-generate a migration from local-vs-migrations diff
 npm run db:push           # apply pending migrations to the linked remote
-npm run db:types          # regenerate packages/shared/src/database.types.ts
 ```
 
-Per-app (from `apps/mobile`): `npm run start`, `npm run lint`, `npm run typecheck`, `npm run test`.
+> Open the project in Xcode with `xed ios/Venn.xcodeproj` (after `make project`).
 
 ## When asked to make a change
 
 - Always create a new branch first: `git checkout -b feat/<what-youre-doing>`.
-- Match the existing folder structure. If you're adding a feature, make `src/features/<name>/` with its own types/provider/hook/index.ts.
-- If the change touches Supabase, add or update a service in `src/services/*.service.ts` rather than calling Supabase inline.
+- Match the existing folder structure. If you're adding a feature, create `ios/Venn/Features/<Name>/` with its own `<Name>Service.swift`, `<Name>ViewModel.swift`, `<Name>View.swift`.
+- If the change touches Supabase, add or update a service rather than calling the client inline.
 - Add a unit test for any new pure function or service.
-- Run `npm run verify` before suggesting the user commit.
-- Write conventional commit messages. If multiple commits, squash them or let the PR squash-merge collapse them.
+- Run `make verify` before suggesting the user commit.
+- Write conventional commit messages.
 
 ## Project management (Notion)
 
 All tasks and meetings live in the [venn Notion HQ](https://notion.so/HQ-34ac60c854a2805fa3b9cc6da0380285).
 
-- [Tasks](https://notion.so/34ac60c854a2800ca903ef85907bec3e) — every ticket with owner, priority, status, and PR link. Properties: Task name, Status (Not started / In progress / Done), Task type (strategy / tech / branding), Priority (low / medium / high), Effort level, Due date, Assignee, Description, PR Link.
+- [Tasks](https://notion.so/34ac60c854a2800ca903ef85907bec3e) — every ticket with owner, priority, status, and PR link.
 - [Meetings](https://notion.so/34ac60c854a2801cb5eff8a694dba2d4) — weekly syncs and notes.
-- [Product vision](https://www.notion.so/product-vision-34bc60c854a28109939dd2d83bb135a4) — the current MVP scope, phasing, and what's explicitly out.
-
-When opening a PR, always link the corresponding Notion task URL in the PR description.
+- [Product vision](https://www.notion.so/product-vision-34bc60c854a28109939dd2d83bb135a4) — current MVP scope, phasing, and what's explicitly out.
 
 ## Things to read before bigger tasks
 
 - `docs/ARCHITECTURE.md` — layering, naming conventions, state management.
 - `docs/CODING_STANDARDS.md` — anti-patterns we reject, patterns we like, PR review rubric.
 - `docs/WORKFLOW.md` — detailed git/PR flow with troubleshooting.
-- `docs/GITHUB_SETUP.md` — one-time repo-admin steps (branch protection etc.).
-- `docs/SUPABASE_SETUP.md` — backend provisioning + RLS policies.
 - `docs/DATABASE.md` — migrations workflow (never edit the prod DB directly).
 - `docs/OBSERVABILITY.md` — Sentry (errors) + PostHog (analytics) setup and usage.
-- `docs/decisions/` — Architectural Decision Records. The "why we did it this way" archive. Read the index in `docs/decisions/README.md` before making a load-bearing technical choice; add a new ADR when you make one yourself.
+- `docs/decisions/` — Architectural Decision Records. Read `docs/decisions/README.md` before making a load-bearing technical choice; add a new ADR when you make one yourself.
 
 ## Things NOT to do without asking
 
-- Don't introduce new dependencies without a clear reason (bundle size, security surface).
-- Don't switch package managers (we use npm workspaces — no pnpm/yarn).
-- Don't add Redux, MobX, or another state library.
-- Don't edit CI workflows, Husky hooks, ESLint/Prettier configs, or CODEOWNERS without a heads-up — those enforce the team's guarantees.
+- Don't introduce new dependencies without a clear reason (binary size, security surface).
+- Don't switch from XcodeGen to a hand-edited `.xcodeproj` — pbxproj merge conflicts are why we use XcodeGen.
+- Don't add CocoaPods or Carthage. SPM only.
+- Don't lower the iOS deployment target below 26.0 — that breaks Liquid Glass and other locked-in API choices.
+- Don't add Android. We are iOS-only.
+- Don't edit CI workflows, Husky hooks, SwiftLint/SwiftFormat configs, or CODEOWNERS without a heads-up — those enforce the team's guarantees.
 - Don't commit to `main` or force-push to anyone's branch.
-- Don't run `npm audit fix --force` in this repo — it would downgrade Expo SDK 52 → 49 and break the entire stack. The current Dependabot alerts are all transitive build-time deps that ship to no user device; see [`docs/DEPENDENCIES.md`](./docs/DEPENDENCIES.md) for the analysis and the plan.
 
 ## Who's here
 

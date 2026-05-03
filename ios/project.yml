@@ -1,0 +1,160 @@
+# =============================================================================
+# project.yml — XcodeGen project definition.
+# =============================================================================
+# This file is the source of truth for the Xcode project. The .xcodeproj is
+# generated from it via `xcodegen generate` (or `make project` from repo root).
+#
+# Why XcodeGen? .xcodeproj/project.pbxproj is a giant nested plist that
+# diff-merges horribly. With XcodeGen we describe the project in YAML, the
+# .xcodeproj is gitignored, and merge conflicts disappear.
+# =============================================================================
+
+name: Venn
+options:
+  bundleIdPrefix: social.venn
+  deploymentTarget:
+    iOS: "26.0"
+  developmentLanguage: en
+  createIntermediateGroups: true
+  generateEmptyDirectories: true
+  groupSortPosition: top
+  fileTypes:
+    xcconfig:
+      attributes: [sourceTree]
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    IPHONEOS_DEPLOYMENT_TARGET: "26.0"
+    SWIFT_STRICT_CONCURRENCY: complete
+    ENABLE_USER_SCRIPT_SANDBOXING: "YES"
+    DEAD_CODE_STRIPPING: "YES"
+    SWIFT_TREAT_WARNINGS_AS_ERRORS: "YES"
+    GCC_TREAT_WARNINGS_AS_ERRORS: "YES"
+    CLANG_ANALYZER_NONNULL: "YES"
+    ENABLE_HARDENED_RUNTIME: "YES"
+
+configs:
+  Debug: debug
+  Release: release
+
+configFiles:
+  Debug: Venn/Resources/Config.xcconfig
+  Release: Venn/Resources/Config.xcconfig
+
+packages:
+  Supabase:
+    url: https://github.com/supabase/supabase-swift
+    from: 2.0.0
+  Sentry:
+    url: https://github.com/getsentry/sentry-cocoa
+    from: 8.40.0
+  PostHog:
+    url: https://github.com/PostHog/posthog-ios
+    from: 3.20.0
+  KeychainAccess:
+    url: https://github.com/kishikawakatsumi/KeychainAccess
+    from: 4.2.0
+  Kingfisher:
+    url: https://github.com/onevcat/Kingfisher
+    from: 8.0.0
+  SwiftCollections:
+    url: https://github.com/apple/swift-collections
+    from: 1.1.0
+
+targets:
+  Venn:
+    type: application
+    platform: iOS
+    sources:
+      - path: Venn
+        excludes:
+          - "Resources/GeneratedConfig.xcconfig"
+    resources:
+      - path: Venn/Resources/Assets.xcassets
+        optional: true
+    dependencies:
+      - package: Supabase
+        product: Supabase
+      - package: Sentry
+        product: Sentry
+      - package: PostHog
+        product: PostHog
+      - package: KeychainAccess
+        product: KeychainAccess
+      - package: Kingfisher
+        product: Kingfisher
+      - package: SwiftCollections
+        product: Collections
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: social.venn.app
+        TARGETED_DEVICE_FAMILY: "1" # iPhone only
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        CURRENT_PROJECT_VERSION: 1
+        MARKETING_VERSION: 0.1.0
+        GENERATE_INFOPLIST_FILE: "NO"
+        INFOPLIST_FILE: Venn/App/Info.plist
+    preBuildScripts:
+      - name: Generate Config from .env
+        script: |
+          set -e
+          ENV_FILE="${SRCROOT}/../.env"
+          OUT="${SRCROOT}/Venn/Resources/GeneratedConfig.xcconfig"
+          if [ ! -f "$ENV_FILE" ]; then
+            echo "warning: .env missing — copy .env.example to .env at repo root"
+            : > "$OUT"
+            exit 0
+          fi
+          # Convert KEY=value lines into xcconfig-safe entries.
+          # Slashes in URLs need to be escaped for xcconfig (// is comment).
+          mkdir -p "$(dirname "$OUT")"
+          {
+            echo "// Auto-generated from .env — do not commit."
+            grep -E '^[A-Z_][A-Z0-9_]*=' "$ENV_FILE" | sed 's|//|/$()/|g'
+          } > "$OUT"
+        basedOnDependencyAnalysis: false
+        outputFiles:
+          - $(SRCROOT)/Venn/Resources/GeneratedConfig.xcconfig
+
+  VennTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - VennTests
+    dependencies:
+      - target: Venn
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: social.venn.app.tests
+        GENERATE_INFOPLIST_FILE: "YES"
+
+  VennUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - VennUITests
+    dependencies:
+      - target: Venn
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: social.venn.app.uitests
+        GENERATE_INFOPLIST_FILE: "YES"
+
+schemes:
+  Venn:
+    build:
+      targets:
+        Venn: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - VennTests
+        - VennUITests
+      gatherCoverageData: true
+      coverageTargets:
+        - Venn
+    archive:
+      config: Release

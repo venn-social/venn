@@ -3,118 +3,137 @@
 Two tools, two purposes:
 
 - **Sentry** — when something breaks, we want to know. Errors and crashes are captured with stack traces, grouped, and viewable in the Sentry dashboard.
-- **PostHog** — when users do something, we want to know what. Product analytics events flow into PostHog so we can answer "is anyone actually clicking that button?" and "how many people get past sign-up?".
+- **PostHog** — what are people doing? Screen views, button taps, feature flags, funnels. Behavioral, not exception-based.
 
-Both have generous free tiers. Both are wired up to be no-ops when not configured, so you can ship features without their keys and add the keys later.
+Both bootstrap from `Observability.bootstrap(config:)` in `ios/Venn/Services/Observability.swift`. Both no-op cleanly if their key/DSN is unset, so local development works with empty observability values in `.env`.
 
 ---
 
-## One-time setup (per environment)
+## Setup
 
-You only need to do this once for the whole team — these are shared accounts.
+In `.env` (read by the build script):
 
-### 1. Sentry
-
-1. Go to [sentry.io/signup/](https://sentry.io/signup/) and create an organisation called `venn`.
-2. Create a project: **Platform = React Native**, name = `venn-mobile`.
-3. Copy the DSN. Format: `https://<key>@<org>.ingest.sentry.io/<project>`.
-4. Paste it as `EXPO_PUBLIC_SENTRY_DSN` in your `apps/mobile/.env`.
-
-### 2. PostHog
-
-1. Go to [posthog.com/signup](https://posthog.com/signup) and create a `venn` workspace. Pick the **US** or **EU** region.
-2. Project Settings → Project API Key. Format: `phc_<long-string>`.
-3. Paste it as `EXPO_PUBLIC_POSTHOG_API_KEY` in your `apps/mobile/.env`.
-4. Set `EXPO_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com` (default) or `https://eu.i.posthog.com` if you chose EU.
-
-### 3. Verify
-
-```bash
-npm run mobile
+```env
+SENTRY_DSN=https://<key>@<org>.ingest.sentry.io/<project>
+POSTHOG_API_KEY=phc_xxx
+POSTHOG_HOST=https://us.i.posthog.com
 ```
 
-The app should start as before. Trigger an error (e.g. throw something in a screen temporarily) and check the Sentry dashboard within a minute. Track an event with `trackEvent('test_event')` from any screen and check PostHog → Live events.
+Both vars are optional. Leave them blank in dev and the SDKs won't initialize. Production builds always set them.
 
 ---
 
-## How to use
+## Sentry — error reporting
 
-### Capturing errors
+### What gets captured automatically
 
-Most errors get captured automatically via the `Sentry.wrap(RootLayout)` boundary in [`apps/mobile/src/app/_layout.tsx`](../apps/mobile/src/app/_layout.tsx). For caught errors you want to attribute, use:
+- All uncaught Swift errors and runtime crashes.
+- Network errors via `URLSession` (Sentry swizzles `URLProtocol`).
+- App lifecycle events (foreground, background, low-memory warnings).
+- Performance traces at `tracesSampleRate` (1.0 in dev, 0.2 in prod) and profiling at `profilesSampleRate` (1.0 in dev, 0.1 in prod).
 
-```ts
-import { Sentry } from '@/lib/sentry';
+### What to add manually
 
-try {
-  await riskyOperation();
-} catch (error) {
-  Sentry.captureException(error);
-  throw error; // re-throw if you want it to fail loudly
+When you catch an error and want to keep it as breadcrumb context (vs. showing a user-facing alert):
+
+```swift
+import Sentry
+
+do {
+    try await service.fetchPosts()
+} catch {
+    SentrySDK.capture(error: error) { scope in
+        scope.setTag(value: "feed", key: "feature")
+        scope.setLevel(.warning)
+    }
+    self.error = AppError(error)
 }
 ```
 
-When the user signs in, tag the session so errors are attributable:
+Tag with `feature: <name>` for every error so the Sentry dashboard groups by feature. Sentry's built-in grouping is by stack trace; tags are how _we_ slice the data.
 
-```ts
-Sentry.setUser({ id: user.id, username: profile.username });
-```
+### What NOT to do
 
-When they sign out, clear it:
-
-```ts
-Sentry.setUser(null);
-```
-
-### Tracking events
-
-Use the helpers from `@/lib/analytics`. Don't import `posthog-react-native` directly elsewhere — keep it wrapped so the dev-mode no-op behavior holds.
-
-```ts
-import { trackEvent, identifyUser, resetAnalytics } from '@/lib/analytics';
-
-// On sign-in:
-identifyUser(user.id, { username: profile.username, joinedAt: profile.created_at });
-
-// On meaningful actions:
-trackEvent('post_liked', { postId, vertical: 'movie' });
-trackEvent('feed_refreshed', { previousPostCount: 24 });
-
-// On sign-out:
-resetAnalytics();
-```
-
-### Naming conventions (PostHog events)
-
-- Event names are **snake_case verbs in past tense**: `post_liked`, `profile_viewed`, `feed_refreshed`. Past tense because we're recording things that happened.
-- Property keys are **camelCase**.
-- Don't put PII beyond user id + username. No emails, no full names, no birthdays. (User id and username are pseudonymous in our context.)
-- Don't track every render or navigation by hand — PostHog has auto-capture for screens via `<PostHogProvider>` if we want it later.
+- **Don't `SentrySDK.capture` and re-throw the same error.** Pick one — either the error stays internal (capture + handle) or it bubbles up (don't capture; the call site decides what to do).
+- **Don't capture user-facing validation errors.** "Username too short" is not a Sentry event; it's a UI state.
+- **Don't set user context to anything more than `user.id`.** No emails, no display names — those go to PostHog.
 
 ---
 
-## Local dev: do you turn it on?
+## PostHog — product analytics
 
-**Default: no.** Leave both env vars empty in your `apps/mobile/.env`. The app behaves identically; the SDKs are no-ops. Your local error-throwing experiments don't pollute the team's Sentry dashboard.
+### What gets captured automatically
 
-**When to turn it on locally:** debugging integration issues with the SDKs themselves, or testing a flow you want to verify lands in PostHog before shipping. Use a dedicated personal dev Sentry project if you go this route.
+- Screen views (via `captureScreenViews = true`).
+- App lifecycle events (`captureApplicationLifecycleEvents = true`).
+- Auto-captured user properties (device, OS, app version).
+
+### Custom events
+
+Naming convention: `feature.action_object` in `lower_snake_case`.
+
+```swift
+import PostHog
+
+PostHogSDK.shared.capture("feed.refreshed", properties: [
+    "post_count": viewModel.posts.count,
+    "trigger": "pull_to_refresh"
+])
+```
+
+| When                                     | Event name                |
+| ---------------------------------------- | ------------------------- |
+| User signs in successfully               | `auth.signed_in`          |
+| User submits a post                      | `feed.post_created`       |
+| User opens someone else's profile        | `profile.viewed_other`    |
+| User taps the Venn-overlap visualization | `profile.overlap_tapped`  |
+| User adds a movie to "Want to Try"       | `taste.want_to_try_added` |
+
+Add a new event whenever you ship a feature where "did people use this?" is a question worth answering. Don't add events for trivial UI state ("settings_panel_opened" is rarely useful).
+
+### Identifying users
+
+```swift
+import PostHog
+
+PostHogSDK.shared.identify(user.id.uuidString, userProperties: [
+    "handle": user.handle,
+    "joined_at": user.createdAt.ISO8601Format()
+])
+```
+
+Call this once at sign-in. Reset on sign-out:
+
+```swift
+PostHogSDK.shared.reset()
+```
+
+### What NOT to do
+
+- **Don't capture every tap.** Auto-screen-view + manual capture for important actions is the right balance.
+- **Don't put PII in event properties.** `user.id` is fine (UUIDs, not emails). No display names, no bios, no message content.
+- **Don't gate features on PostHog feature flags without a fallback.** If PostHog is unreachable (network, rate-limited), the feature must still resolve to a sensible default.
 
 ---
 
-## Production
+## Local debugging
 
-When we set up CI/EAS Build (item 4 of the audit), the same env vars will need to be set as GitHub Actions secrets and as EAS build secrets. We'll add that step then.
+Sentry: pass `--launch-arguments=SENTRY_DEBUG=1` to a scheme to log every captured event. Useful when you're not sure if an error you handled actually made it to the dashboard.
 
-For now, the production app gets the values from `.env` at build time — same as local, just with real keys.
+PostHog: events show up in the **Live Events** view in the PostHog dashboard within a few seconds. The simulator's IP is what shows up in PostHog, so events from your laptop are easy to filter out (set a property `is_developer: true` and add a Sentry filter).
 
 ---
 
-## What's intentionally not set up yet
+## Alerts
 
-These are reasonable to add later when there's a clear use case:
+Sentry alerts (configured in the Sentry dashboard, not code):
 
-- **Sentry source maps.** Stack traces in production currently point at minified bundle line numbers. Add the Sentry CLI to EAS Build to upload source maps when we set up real builds.
-- **Sentry release tracking.** Tagging crashes with the app version helps spot regressions. Set this once we have versioning + EAS build numbers.
-- **PostHog feature flags.** PostHog can ship feature flags. Useful when we want to gate new features. Out of scope until we have features to gate.
-- **PostHog auto-capture.** Off by default. Turn on `<PostHogProvider autocapture={...}>` if you want screen views recorded automatically.
-- **Sentry session replay.** Records what users do on the screen. Powerful, privacy-loaded — opt-in only after we have a real privacy policy.
+- New unique error → Slack `#engineering`
+- Error rate > 5/min sustained → Slack `#engineering` + email founder
+
+PostHog alerts:
+
+- Daily active users drops > 30% week-over-week → email founder
+- Funnel drop-off > 20% step-over-step → Slack `#engineering`
+
+We'll tighten these as the user base grows. For now they're noise-tolerant defaults.

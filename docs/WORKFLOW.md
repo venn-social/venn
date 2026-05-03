@@ -1,188 +1,176 @@
 # Git + PR Workflow
 
-This is the detailed version of the workflow summarized in [`CONTRIBUTING.md`](../CONTRIBUTING.md). If you want to understand _why_ we do each step, read this.
+This is the detailed version of the workflow summarized in [`.github/CONTRIBUTING.md`](../.github/CONTRIBUTING.md).
 
 ## The mental model
 
-`main` is the **only** branch that matters. Everything else is temporary scratch space.
+`main` is sacred. Every change rides in on a feature branch, gets reviewed, passes CI, and squash-merges in. Nothing else lands on `main`.
 
-The rules:
+```
+main         o───o───o───o───o─────o───o───  (always green)
+                       \                /
+feat/auth-screen        o───o───o───o─/      (your work; squashed on merge)
+```
 
-1. `main` is always "green" — it builds, tests pass, it's ready to ship.
-2. You never edit `main` directly. You edit a branch, open a PR, get it reviewed, and merge.
-3. Once merged, the branch is deleted.
+## The full flow, step by step
 
-That's it. Every single change to Venn's code, no matter how small, follows that pattern.
-
-## The full walkthrough
-
-### 1. Sync with `main`
-
-Before starting anything, make sure your local `main` matches GitHub's `main`.
+### 1. Sync `main`
 
 ```bash
 git checkout main
-git pull --rebase
+git pull origin main
 ```
 
-`--rebase` keeps history linear. You want this.
+### 2. Create a Notion task
 
-### 2. Create a branch
+Before writing code, create or find a Notion task in the [tasks DB](https://notion.so/34ac60c854a2800ca903ef85907bec3e):
 
-Name it after what you're doing, not after yourself (usually):
+- **Task name:** lowercase, short, action-oriented (`add auth screen`, `fix feed crash`).
+- **Task type:** `tech` for code work; `branding` for marketing-site work.
+- **Status:** `In progress`.
+- **Description:** what you're doing and why.
+
+Claude does this automatically when you start a coding task.
+
+### 3. Branch
 
 ```bash
-git checkout -b feat/signup-validation
+git checkout -b feat/short-description
+# or fix/, refactor/, docs/, ci/, chore/...
 ```
 
-The `-b` flag means "create it if it doesn't exist." After this, `git branch` shows a `*` next to `feat/signup-validation`.
+Branch name format: `<type>/<kebab-case-description>`. Match the conventional-commit type.
 
-### 3. Make changes
+### 4. Code
 
-Edit files. Save. The dev server auto-reloads.
+Match the existing folder structure. New feature → new folder under `ios/Venn/Features/<Name>/` with `<Name>Service.swift`, `<Name>ViewModel.swift`, `<Name>View.swift`.
 
-Run `git status` periodically to remind yourself what's changed. Run `git diff` to see the actual changes.
+Don't fight SwiftLint or SwiftFormat — they're configured to match the project's style. If you really think a rule is wrong, raise it in a PR; don't disable it inline.
 
-### 4. Commit often, in logical chunks
+### 5. Commit
 
-One commit = one idea. If you're working on signup validation and you also happen to fix a typo in the button label, that's two commits:
+Conventional Commits format: `<type>(<scope>): <subject>`.
 
-```bash
-git add apps/mobile/src/app/auth/signup.tsx
-git commit -m "feat(auth): validate username before signup"
+| Type       | When to use                                            |
+| ---------- | ------------------------------------------------------ |
+| `feat`     | New user-facing feature                                |
+| `fix`      | Bug fix                                                |
+| `refactor` | Code restructure, no behavior change                   |
+| `perf`     | Performance improvement                                |
+| `style`    | Formatting/whitespace only (rare; SwiftFormat handles) |
+| `test`     | Adding or fixing tests                                 |
+| `docs`     | Documentation only                                     |
+| `build`    | Project / build system / dependencies                  |
+| `ci`       | CI configuration                                       |
+| `chore`    | Anything else (deletions, version bumps)               |
+| `revert`   | Reverts a previous commit                              |
 
-git add apps/mobile/src/components/ui/Button.tsx
-git commit -m "fix(ui): correct capitalization of 'Sign up' button label"
+Examples:
+
+```text
+feat(auth): add sign-in with Apple
+fix(feed): crash when post body is empty
+refactor(profile): extract overlap calculation to service
+chore(deps): bump supabase-swift to 2.10.0
+ci: cache SwiftPM dependencies between runs
 ```
 
-Don't pile everything into one giant "did a bunch of stuff" commit. Smaller commits are easier to review, easier to revert, and easier to read in history.
+The pre-commit hook runs SwiftLint and SwiftFormat on staged files. The commit-msg hook validates the message against commitlint.
 
-### 5. Verify locally
-
-Before pushing, run:
+### 6. Push
 
 ```bash
-npm run verify
+git push -u origin feat/short-description
 ```
 
-This runs the same checks that CI will run on your PR. Catching issues locally saves you the round-trip of "push → CI fails → fix → push again."
-
-If something fails, most issues are auto-fixable:
+### 7. Open a PR
 
 ```bash
-npm run lint:fix    # fix lint issues
-npm run format      # fix formatting
+gh pr create
 ```
 
-For typecheck and test failures, you have to fix them by hand (they're usually real bugs).
+Or click the "Compare & pull request" button on GitHub. Fill in the PR template. CI runs automatically.
 
-### 6. Push your branch
+### 8. CI must pass
+
+Four jobs run on every PR:
+
+- **Lint** — SwiftLint in strict mode.
+- **Format check (Swift)** — SwiftFormat in lint mode.
+- **Format check (docs)** — Prettier on Markdown / JSON / YAML.
+- **Tests** — Swift Testing + XCUITest in the iOS Simulator.
+
+Plus:
+
+- **Commit messages** — commitlint validates each commit follows Conventional Commits.
+- **Secret scan (trufflehog)** — fails if any committed file looks like a credential.
+
+If any fail, click through to the run, fix the issue, push again. Don't merge through a red CI.
+
+### 9. Review
+
+At least one approval from a CODEOWNER. Reviewers check the rubric in [`CODING_STANDARDS.md`](./CODING_STANDARDS.md#pr-review-rubric).
+
+### 10. Squash merge
+
+`main` keeps a clean linear history. Each PR becomes one commit on `main`. The PR title becomes the commit subject — make sure it's a valid Conventional Commit.
+
+### 11. Update Notion
+
+Set the task's `PR Link` field to the merged PR URL and `Status` to `Done`. Claude does this automatically.
+
+---
+
+## Troubleshooting
+
+### "Pre-commit hook failed"
+
+Read the output. Usually:
+
+- **SwiftLint error:** fix the lint issue. If it's a false positive, talk to the team before disabling.
+- **SwiftFormat:** the hook formats in place. Just `git add .` again and commit.
+- **Prettier:** same — formats in place.
+
+### "Commit message rejected"
+
+Your commit message doesn't follow Conventional Commits. Run `git commit --amend` and fix the subject line.
+
+### "CI Tests are failing but they pass locally"
+
+- Run `make clean && make test` locally first. Stale `DerivedData` masks bugs.
+- If it's only failing in CI, it's likely a Simulator-version mismatch. Check the destination in `.github/workflows/ci.yml` matches what you have locally.
+- If it's a flake, push an empty commit (`git commit --allow-empty -m "ci: retrigger"`) to re-run.
+
+### "I committed to `main` by accident"
 
 ```bash
-git push -u origin feat/signup-validation
+git reset HEAD~1                      # un-commit, keep changes staged
+git checkout -b feat/my-thing
+git add . && git commit -m "feat(...): ..."
+git push -u origin feat/my-thing
 ```
 
-The `-u origin` part tells git "remember that this branch tracks `origin/feat/signup-validation`." After the first push, you can just say `git push`.
+If you've already pushed to main, **stop and ask** — undoing a public commit affects everyone. Don't force-push to main yourself.
 
-### 7. Open a pull request
-
-```bash
-gh pr create --fill
-```
-
-`--fill` pre-populates the title and body from your commits. Edit them in your browser so they match the PR template.
-
-Good PR title examples:
-
-- `feat(auth): validate username before signup`
-- `fix(feed): handle empty-caption edge case`
-
-Bad:
-
-- `My changes`
-- `WIP`
-- `Updates`
-
-### 8. Get a review
-
-- Assign one or more reviewers.
-- Wait for CI to go green (all the checkmarks on the PR page).
-- Reviewers leave comments. Respond to each one — either push a fix or explain why you disagree.
-
-PRs usually need one approval before merging. For critical paths (auth, CI config, dependencies) require at least two.
-
-### 9. Merge
-
-Use **"Squash and merge"** from the GitHub UI. This collapses all the commits on your branch into one clean commit on `main`.
-
-Why squash?
-
-- `main` history stays legible: one commit per feature, not 17 "fix typo" commits.
-- If something breaks, reverting is one `git revert`, not seventeen.
-
-### 10. Clean up
-
-After merging:
+### "I need to rebase onto a moved `main`"
 
 ```bash
-git checkout main
-git pull --rebase
-git branch -d feat/signup-validation
-```
-
-GitHub will also offer a "Delete branch" button. Click it.
-
-## Common scenarios
-
-### "Someone else merged to `main` while my PR was open, and now there are conflicts."
-
-```bash
-git checkout main
-git pull --rebase
-git checkout feat/signup-validation
-git rebase main
-# Fix conflicts in your editor. Git tells you which files have conflicts.
-git add <conflicted-files>
+git fetch origin
+git rebase origin/main
+# Resolve conflicts file by file, then:
+git add .
 git rebase --continue
-git push --force-with-lease    # required after rebase
+git push --force-with-lease
 ```
 
-`--force-with-lease` is a safer version of `--force` — it refuses to push if someone else also pushed to your branch.
+`--force-with-lease` is safer than `--force` — it refuses if someone else pushed to your branch.
 
-### "I committed to `main` by accident."
+### "I want to undo a merge to `main`"
+
+Don't undo it on `main`. Open a PR with a `revert:` commit:
 
 ```bash
-# Move your last commit onto a new branch.
-git checkout -b my-rescue-branch
-# Go back to main and reset it.
-git checkout main
-git reset --hard origin/main
-git checkout my-rescue-branch
+git revert <merge-commit-sha> -m 1
 ```
 
-Then push the rescue branch and open a PR as normal.
-
-### "I need to pull someone else's PR branch to test it locally."
-
-```bash
-gh pr checkout 42    # pulls PR #42 and switches to its branch
-```
-
-### "My pre-commit hook is being a pain and I need to bypass it this ONE time."
-
-```bash
-git commit --no-verify -m "fix: bypass hook because of <reason>"
-```
-
-Don't make this a habit. If you find yourself doing this often, the hook is too strict (fix the config) or the codebase is broken (fix the code).
-
-## Keyboard shortcuts to memorize
-
-- `git status` — what have I changed?
-- `git diff` — show me the changes.
-- `git log --oneline -10` — last 10 commits.
-- `git checkout -` — switch to the previous branch (like `cd -`).
-- `git branch -d <name>` — delete a branch that's been merged.
-- `gh pr create --fill` — open a PR from your current branch.
-- `gh pr checkout <number>` — switch to another person's PR.
-- `gh pr view --web` — open the current PR in your browser.
+This is reversible and visible in history.

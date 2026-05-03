@@ -1,258 +1,245 @@
 # Setup Guide
 
-This guide takes you from "I have never coded before" to "The Venn app is running on my phone and I just opened my first pull request." Read it from top to bottom. It takes about 45 minutes the first time.
+This guide takes you from "fresh laptop" to "Venn app running in the simulator and your first PR opened." Read it top to bottom. It takes about 45 minutes the first time.
 
-If something goes wrong, don't panic — the fix is almost always in the troubleshooting section at the bottom.
-
----
-
-## Step 1 — Install the tools (one-time, per person)
-
-You need four things on your computer. Install them in this order.
-
-### 1a. Node.js (via `nvm`)
-
-Node is the runtime that powers our build tools, our test runner, and the Expo dev server. We manage which version of Node is installed using `nvm` ("Node Version Manager") so every teammate is on the same version — that avoids a whole class of "works on my machine" bugs.
-
-**On macOS or Linux:**
-
-```bash
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
-```
-
-Close and reopen your terminal, then run:
-
-```bash
-nvm install 20.11.1
-nvm use 20.11.1
-node --version   # should print v20.11.1
-```
-
-**On Windows:** install [`nvm-windows`](https://github.com/coreybutler/nvm-windows/releases) (grab `nvm-setup.exe` from the latest release), then in PowerShell:
-
-```powershell
-nvm install 20.11.1
-nvm use 20.11.1
-node --version
-```
-
-### 1b. Git
-
-Git is how you save, share, and collaborate on code.
-
-- macOS: `xcode-select --install` (installs Git and command-line tools).
-- Windows: download [Git for Windows](https://git-scm.com/download/win) and run the installer with default options.
-- Linux: `sudo apt install git` (Ubuntu/Debian) or `sudo dnf install git` (Fedora).
-
-Then configure your name and email (use the same email you use for GitHub):
-
-```bash
-git config --global user.name "[NAME]"
-git config --global user.email "[EMAIL]"
-git config --global init.defaultBranch main
-```
-
-### 1c. GitHub CLI (`gh`)
-
-The GitHub CLI lets you open PRs, review them, and merge from the terminal. Download from [cli.github.com](https://cli.github.com/) and after install:
-
-```bash
-gh auth login
-```
-
-Pick: GitHub.com → HTTPS → Authenticate with your browser. Follow the prompts.
-
-### 1d. The Expo Go app (on your phone)
-
-This is the iPhone / Android app that lets you run Venn on your phone while you develop. You don't need an Apple Developer account. You don't need a Mac. You don't need an Android emulator.
-
-- iPhone: install [**Expo Go**](https://apps.apple.com/app/expo-go/id982107779) from the App Store.
-- Android: install [**Expo Go**](https://play.google.com/store/apps/details?id=host.exp.exponent) from the Play Store.
-
-### 1e. (Optional, for later) A code editor
-
-[Visual Studio Code](https://code.visualstudio.com/) or [Cursor](https://cursor.com) (an AI-enhanced fork of VS Code). Either one will auto-install the right extensions the first time you open the repo, because this repo has a `.vscode/extensions.json` that recommends them.
+If something goes wrong, the fix is almost always in [Troubleshooting](#troubleshooting) at the bottom.
 
 ---
 
-## Step 2 — Clone the repo
+## What you need
 
-"Cloning" means downloading a copy of the code to your computer.
+- A **Mac** (Apple Silicon recommended). Building iOS apps requires macOS.
+- About **30 GB free disk space** (Xcode is large).
+- A **GitHub account** with access to [venn-social/venn](https://github.com/venn-social/venn).
+- A **GitHub SSH key** ([guide](https://docs.github.com/en/authentication/connecting-to-github-with-ssh)).
+
+---
+
+## 1. Install Xcode
+
+1. Open the App Store, search for **Xcode**, click Get. (~7 GB; takes 30+ minutes on slow connections.)
+2. Open Xcode once it's installed and accept the license.
+3. In a Terminal:
 
 ```bash
-cd ~                                         # pick wherever you want it to live
-gh repo clone venn-social/venn                     # this is our repo
+sudo xcode-select -s /Applications/Xcode.app
+xcodebuild -version    # should print "Xcode 26.x" or later
+```
+
+If it prints a different Xcode path, point `xcode-select` at the right one.
+
+---
+
+## 2. Install Homebrew
+
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+```
+
+Follow the on-screen instructions to add Homebrew to your shell (the installer prints exactly what to copy/paste).
+
+Verify:
+
+```bash
+brew --version    # should print "Homebrew 4.x"
+```
+
+---
+
+## 3. Install Node + Git
+
+```bash
+brew install node@20 git gh
+brew link node@20
+```
+
+Verify:
+
+```bash
+node --version    # v20.x.x
+npm --version     # 10.x or later
+git --version     # 2.40+
+gh --version      # any 2.x
+```
+
+`gh` is the GitHub CLI — handy for opening PRs from the terminal.
+
+---
+
+## 4. Install the Swift toolchain helpers
+
+```bash
+brew install xcodegen swiftlint swiftformat xcbeautify
+```
+
+What each does:
+
+- **xcodegen** — generates `Venn.xcodeproj` from `ios/project.yml`. We don't commit the `.xcodeproj`.
+- **swiftlint** — strict lint rules for Swift code (requires full Xcode, which is why we installed it first).
+- **swiftformat** — auto-formats Swift code.
+- **xcbeautify** — pretty output from `xcodebuild` (the raw output is unreadable).
+
+Verify:
+
+```bash
+xcodegen --version
+swiftlint version
+swiftformat --version
+xcbeautify --version
+```
+
+---
+
+## 5. Clone the repo
+
+```bash
+mkdir -p ~/GitProjects && cd ~/GitProjects
+git clone git@github.com:venn-social/venn.git
 cd venn
 ```
 
-You should now see files like `README.md`, `package.json`, and folders like `apps/` and `packages/`.
+If you see "Permission denied (publickey)", your GitHub SSH key isn't set up. Follow the [GitHub guide](https://docs.github.com/en/authentication/connecting-to-github-with-ssh).
 
 ---
 
-## Step 3 — Install dependencies
-
-Our app depends on hundreds of small libraries (React, React Native, Expo, Supabase, etc.). Install all of them in one shot:
+## 6. Run setup
 
 ```bash
-nvm use            # switch to the Node version this repo expects
-npm install        # installs everything. Takes 2–5 minutes the first time.
+make setup
 ```
 
-When that finishes, you should have a new `node_modules/` folder. Don't worry about what's inside it — and definitely don't commit it. (`.gitignore` already blocks it from being committed.)
+This installs node tooling (husky, commitlint, prettier), runs `xcodegen` to create the Xcode project, and verifies your tools are installed.
+
+If `make setup` fails, jump to [Troubleshooting](#troubleshooting).
 
 ---
 
-## Step 4 — Set up your environment variables
-
-The app needs to know how to talk to our backend (Supabase). Those URLs and keys live in an `.env` file that each person creates themselves — we never commit it, because secrets shouldn't live in git.
+## 7. Add your environment variables
 
 ```bash
-cd apps/mobile
 cp .env.example .env
 ```
 
-Now open `apps/mobile/.env` in your editor and fill in the Supabase URL and anon key. (The project owner sets up the Supabase project once and shares those values over a secure channel — Slack DM, 1Password, etc. Never paste them into a public chat or commit them to git.)
+Open `.env` in your editor and fill in real values. Get them from another collaborator (or from the Supabase dashboard if you're the owner). At minimum you need:
 
-> **Don't have Supabase set up yet?** See [`docs/SUPABASE_SETUP.md`](./SUPABASE_SETUP.md) for the 5-minute guide to creating the project.
+- `SUPABASE_URL`
+- `SUPABASE_ANON_KEY`
+
+The other vars (Sentry DSN, PostHog API key) are optional — leave them blank for local development.
+
+**Never commit `.env`.** It's in `.gitignore`. The build script reads it at compile time and writes derived values into `Resources/GeneratedConfig.xcconfig` (also gitignored).
 
 ---
 
-## Step 4b — Sanity-check your environment
-
-Before running the app, verify everything is wired correctly:
+## 8. Open the project in Xcode
 
 ```bash
-npm run doctor
+xed ios/Venn.xcodeproj
 ```
 
-This checks your Node version, that git's commit hooks are installed, and that your `.env` is filled in. If anything is wrong it tells you exactly what to do. Run this any time you suspect the environment is in a weird state — it's also part of `npm run verify`.
+Or `open ios/Venn.xcodeproj`. Xcode will:
+
+1. Resolve the Swift Package Manager dependencies (Supabase, Sentry, PostHog, ...). This takes 1–2 minutes the first time.
+2. Index the project. The status bar shows progress.
+
+Once indexing is done:
+
+1. Pick an iPhone simulator from the scheme menu (e.g. **iPhone 17 Pro**).
+2. Hit **⌘R** to build and run.
+
+The app should launch and show "venn" with a colored icon.
 
 ---
 
-## Step 5 — Run the app
+## 9. Run the tests
 
 From the repo root:
 
 ```bash
-npm run mobile
+make test
 ```
 
-A QR code will appear in your terminal. On your phone:
-
-- **iPhone**: open the Camera app and point it at the QR code. Tap the notification banner to open in Expo Go.
-- **Android**: open the Expo Go app and tap "Scan QR code."
-
-Your phone connects to your laptop, downloads the JavaScript bundle, and shows the app. Edit a file in `apps/mobile/src/app/(tabs)/index.tsx`, save, and watch the app reload instantly on your phone. That's the full dev loop.
+You should see all tests pass. If they don't, [Troubleshooting](#troubleshooting).
 
 ---
 
-## Step 6 — Open your first pull request
+## 10. Open your first PR
 
-Never push code directly to the `main` branch. Every change goes through the branch → PR → review → merge flow. Here it is end to end:
+Pick something small — typo in a doc, fix a comment, anything. Then:
 
 ```bash
-# 1. Make sure you're up to date.
-git checkout main
-git pull
-
-# 2. Create a new branch for your change. Name it after what you're doing.
-#    Pattern: <your-name>/<short-description>  OR  feat/<short-description>
-git checkout -b charles/fix-typo-in-readme
-
-# 3. Make some edits. Save the files.
-
-# 4. Check what you changed.
-git status
-git diff
-
-# 5. Verify your change doesn't break anything.
-npm run verify    # runs lint + format check + typecheck + tests
-
-# 6. Stage and commit. The commit message MUST follow the convention.
-#    Format: <type>(<scope>): <short summary>
-#    Types:  feat, fix, docs, style, refactor, perf, test, build, ci, chore
-git add README.md
-git commit -m "docs: fix typo in setup guide"
-
-# 7. Push your branch to GitHub.
-git push -u origin charles/fix-typo-in-readme
-
-# 8. Open a PR.
-gh pr create --fill
-#    ^ opens your browser with a PR template ready to edit.
-
-# 9. Request a review from at least one teammate.
-#    Wait for approval. CI must pass (all green checkmarks).
-#    Address review comments by pushing more commits to the same branch.
-
-# 10. When approved + CI passes, merge via the GitHub UI ("Squash and merge").
-
-# 11. Clean up.
-git checkout main
-git pull
-git branch -d charles/fix-typo-in-readme
+git checkout -b docs/your-name-fix-typo
+# make your change
+git add .
+git commit -m "docs: fix typo in <file>"
+git push -u origin docs/your-name-fix-typo
+gh pr create
 ```
 
-Your first PR is the one you want to keep small — maybe fixing a typo in this setup guide, or adding a comment somewhere. That way you go through the whole workflow without worrying about the code being complicated.
+Fill in the PR template. Wait for CI. Once green, ping a CODEOWNER for review.
 
 ---
 
 ## Troubleshooting
 
-<details>
-<summary><strong>"nvm: command not found"</strong></summary>
+### `make setup` fails with "command not found: xcodegen"
 
-Close the terminal and open a new one. If it still doesn't work, your shell startup file (`.zshrc` on Mac, `.bashrc` on Linux) may be missing the nvm snippet. Add this at the bottom:
-
-```bash
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-```
-
-Save and open a new terminal.
-
-</details>
-
-<details>
-<summary><strong>The QR code scans but the app hangs on "Downloading JavaScript bundle…"</strong></summary>
-
-Your phone and laptop must be on the same Wi-Fi network. Corporate Wi-Fi often blocks the connection. If that's the case, run `npm run mobile -- --tunnel` instead; it routes through Expo's servers and works on any network.
-
-</details>
-
-<details>
-<summary><strong>"Missing required environment variable: EXPO_PUBLIC_SUPABASE_URL"</strong></summary>
-
-You skipped Step 4. Go back and create `apps/mobile/.env` from the example.
-
-</details>
-
-<details>
-<summary><strong>`npm install` fails with a permission error</strong></summary>
-
-You probably ran it with `sudo` at some point and broke the permissions on `~/.npm`. Fix with:
+Homebrew may not be on your PATH. Run:
 
 ```bash
-sudo chown -R $(whoami) ~/.npm
+echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zshrc
+source ~/.zshrc
 ```
 
-Then delete `node_modules` and re-run `npm install` _without_ sudo.
+Then try `make setup` again.
 
-</details>
+### `xcodegen generate` complains about a missing `project.yml`
 
-<details>
-<summary><strong>"Husky isn't running on commit"</strong></summary>
+You need to be in the `ios/` directory or run via `make project` from the repo root.
 
-Run `npm run doctor` — it'll tell you exactly what's wrong. The fix is almost always `npm run prepare` (or `npm install` from the repo root), which re-wires the git hooks. If `git config --get core.hooksPath` returns nothing, the hooks aren't installed.
+### Xcode says "No such module 'Supabase'"
 
-</details>
+Swift Package Manager hasn't resolved yet. In Xcode: **File → Packages → Reset Package Caches**. Then **File → Packages → Resolve Package Versions**.
+
+### App crashes on launch with "Missing SUPABASE_URL"
+
+Your `.env` is missing or empty. Run `cp .env.example .env` and fill in real values, then **Product → Clean Build Folder** in Xcode (⇧⌘K) and rebuild.
+
+### Tests fail with "iPhone 17 Pro not available"
+
+Open Xcode → Settings → Platforms → iOS, install the latest simulator runtime. Or change the destination in `Makefile` to a simulator you do have:
+
+```makefile
+DESTINATION := platform=iOS Simulator,name=iPhone 16,OS=latest
+```
+
+### "Cannot find Xcode 26"
+
+You're on an older Xcode. Update via App Store. iOS 26 is required.
+
+### Pre-commit hook fails
+
+Read the actual error. Usually:
+
+- **SwiftLint error**: fix the lint warning.
+- **SwiftFormat**: the hook reformats in place — `git add .` and commit again.
+- **Commitlint**: your commit message doesn't follow Conventional Commits.
+
+### "Husky hook not running"
+
+```bash
+npm run prepare
+```
+
+### CI passes but my local `make test` fails
+
+You probably have stale derived data. Run `make clean && make test`.
 
 ---
 
-## What's next
+## What to read next
 
-- Read [`CONTRIBUTING.md`](../.github/CONTRIBUTING.md) for the day-to-day workflow.
-- Read [`docs/WORKFLOW.md`](./WORKFLOW.md) for the detailed branch/PR/review process.
-- Read [`docs/ARCHITECTURE.md`](./ARCHITECTURE.md) to understand _why_ the code is organized this way.
-- Skim [`docs/CODING_STANDARDS.md`](./CODING_STANDARDS.md) to see the patterns and anti-patterns we watch for.
-- If you're a repo owner, do [`docs/GITHUB_SETUP.md`](./GITHUB_SETUP.md) once to lock down branch protection.
+- [`CODING_STANDARDS.md`](./CODING_STANDARDS.md) — what we expect in PRs.
+- [`ARCHITECTURE.md`](./ARCHITECTURE.md) — where things go and why.
+- [`WORKFLOW.md`](./WORKFLOW.md) — the full git/PR flow.
+- [`DATABASE.md`](./DATABASE.md) — Supabase migrations workflow.
