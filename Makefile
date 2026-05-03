@@ -13,12 +13,12 @@ DERIVED_DATA     := build/DerivedData
 XCODEBUILD       := xcodebuild
 XCBEAUTIFY       := xcbeautify --quiet --is-ci
 
-.PHONY: help setup project lint format format-check test build verify clean
+.PHONY: help setup project packages lint format format-check test build verify clean
 
 help: ## Print this help.
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
-setup: ## Install Homebrew tooling + node dev deps. Run once after cloning.
+setup: ## Install Homebrew tooling + node dev deps + resolve SPM. Run once after cloning.
 	@command -v brew >/dev/null || { echo "Install Homebrew first: https://brew.sh"; exit 1; }
 	brew bundle --file=- <<-EOF
 		brew "xcodegen"
@@ -28,9 +28,16 @@ setup: ## Install Homebrew tooling + node dev deps. Run once after cloning.
 	EOF
 	npm install
 	@$(MAKE) project
+	@$(MAKE) packages
 
 project: ## Generate Venn.xcodeproj from project.yml.
 	cd ios && xcodegen generate
+
+packages: project ## Resolve + download SPM dependencies (Supabase, Sentry, PostHog, …).
+	$(XCODEBUILD) -resolvePackageDependencies \
+		-project $(PROJECT) \
+		-scheme $(SCHEME) \
+		-derivedDataPath $(DERIVED_DATA)
 
 lint: ## Run SwiftLint in strict mode (warnings fail).
 	swiftlint lint --strict
