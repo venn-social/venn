@@ -14,16 +14,18 @@ Then read **[.github/CONTRIBUTING.md](./.github/CONTRIBUTING.md)** for the day-t
 
 ## For people who already know what they're doing
 
+Prerequisite: install **Xcode 26** from the Mac App Store first (the brew toolchain depends on it).
+
 ```bash
-brew install xcodegen swiftlint swiftformat xcbeautify
 git clone git@github.com:venn-social/venn.git
 cd venn
-make setup                       # node deps + xcodegen + project generation
+make setup                       # brew tools + node deps + project + SPM resolve
 cp .env.example .env             # fill in real Supabase + observability values
-xed ios/Venn.xcodeproj            # open in Xcode, hit ⌘R
+xed ios/Venn.xcodeproj           # open in Xcode, hit ⌘R
 ```
 
-`make verify` runs lint + format-check + tests. Run it before every PR.
+- `make doctor` — health-check the env (Xcode, brew tools, `.env`, hooks). Run any time things feel off.
+- `make verify` — doctor + lint + format-check + tests. Run before every PR.
 
 ## How this repo is organized
 
@@ -66,6 +68,16 @@ Every major decision behind this layout is documented in [`docs/ARCHITECTURE.md`
 | Lint / format | SwiftLint (strict) + SwiftFormat | Auto-fix on save, enforced in CI.                     |
 | Git hooks     | Husky                            | Can't commit unformatted or broken code.              |
 | CI            | GitHub Actions on `macos-latest` | Native macOS runners with current Xcode preinstalled. |
+
+## Future considerations
+
+On the radar, deliberately not done yet:
+
+- **`hex` MCP servers** ([levnikolaevich/claude-code-skills](https://github.com/levnikolaevich/claude-code-skills)) — `hex-graph` (SQLite code knowledge graph), `hex-line` (hash-verified editing), `hex-ssh` (remote SSH execution). Premature for a ~15-file codebase; revisit when we cross ~50 files / 5k lines, or if anyone on the team starts working from a cloud Mac.
+- **Per-PR TestFlight builds** — Xcode Cloud or Fastlane Match. Needs an Apple Developer account first.
+- **CodeQL / static analysis** — defer until we have user-facing features sensitive enough to warrant another security gate beyond the existing TruffleHog secret scan.
+- **Sentry source maps + release tracking** — wire up once we cut real builds (currently relevant only for production traces, not simulator).
+- **End-to-end UI tests beyond XCUITest stubs** — start once the first real social flow lands (auth → profile → first post).
 
 ## License
 
