@@ -13,10 +13,13 @@ DERIVED_DATA     := build/DerivedData
 XCODEBUILD       := xcodebuild
 XCBEAUTIFY       := xcbeautify --quiet --is-ci
 
-.PHONY: help setup project packages lint format format-check test build verify clean
+.PHONY: help setup doctor project packages lint format format-check test build verify clean
 
 help: ## Print this help.
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+
+doctor: ## Health-check the local dev environment (Xcode, brew tools, .env, hooks).
+	@bash scripts/doctor.sh
 
 setup: ## Install Homebrew tooling + node dev deps + resolve SPM. Run once after cloning.
 	@command -v brew >/dev/null || { echo "Install Homebrew first: https://brew.sh"; exit 1; }
@@ -65,7 +68,7 @@ build: project ## Build the app for the simulator (no tests).
 		-derivedDataPath $(DERIVED_DATA) \
 		build | $(XCBEAUTIFY)
 
-verify: lint format-check test ## Run before opening any PR.
+verify: doctor lint format-check test ## Run before opening any PR.
 
 clean: ## Remove derived data and the generated Xcode project.
 	rm -rf build $(DERIVED_DATA) ios/Venn.xcodeproj
