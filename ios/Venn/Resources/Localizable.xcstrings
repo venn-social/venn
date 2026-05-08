@@ -7,7 +7,13 @@
     "Check your inbox" : {
 
     },
+    "Check your connection and try again." : {
+
+    },
     "Continue" : {
+
+    },
+    "Couldn't load your profile" : {
 
     },
     "Couldn't send the magic link. Please try again." : {
@@ -16,16 +22,31 @@
     "Email" : {
 
     },
+    "Feed" : {
+
+    },
     "Find friends" : {
 
     },
+    "Find friends or look up something you've watched." : {
+
+    },
     "Find friends to see where your tastes overlap." : {
+
+    },
+    "Friends, movies, music…" : {
+
+    },
+    "in common" : {
 
     },
     "Loading…" : {
 
     },
     "Loading your feed…" : {
+
+    },
+    "Loading your profile…" : {
 
     },
     "No friends yet" : {
@@ -40,7 +61,22 @@
     "Posts from people you follow will appear here." : {
 
     },
+    "Profile" : {
+
+    },
+    "Search" : {
+
+    },
+    "Search venn" : {
+
+    },
     "Sign out" : {
+
+    },
+    "Things you've logged" : {
+
+    },
+    "Try again" : {
 
     },
     "Use a different email" : {
