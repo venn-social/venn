@@ -46,7 +46,13 @@ Lightweight Nygard style. Five sections:
 
 ## Index
 
-| #                                         | Title                                          | Status             | Date       |
-| ----------------------------------------- | ---------------------------------------------- | ------------------ | ---------- |
-| [0001](./0001-react-native-over-swift.md) | Build on React Native + Expo, not native Swift | Superseded by 0002 | 2026-04-26 |
-| [0002](./0002-swift-over-react-native.md) | Migrate from React Native to native Swift      | Accepted           | 2026-05-01 |
+| #                                                        | Title                                                                             | Status             | Date       |
+| -------------------------------------------------------- | --------------------------------------------------------------------------------- | ------------------ | ---------- |
+| [0001](./0001-react-native-over-swift.md)                | Build on React Native + Expo, not native Swift                                    | Superseded by 0002 | 2026-04-26 |
+| [0002](./0002-swift-over-react-native.md)                | Migrate from React Native to native Swift                                         | Accepted           | 2026-05-01 |
+| [0003](./0003-supabase-as-backend.md)                    | Use Supabase for backend (Postgres + Auth + Storage + Realtime)                   | Proposed           | 2026-05-08 |
+| [0004](./0004-no-centralised-state-store.md)             | No centralised state store (no Redux, no TCA)                                     | Proposed           | 2026-05-08 |
+| [0005](./0005-service-protocol-with-fake-testability.md) | Service-protocol-with-fake for testability                                        | Proposed           | 2026-05-08 |
+| [0006](./0006-error-handling-layering.md)                | Error handling: `AppError` at the service boundary, `State.error(reason)` at view | Proposed           | 2026-05-08 |
+| [0007](./0007-sentry-and-posthog-observability.md)       | Sentry for errors, PostHog for product analytics                                  | Proposed           | 2026-05-08 |
+| [0008](./0008-figma-first-frontend.md)                   | Frontend design goes through Figma first; no improvising                          | Proposed           | 2026-05-08 |
