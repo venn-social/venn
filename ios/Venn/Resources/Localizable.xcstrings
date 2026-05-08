@@ -1,0 +1,30 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Cancel" : {
+
+    },
+    "Continue" : {
+
+    },
+    "Find friends" : {
+
+    },
+    "Loading your feed…" : {
+
+    },
+    "No friends yet" : {
+
+    },
+    "Nothing here yet" : {
+
+    },
+    "Posts from people you follow will appear here." : {
+
+    },
+    "Find friends to see where your tastes overlap." : {
+
+    }
+  },
+  "version" : "1.0"
+}
