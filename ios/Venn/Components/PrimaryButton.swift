@@ -9,9 +9,9 @@ import SwiftUI
 /// work.
 struct PrimaryButton: View {
     let title: LocalizedStringKey
-    let action: () -> Void
     var isLoading = false
     var isEnabled = true
+    let action: () -> Void
 
     var body: some View {
         Button(action: action) {
@@ -37,9 +37,9 @@ struct PrimaryButton: View {
 
 #Preview {
     VStack(spacing: Theme.Spacing.md) {
-        PrimaryButton(title: "Continue", action: {})
-        PrimaryButton(title: "Loading", action: {}, isLoading: true)
-        PrimaryButton(title: "Disabled", action: {}, isEnabled: false)
+        PrimaryButton(title: "Continue") {}
+        PrimaryButton(title: "Loading", isLoading: true) {}
+        PrimaryButton(title: "Disabled", isEnabled: false) {}
     }
     .padding(Theme.Spacing.lg)
 }

@@ -65,7 +65,6 @@ struct EmptyStateView: View {
         systemImage: "person.2",
         title: "No friends yet",
         message: "Find friends to see where your tastes overlap.",
-        actionTitle: "Find friends",
-        action: {}
-    )
+        actionTitle: "Find friends"
+    ) {}
 }

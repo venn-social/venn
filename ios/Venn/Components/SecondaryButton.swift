@@ -5,8 +5,8 @@ import SwiftUI
 /// "Skip", "Log in instead").
 struct SecondaryButton: View {
     let title: LocalizedStringKey
-    let action: () -> Void
     var isEnabled = true
+    let action: () -> Void
 
     var body: some View {
         Button(action: action) {
@@ -28,8 +28,8 @@ struct SecondaryButton: View {
 
 #Preview {
     VStack(spacing: Theme.Spacing.md) {
-        SecondaryButton(title: "Cancel", action: {})
-        SecondaryButton(title: "Disabled", action: {}, isEnabled: false)
+        SecondaryButton(title: "Cancel") {}
+        SecondaryButton(title: "Disabled", isEnabled: false) {}
     }
     .padding(Theme.Spacing.lg)
 }
