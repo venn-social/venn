@@ -5,8 +5,10 @@ import SwiftUI
 /// confirms the user is signed in and provides a sign-out affordance so the
 /// auth round-trip is exercisable end-to-end.
 struct MainView: View {
-    @Environment(AuthState.self) private var authState
-    @Environment(AppConfig.self) private var config
+    @Environment(AuthState.self)
+    private var authState
+    @Environment(AppConfig.self)
+    private var config
 
     var body: some View {
         Screen {
