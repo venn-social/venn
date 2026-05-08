@@ -55,12 +55,11 @@ struct VennOverlap: View {
         circleSize * 0.32
     }
 
-    @ViewBuilder
-    private var diagram: some View {
+    @ViewBuilder private var diagram: some View {
         switch mode {
-        case .solo(let only):
+        case let .solo(only):
             soloCircle(only)
-        case .pair(let yours, let theirs, _):
+        case let .pair(yours, theirs, _):
             pairCircles(yours: yours, theirs: theirs)
         }
     }
@@ -116,14 +115,13 @@ struct VennOverlap: View {
 
     // MARK: - Legend
 
-    @ViewBuilder
-    private var legend: some View {
+    @ViewBuilder private var legend: some View {
         switch mode {
-        case .solo(let only):
+        case let .solo(only):
             Text(only.label)
                 .font(Theme.Font.callout)
                 .foregroundStyle(Theme.Color.textSecondary)
-        case .pair(let yours, let theirs, let shared):
+        case let .pair(yours, theirs, shared):
             VStack(spacing: Theme.Spacing.xs) {
                 legendRow(label: yours.label, count: yours.count - shared)
                 legendRow(label: "in common", count: shared, emphasised: true)
@@ -136,9 +134,7 @@ struct VennOverlap: View {
         label: LocalizedStringKey,
         count: Int,
         emphasised: Bool = false
-    )
-        -> some View
-    {
+    ) -> some View {
         HStack {
             Text(label)
                 .font(emphasised ? Theme.Font.body.weight(.semibold) : Theme.Font.body)

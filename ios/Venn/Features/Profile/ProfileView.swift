@@ -21,16 +21,15 @@ struct ProfileView: View {
         .task { await ensureLoaded() }
     }
 
-    @ViewBuilder
-    private var content: some View {
+    @ViewBuilder private var content: some View {
         if let viewModel {
             switch viewModel.state {
             case .loading:
                 LoadingView(caption: "Loading your profile…")
-            case .loaded(let profile):
+            case let .loaded(profile):
                 loadedView(profile)
             case .error:
-                errorView(retry: { Task { await viewModel.load() } })
+                errorView { Task { await viewModel.load() } }
             }
         } else {
             // Pre-bootstrap (we don't have a session yet, somehow). Show
@@ -106,7 +105,7 @@ struct ProfileView: View {
     }
 
     private func ensureLoaded() async {
-        if viewModel == nil, case .signedIn(let session) = authState.status {
+        if viewModel == nil, case let .signedIn(session) = authState.status {
             let viewModel = ProfileViewModel(
                 userID: session.user.id,
                 service: ProfileService(client: clientProvider.client)
