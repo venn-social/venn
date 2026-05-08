@@ -4,10 +4,25 @@
     "Cancel" : {
 
     },
+    "Check your inbox" : {
+
+    },
     "Continue" : {
 
     },
+    "Couldn't send the magic link. Please try again." : {
+
+    },
+    "Email" : {
+
+    },
     "Find friends" : {
+
+    },
+    "Find friends to see where your tastes overlap." : {
+
+    },
+    "Loading…" : {
 
     },
     "Loading your feed…" : {
@@ -19,10 +34,25 @@
     "Nothing here yet" : {
 
     },
+    "Please enter a valid email address." : {
+
+    },
     "Posts from people you follow will appear here." : {
 
     },
-    "Find friends to see where your tastes overlap." : {
+    "Sign out" : {
+
+    },
+    "Use a different email" : {
+
+    },
+    "We sent a sign-in link to %@. Tap it to finish signing in." : {
+
+    },
+    "Where your tastes meet your friends'." : {
+
+    },
+    "You're signed in. The real home screen lands in the next PR." : {
 
     }
   },

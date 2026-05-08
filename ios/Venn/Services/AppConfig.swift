@@ -20,6 +20,10 @@ final class AppConfig: @unchecked Sendable {
     let sentryDSN: String?
     let postHogAPIKey: String?
     let postHogHost: URL
+    /// URL the magic-link email sends the user back to. Must match a scheme
+    /// registered in `Info.plist` under `CFBundleURLTypes`. The host segment
+    /// distinguishes auth from any future deep-link surfaces.
+    let authCallbackURL: URL
 
     enum AppEnv: String {
         case development
@@ -33,7 +37,8 @@ final class AppConfig: @unchecked Sendable {
         appEnv: AppEnv,
         sentryDSN: String?,
         postHogAPIKey: String?,
-        postHogHost: URL
+        postHogHost: URL,
+        authCallbackURL: URL = URL(staticString: "social.venn.app://auth-callback")
     ) {
         self.supabaseURL = supabaseURL
         self.supabaseAnonKey = supabaseAnonKey
@@ -41,6 +46,7 @@ final class AppConfig: @unchecked Sendable {
         self.sentryDSN = sentryDSN
         self.postHogAPIKey = postHogAPIKey
         self.postHogHost = postHogHost
+        self.authCallbackURL = authCallbackURL
     }
 
     /// Read configuration from the app's `Info.plist`. Crashes early if a
