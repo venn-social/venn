@@ -61,7 +61,7 @@ struct AuthView: View {
                 )
                 .accessibilityIdentifier("auth_email_field")
 
-            if case .error(let reason) = viewModel.state {
+            if case let .error(reason) = viewModel.state {
                 Text(errorMessage(for: reason))
                     .font(Theme.Font.caption)
                     .foregroundStyle(.red)

@@ -47,7 +47,7 @@ final class AuthViewModel {
     /// Validate the email, flip to `.sending`, ask the service to send the
     /// magic link, then transition to `.sent` (success) or `.error`.
     func submit() async {
-        guard case .valid(let normalized) = Sanitize.email(email) else {
+        guard case let .valid(normalized) = Sanitize.email(email) else {
             state = .error(.invalidEmail)
             return
         }

@@ -24,7 +24,9 @@
 --wrapparameters before-first
 --wrapcollections before-first
 --wrapconditions after-first
---wrapreturntype if-multiline
+# Keep `-> ReturnType {` on the closing-paren line; SwiftLint's
+# `opening_brace` rule rejects the `{` on its own.
+--wrapreturntype never
 --wraptypealiases before-first
 
 # Style
@@ -35,10 +37,16 @@
 --trimwhitespace always
 --ranges no-space
 --operatorfunc spaced
---patternlet inline
+# Hoist `let`/`var` outside enum-case patterns so `case let .pair(a, b)`
+# satisfies SwiftLint's `pattern_matching_keywords` rule.
+--patternlet hoist
 --redundanttype inferred
 --shortoptionals always
 --stripunusedargs closure-only
+# Match SwiftLint's `attributes` rule: vars get same-line, funcs/types prev-line.
+--varattributes same-line
+--funcattributes prev-line
+--typeattributes prev-line
 --voidtype void
 
 # Imports & headers
