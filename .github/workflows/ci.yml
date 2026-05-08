@@ -125,3 +125,15 @@ jobs:
             echo "::error::Line coverage ${PERCENT}% is below the ${THRESHOLD}% threshold."
             exit 1
           fi
+      # Upload the simulator-built Venn.app so reviewers can drag it onto
+      # a running iOS Simulator without rebuilding locally. Stopgap until
+      # per-PR TestFlight builds land (blocked on the Apple Developer
+      # account). The artifact is keyed on the commit SHA so multiple
+      # PR runs don't clash.
+      - name: Upload .app artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: venn-${{ github.sha }}
+          path: build/DerivedData/Build/Products/Debug-iphonesimulator/Venn.app
+          retention-days: 7
+          if-no-files-found: error
