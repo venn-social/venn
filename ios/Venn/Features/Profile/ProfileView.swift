@@ -11,14 +11,54 @@ struct ProfileView: View {
     private var clientProvider
 
     @State private var viewModel: ProfileViewModel?
+    @State private var editViewModel: ProfileEditViewModel?
 
     var body: some View {
         NavigationStack {
             content
                 .navigationTitle("Profile")
                 .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    if case .loaded = viewModel?.state {
+                        ToolbarItem(placement: .topBarTrailing) {
+                            Button("Edit") { presentEditSheet() }
+                                .accessibilityIdentifier("profile_edit_button")
+                        }
+                    }
+                }
+                .sheet(
+                    isPresented: Binding(
+                        get: { editViewModel != nil },
+                        set: { if !$0 { editViewModel = nil } }
+                    )
+                ) {
+                    if let editViewModel {
+                        ProfileEditView(
+                            viewModel: editViewModel,
+                            onSaved: {
+                                self.editViewModel = nil
+                                Task { await viewModel?.load() }
+                            },
+                            onCancel: { self.editViewModel = nil }
+                        )
+                    }
+                }
         }
         .task { await ensureLoaded() }
+    }
+
+    private func presentEditSheet() {
+        guard let viewModel,
+              case let .loaded(profile) = viewModel.state
+        else {
+            return
+        }
+        editViewModel = ProfileEditViewModel(
+            userID: profile.id,
+            displayName: profile.displayName,
+            bio: profile.bio,
+            service: ProfileService(client: clientProvider.client)
+        )
     }
 
     @ViewBuilder private var content: some View {
