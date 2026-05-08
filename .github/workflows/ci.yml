@@ -104,5 +104,24 @@ jobs:
             -scheme Venn \
             -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=latest' \
             -derivedDataPath build/DerivedData \
+            -resultBundlePath build/test-results.xcresult \
             -enableCodeCoverage YES \
             test | xcbeautify --is-ci
+      # Read the xccov report and fail the job if coverage drops below the
+      # repo-wide threshold. The threshold is intentionally conservative
+      # (we don't unit-test SwiftUI views) and can be ratcheted up as the
+      # test surface grows. To avoid a brittle gate, only LINE coverage is
+      # checked — function/branch coverage is too noisy at our size.
+      - name: Coverage gate
+        env:
+          THRESHOLD: "30"
+        run: |
+          set -euo pipefail
+          REPORT=$(xcrun xccov view --report --json build/test-results.xcresult)
+          PERCENT=$(jq -r '.lineCoverage * 100 | floor' <<<"$REPORT")
+          echo "Line coverage: ${PERCENT}%"
+          jq -r '.targets[] | select(.name | endswith(".app")) | "\(.name): \((.lineCoverage * 100) | floor)%"' <<<"$REPORT"
+          if [ "$PERCENT" -lt "$THRESHOLD" ]; then
+            echo "::error::Line coverage ${PERCENT}% is below the ${THRESHOLD}% threshold."
+            exit 1
+          fi
