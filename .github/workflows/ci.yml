@@ -80,6 +80,20 @@ jobs:
           swift --version
       - name: Install tools
         run: brew install xcodegen xcbeautify
+      # Most of the Tests job time is the SPM packages (Supabase, Sentry,
+      # PostHog, Kingfisher, Crypto, …) being checked out and compiled. We
+      # cache the source checkouts and the DerivedData build outputs keyed
+      # on project.yml so a Dependabot version bump invalidates cleanly.
+      # restore-keys gives partial hits on unrelated edits to project.yml.
+      - name: Cache SPM + DerivedData
+        uses: actions/cache@v4
+        with:
+          path: |
+            build/DerivedData
+            ~/Library/Caches/org.swift.swiftpm
+          key: ${{ runner.os }}-spm-${{ hashFiles('ios/project.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-spm-
       - name: Generate Xcode project
         run: cd ios && xcodegen generate
       - name: Run tests
