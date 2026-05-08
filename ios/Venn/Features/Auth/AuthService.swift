@@ -37,7 +37,7 @@ struct AuthService: AuthServicing {
     var sessionChanges: AsyncStream<Session?> {
         AsyncStream { continuation in
             let task = Task {
-                for await (_, session) in await client.auth.authStateChanges {
+                for await (_, session) in client.auth.authStateChanges {
                     continuation.yield(session)
                 }
                 continuation.finish()
