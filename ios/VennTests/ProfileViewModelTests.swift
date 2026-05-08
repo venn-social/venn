@@ -73,12 +73,29 @@ struct ProfileViewModelTests {
 }
 
 final class FakeProfileService: ProfileServicing, @unchecked Sendable {
+    struct UpdateCall: Equatable {
+        let userID: UUID
+        let displayName: String?
+        let bio: String?
+    }
+
     var result: Result<UserProfile, Error> = .failure(NotConfigured())
-    var lastRequestedID: UUID?
+    var updateResult: Result<Void, Error> = .success(())
+    private(set) var lastRequestedID: UUID?
+    private(set) var updateCalls: [UpdateCall] = []
 
     func profile(for userID: UUID) async throws -> UserProfile {
         lastRequestedID = userID
         return try result.get()
+    }
+
+    func updateProfile(
+        userID: UUID,
+        displayName: String?,
+        bio: String?
+    ) async throws {
+        updateCalls.append(.init(userID: userID, displayName: displayName, bio: bio))
+        try updateResult.get()
     }
 
     private struct NotConfigured: Error {}
