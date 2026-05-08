@@ -71,6 +71,7 @@ The "why" behind this layout is in [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.
 12. **No `try!`, no `as!`** in production code. Handle errors explicitly.
 13. **Functions small and pure where possible.** Max 80 lines per function is a SwiftLint warning. Prefer composition over giant procedures. Use value types (`struct`) over reference types (`class`) unless you genuinely need identity.
 14. **Schema changes go through migrations.** Every change to the Supabase schema (new column, new table, new RLS policy, new RPC) is a SQL file in `supabase/migrations/` shipped in a PR. Never run SQL directly against production via the dashboard. See [`docs/DATABASE.md`](./docs/DATABASE.md).
+15. **Frontend design goes through Figma first — no improvising.** Any net-new UI surface (screen, component, sheet, empty state, error state, or a meaningful re-skin) must be designed in Figma before code is written. The implementation PR description must include the Figma node URL. Tweaks within existing design-system tokens (already-defined spacing, color, type) don't require a new frame — but a new layout, a new component, or a fresh visual direction does. **If a Figma source doesn't exist yet, pause and design it in Figma — never "just stub something reasonable."** The reasoning lives in [`docs/decisions/0008-figma-first-frontend.md`](./docs/decisions/0008-figma-first-frontend.md) (to be written in the upcoming foundations PR).
 
 ## Common commands (from repo root)
 
