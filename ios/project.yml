@@ -72,7 +72,6 @@ targets:
           - "Resources/GeneratedConfig.xcconfig"
     resources:
       - path: Venn/Resources/Assets.xcassets
-        optional: true
     dependencies:
       - package: Supabase
         product: Supabase
