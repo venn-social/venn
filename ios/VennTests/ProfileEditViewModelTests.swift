@@ -38,9 +38,12 @@ struct ProfileEditViewModelTests {
         await viewModel.save()
 
         #expect(viewModel.state == .saved)
-        #expect(service.updateCalls == [
-            .init(userID: userID, displayName: "Ada Lovelace", bio: "Maths."),
-        ])
+        #expect(service.updateCalls.count == 1)
+        #expect(service.updateCalls.first == .init(
+            userID: userID,
+            displayName: "Ada Lovelace",
+            bio: "Maths."
+        ))
     }
 
     @Test
