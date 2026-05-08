@@ -5,17 +5,20 @@ struct ContentView: View {
     private var config
 
     var body: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: Theme.Spacing.lg) {
             Image(systemName: "circle.hexagongrid.fill")
                 .font(.system(size: 64))
-                .foregroundStyle(.tint)
+                .foregroundStyle(Theme.Color.accent)
             Text("venn")
-                .font(.largeTitle.weight(.semibold))
+                .font(Theme.Font.largeTitle)
+                .foregroundStyle(Theme.Color.textPrimary)
             Text(config.appEnv.rawValue)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                .font(Theme.Font.caption)
+                .foregroundStyle(Theme.Color.textSecondary)
         }
-        .padding()
+        .padding(Theme.Spacing.xl)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Theme.Color.background)
     }
 }
 
