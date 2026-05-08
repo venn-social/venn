@@ -121,6 +121,26 @@ Set the task's `PR Link` field to the merged PR URL and `Status` to `Done`. Clau
 
 ---
 
+## Reviewing a PR without running Xcode
+
+Every successful CI run uploads the simulator-built `Venn.app` as an artifact, so reviewers can install the build on a Simulator without checking out the branch.
+
+1. Open the PR's **Checks** tab → click the **CI** workflow → scroll to **Artifacts** at the bottom.
+2. Download `venn-<sha>.zip` and unzip it. You get `Venn.app`.
+3. Boot a simulator (`xcrun simctl boot "iPhone 17 Pro"` or open Simulator.app and pick a device).
+4. Drag `Venn.app` onto the running simulator window — it installs automatically. Or run:
+
+   ```bash
+   xcrun simctl install booted Venn.app
+   xcrun simctl launch booted social.venn.app
+   ```
+
+The artifact is built for arm64 iOS Simulator (matches Apple Silicon Macs). Retention is 7 days; older artifacts auto-expire.
+
+This is a stopgap until per-PR TestFlight builds land — blocked on the Apple Developer enrollment ([`README.md`](../README.md) "Future considerations").
+
+---
+
 ## Troubleshooting
 
 ### "Pre-commit hook failed"
