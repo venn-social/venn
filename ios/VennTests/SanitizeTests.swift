@@ -167,6 +167,96 @@ struct SanitizeTests {
         #expect(Sanitize.searchQuery(oneOhOne) == .invalid(.tooLong))
     }
 
+    // MARK: - email
+
+    @Test
+    func emailAcceptsCommonForm() {
+        #expect(Sanitize.email("charles@example.com") == .valid("charles@example.com"))
+    }
+
+    @Test
+    func emailLowercasesEverything() {
+        #expect(Sanitize.email("Charles@EXAMPLE.com") == .valid("charles@example.com"))
+    }
+
+    @Test
+    func emailTrimsWhitespace() {
+        #expect(Sanitize.email("  charles@example.com  ") == .valid("charles@example.com"))
+    }
+
+    @Test
+    func emailAcceptsPlusAddressing() {
+        #expect(
+            Sanitize.email("charles+filter@example.com")
+                == .valid("charles+filter@example.com")
+        )
+    }
+
+    @Test
+    func emailAcceptsMultiLevelDomain() {
+        #expect(
+            Sanitize.email("charles.salomon@a.b.c.example.co.uk")
+                == .valid("charles.salomon@a.b.c.example.co.uk")
+        )
+    }
+
+    @Test
+    func emailAcceptsLocalPartSpecialChars() {
+        #expect(
+            Sanitize.email("charles_99-c.salomon%tag@example.com")
+                == .valid("charles_99-c.salomon%tag@example.com")
+        )
+    }
+
+    @Test
+    func emailRejectsEmpty() {
+        #expect(Sanitize.email("") == .invalid(.empty))
+        #expect(Sanitize.email("   ") == .invalid(.empty))
+    }
+
+    @Test
+    func emailRejectsTooLong() {
+        // RFC 5321: total length capped at 254 octets.
+        let local = String(repeating: "a", count: 250)
+        let tooLong = "\(local)@b.co"
+        #expect(Sanitize.email(tooLong) == .invalid(.tooLong))
+    }
+
+    @Test
+    func emailRejectsMissingAtSign() {
+        #expect(Sanitize.email("charlesexample.com") == .invalid(.invalidFormat))
+    }
+
+    @Test
+    func emailRejectsMissingDomain() {
+        #expect(Sanitize.email("charles@") == .invalid(.invalidFormat))
+    }
+
+    @Test
+    func emailRejectsMissingLocalPart() {
+        #expect(Sanitize.email("@example.com") == .invalid(.invalidFormat))
+    }
+
+    @Test
+    func emailRejectsMissingTLD() {
+        #expect(Sanitize.email("charles@example") == .invalid(.invalidFormat))
+    }
+
+    @Test
+    func emailRejectsSingleCharTLD() {
+        #expect(Sanitize.email("charles@example.c") == .invalid(.invalidFormat))
+    }
+
+    @Test
+    func emailRejectsMultipleAtSigns() {
+        #expect(Sanitize.email("a@b@example.com") == .invalid(.invalidFormat))
+    }
+
+    @Test
+    func emailRejectsInternalSpaces() {
+        #expect(Sanitize.email("char les@example.com") == .invalid(.invalidFormat))
+    }
+
     // MARK: - httpsURL
 
     @Test

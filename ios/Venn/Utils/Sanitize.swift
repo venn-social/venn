@@ -79,6 +79,24 @@ enum Sanitize {
         return .valid(normalised)
     }
 
+    /// Email address. Trims whitespace, lowercases, and runs a pragmatic
+    /// RFC 5322-light format check. Capped at 254 octets per RFC 5321.
+    ///
+    /// Validation here is for UX feedback only — Supabase Auth runs its own
+    /// validation and is the real source of truth. The point of this check
+    /// is to catch obvious typos before the user submits the form.
+    static func email(_ input: String) -> Result {
+        let trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return .invalid(.empty) }
+        let lowered = trimmed.lowercased()
+        guard lowered.count <= 254 else { return .invalid(.tooLong) }
+        let pattern = /^[a-z0-9._%+-]+@(?:[a-z0-9-]+\.)+[a-z]{2,}$/
+        guard lowered.wholeMatch(of: pattern) != nil else {
+            return .invalid(.invalidFormat)
+        }
+        return .valid(lowered)
+    }
+
     /// HTTPS URL. Plain `http://` is rejected. Returns the URL re-stringified
     /// (canonical form) on success.
     static func httpsURL(_ input: String) -> Result {
