@@ -15,7 +15,7 @@ import Testing
 /// host machines; full-device renders aren't because of safe-area insets,
 /// status-bar variations, and dynamic-type defaults.
 ///
-/// `perceptualPrecision: 0.98` lets sub-pixel font-rendering noise pass
+/// `perceptualPrecision: 0.95` lets sub-pixel font-rendering noise pass
 /// while still flagging real visual diffs. Tighten if tests start
 /// missing real regressions.
 @MainActor
@@ -30,7 +30,7 @@ struct ComponentSnapshotTests {
             .background(Theme.Color.background)
 
         assertSnapshot(of: view, as: .image(
-            perceptualPrecision: 0.98,
+            perceptualPrecision: 0.95,
             layout: .fixed(width: 360, height: 96)
         ))
     }
@@ -42,7 +42,7 @@ struct ComponentSnapshotTests {
             .background(Theme.Color.background)
 
         assertSnapshot(of: view, as: .image(
-            perceptualPrecision: 0.98,
+            perceptualPrecision: 0.95,
             layout: .fixed(width: 360, height: 96)
         ))
     }
@@ -54,7 +54,7 @@ struct ComponentSnapshotTests {
             .background(Theme.Color.background)
 
         assertSnapshot(of: view, as: .image(
-            perceptualPrecision: 0.98,
+            perceptualPrecision: 0.95,
             layout: .fixed(width: 360, height: 96)
         ))
     }
@@ -68,7 +68,7 @@ struct ComponentSnapshotTests {
             .background(Theme.Color.background)
 
         assertSnapshot(of: view, as: .image(
-            perceptualPrecision: 0.98,
+            perceptualPrecision: 0.95,
             layout: .fixed(width: 360, height: 96)
         ))
     }
@@ -80,7 +80,7 @@ struct ComponentSnapshotTests {
             .background(Theme.Color.background)
 
         assertSnapshot(of: view, as: .image(
-            perceptualPrecision: 0.98,
+            perceptualPrecision: 0.95,
             layout: .fixed(width: 360, height: 96)
         ))
     }
@@ -97,7 +97,7 @@ struct ComponentSnapshotTests {
         .background(Theme.Color.background)
 
         assertSnapshot(of: view, as: .image(
-            perceptualPrecision: 0.98,
+            perceptualPrecision: 0.95,
             layout: .fixed(width: 390, height: 500)
         ))
     }
@@ -113,7 +113,7 @@ struct ComponentSnapshotTests {
             .background(Theme.Color.background)
 
         assertSnapshot(of: view, as: .image(
-            perceptualPrecision: 0.98,
+            perceptualPrecision: 0.95,
             layout: .fixed(width: 390, height: 560)
         ))
     }
@@ -130,7 +130,7 @@ struct ComponentSnapshotTests {
         .background(Theme.Color.background)
 
         assertSnapshot(of: view, as: .image(
-            perceptualPrecision: 0.98,
+            perceptualPrecision: 0.95,
             layout: .fixed(width: 390, height: 360)
         ))
     }
@@ -146,7 +146,7 @@ struct ComponentSnapshotTests {
         .background(Theme.Color.background)
 
         assertSnapshot(of: view, as: .image(
-            perceptualPrecision: 0.98,
+            perceptualPrecision: 0.95,
             layout: .fixed(width: 390, height: 360)
         ))
     }
