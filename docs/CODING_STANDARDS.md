@@ -198,6 +198,12 @@ struct SanitizeTests {
 }
 ```
 
+### Coverage gate
+
+CI fails the Tests job if repo-wide line coverage drops below the threshold defined in [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) (currently 30%). Only line coverage is checked — function and branch coverage are too noisy at our size.
+
+The threshold is intentionally conservative because we don't unit-test SwiftUI views (they're tested in XCUITest, which has its own coverage path). Ratchet it up as the test surface grows; treat any meaningful drop as a signal to add tests, not a signal to lower the threshold.
+
 ## Rate limiting
 
 Every Supabase Edge Function and RPC enforces a sliding-window rate limit. The pattern (in SQL):
