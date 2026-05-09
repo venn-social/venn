@@ -13,7 +13,7 @@ DERIVED_DATA     := build/DerivedData
 XCODEBUILD       := xcodebuild
 XCBEAUTIFY       := xcbeautify --quiet --is-ci
 
-.PHONY: help setup doctor project packages lint format format-check test build verify clean
+.PHONY: help setup doctor project packages lint format format-check docs test build verify clean
 
 help: ## Print this help.
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -50,6 +50,16 @@ format: ## Auto-format all Swift files in place.
 
 format-check: ## Fail if any Swift file is unformatted.
 	swiftformat --lint ios
+
+docs: project ## Build DocC docs into build/Venn.doccarchive (open in Xcode).
+	set -o pipefail && $(XCODEBUILD) docbuild \
+		-project $(PROJECT) \
+		-scheme $(SCHEME) \
+		-destination '$(DESTINATION)' \
+		-derivedDataPath $(DERIVED_DATA) | $(XCBEAUTIFY)
+	@find $(DERIVED_DATA) -name 'Venn.doccarchive' -type d -print -quit | \
+		xargs -I{} cp -R {} build/Venn.doccarchive
+	@echo "Docs at build/Venn.doccarchive — open in Xcode."
 
 test: project ## Run XCTest suites in the iOS simulator.
 	set -o pipefail && $(XCODEBUILD) \
