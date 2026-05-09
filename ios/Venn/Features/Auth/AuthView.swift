@@ -103,6 +103,8 @@ struct AuthView: View {
     private func errorMessage(for reason: AuthViewModel.ErrorReason) -> LocalizedStringKey {
         switch reason {
         case .invalidEmail: "Please enter a valid email address."
+        case .offline: "You're offline. Check your connection and try again."
+        case .rateLimited: "Too many sign-in requests. Try again in a few minutes."
         case .sendFailed: "Couldn't send the magic link. Please try again."
         }
     }

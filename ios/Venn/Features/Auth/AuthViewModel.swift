@@ -22,6 +22,8 @@ final class AuthViewModel {
     /// `LocalizedStringKey` and easy to test.
     enum ErrorReason: Equatable {
         case invalidEmail
+        case offline
+        case rateLimited
         case sendFailed
     }
 
@@ -55,8 +57,20 @@ final class AuthViewModel {
         do {
             try await service.sendMagicLink(email: normalized, redirectTo: redirectURL)
             state = .sent
+        } catch let error as AppError {
+            state = .error(reason(for: error))
         } catch {
             state = .error(.sendFailed)
+        }
+    }
+
+    /// Translate a service-layer `AppError` into a UI-layer `ErrorReason`.
+    /// View renders different copy + affordances per reason.
+    private func reason(for error: AppError) -> ErrorReason {
+        switch error {
+        case .network: .offline
+        case .rateLimited: .rateLimited
+        case .unauthorized, .validation, .server, .unknown: .sendFailed
         }
     }
 
