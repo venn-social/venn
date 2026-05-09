@@ -1,0 +1,52 @@
+#!/usr/bin/env sh
+# Runs before every `git push`. If it fails, the push is aborted.
+#
+# What it does:
+#   - Runs the VennTests unit suite in the iOS Simulator. Skips
+#     VennUITests (which boots the app and is too slow for a hook).
+#
+# Why:
+#   - CI takes 7+ minutes to fail on a broken unit test. This hook
+#     catches the same breakage in ~30 seconds locally so we don't
+#     burn a CI cycle on something xcodebuild would have caught.
+#
+# Cost:
+#   - ~25-35s per push on warm DerivedData. Slower on cold.
+#
+# Skip in emergencies: `git push --no-verify`. Prefer fixing the
+# failing tests.
+#
+# Tools that aren't installed are skipped with a warning rather than
+# blocking the push — fresh clones stay unblocked until the
+# contributor finishes `make setup`. CI is the real gate.
+
+set -e
+
+if ! command -v xcodebuild >/dev/null 2>&1; then
+  echo "warning: xcodebuild not found — skipping unit-test pre-push check."
+  echo "         Install Xcode and re-run 'make setup' to enable this hook."
+  exit 0
+fi
+
+if ! command -v xcbeautify >/dev/null 2>&1; then
+  echo "warning: xcbeautify not found — skipping unit-test pre-push check."
+  echo "         Run 'brew install xcbeautify' to enable this hook."
+  exit 0
+fi
+
+if [ ! -d ios/Venn.xcodeproj ]; then
+  echo "warning: ios/Venn.xcodeproj not found — skipping unit-test pre-push check."
+  echo "         Run 'make project' to generate it."
+  exit 0
+fi
+
+echo "Running unit tests before push (use --no-verify to skip)…"
+
+set -o pipefail
+xcodebuild \
+  -project ios/Venn.xcodeproj \
+  -scheme Venn \
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=latest' \
+  -derivedDataPath build/DerivedData \
+  -only-testing:VennTests \
+  test 2>&1 | xcbeautify --quiet --is-ci
