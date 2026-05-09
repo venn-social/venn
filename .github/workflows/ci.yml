@@ -114,7 +114,7 @@ jobs:
       # checked — function/branch coverage is too noisy at our size.
       - name: Coverage gate
         env:
-          THRESHOLD: "30"
+          THRESHOLD: "40"
         run: |
           set -euo pipefail
           REPORT=$(xcrun xccov view --report --json build/test-results.xcresult)
