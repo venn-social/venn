@@ -1,4 +1,4 @@
-# `Venn`
+# ``Venn``
 
 Native iOS social app where people log what they consume — movies, music, books, restaurants, games — and share their favorites with friends. Every profile shows a Venn diagram of where your tastes overlap with the person you're viewing.
 
@@ -14,47 +14,47 @@ The app is structured as feature slices under `ios/Venn/Features/<name>/`, each 
 
 ### App layer
 
-- `VennApp`
-- `RootView`
+- ``VennApp``
+- ``RootView``
 
 ### Auth
 
-- `AuthService`
-- `AuthServicing`
-- `AuthState`
-- `AuthView`
-- `AuthViewModel`
+- ``AuthService``
+- ``AuthServicing``
+- ``AuthState``
+- ``AuthView``
+- ``AuthViewModel``
 
 ### Profile
 
-- `ProfileService`
-- `ProfileServicing`
-- `ProfileView`
-- `ProfileViewModel`
-- `ProfileEditView`
-- `ProfileEditViewModel`
-- `UserProfile`
+- ``ProfileService``
+- ``ProfileServicing``
+- ``ProfileView``
+- ``ProfileViewModel``
+- ``ProfileEditView``
+- ``ProfileEditViewModel``
+- ``UserProfile``
 
 ### Components (design system)
 
-- `PrimaryButton`
-- `SecondaryButton`
-- `LoadingView`
-- `EmptyStateView`
-- `Screen`
-- `VennOverlap`
+- ``PrimaryButton``
+- ``SecondaryButton``
+- ``LoadingView``
+- ``EmptyStateView``
+- ``Screen``
+- ``VennOverlap``
 
 ### Services
 
-- `AppConfig`
-- `SupabaseClientProvider`
-- `Observability`
+- ``AppConfig``
+- ``SupabaseClientProvider``
+- ``Observability``
 
 ### Errors
 
-- `AppError`
+- ``AppError``
 
 ### Utilities
 
-- `Sanitize`
-- `RateLimiter`
+- ``Sanitize``
+- ``RateLimiter``

@@ -18,3 +18,7 @@ package-lock.json
 
 # Don't touch Swift — that's swiftformat's job
 *.swift
+
+# DocC catalogs use double-backtick symbol links (``Venn``, ``AuthService``)
+# that prettier collapses to single backticks. Leave them alone.
+**/*.docc/**
