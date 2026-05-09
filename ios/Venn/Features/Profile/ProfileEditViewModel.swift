@@ -27,6 +27,7 @@ final class ProfileEditViewModel {
     enum ErrorReason: Equatable {
         case invalidDisplayName
         case invalidBio
+        case offline
         case saveFailed
     }
 
@@ -97,8 +98,21 @@ final class ProfileEditViewModel {
                 bio: bioValue
             )
             state = .saved
+        } catch let error as AppError {
+            state = .error(reason(for: error))
         } catch {
             state = .error(.saveFailed)
+        }
+    }
+
+    /// Translate a service-layer `AppError` into a UI-layer `ErrorReason`.
+    /// Only network gets distinct copy today; everything else collapses to
+    /// `.saveFailed` ("try again") because the user can't act on the
+    /// distinction (a 429 / 5xx / RLS denial all read the same to them).
+    private func reason(for error: AppError) -> ErrorReason {
+        switch error {
+        case .network: .offline
+        case .unauthorized, .validation, .rateLimited, .server, .unknown: .saveFailed
         }
     }
 }
