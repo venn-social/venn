@@ -8,9 +8,13 @@ See the [product vision](https://www.notion.so/product-vision-34bc60c854a2810993
 
 ## For first-time contributors
 
-Start with **[docs/SETUP.md](./docs/SETUP.md)** — it walks you through installing every tool you need (Xcode, Homebrew, Node, the project tooling), cloning the repo, and opening your first pull request.
+The team works **AI-pair-first**: most code is written in conversation with Claude inside VS Code, not by hand. You don't need to be an engineer to contribute productively — you do need the toolchain installed.
 
-Then read **[.github/CONTRIBUTING.md](./.github/CONTRIBUTING.md)** for the day-to-day workflow (branch → commit → PR → review → merge).
+**Read [`docs/SETUP.md`](./docs/SETUP.md)** top to bottom. It walks you through everything: GitHub + Notion access, Xcode, the brew toolchain, **VS Code + the Claude Code extension**, the plugin bundle (Superpowers, Figma, etc.), Notion MCP, and your first PR. Plan ~90 minutes the first time.
+
+If you're non-technical, the fastest path is to install VS Code + Claude Code first (steps 5–6 of SETUP.md), then hand the rest of the doc to Claude: **"Open `docs/SETUP.md` and walk me through it from where I am."**
+
+For day-to-day workflow once you're set up, read **[.github/CONTRIBUTING.md](./.github/CONTRIBUTING.md)** (branch → commit → PR → review → merge) and skim **[`CLAUDE.md`](./CLAUDE.md)** so you know what Claude already knows about the project.
 
 ## For people who already know what they're doing
 
@@ -26,6 +30,8 @@ xed ios/Venn.xcodeproj           # open in Xcode, hit ⌘R
 
 - `make doctor` — health-check the env (Xcode, brew tools, `.env`, hooks). Run any time things feel off.
 - `make verify` — doctor + lint + format-check + tests. Run before every PR.
+
+If you'll be using Claude on the project, also do the [Claude Code + plugins + Notion MCP](./docs/SETUP.md#5-install-vs-code-and-the-claude-code-extension) section of SETUP.md — that's how the rest of the team works.
 
 ## How this repo is organized
 
@@ -54,20 +60,22 @@ Every major decision behind this layout is documented in [`docs/ARCHITECTURE.md`
 
 ## Tech stack
 
-| Layer         | Choice                           | Why                                                   |
-| ------------- | -------------------------------- | ----------------------------------------------------- |
-| Language      | Swift 6 (strict concurrency)     | Memory-safe, fast, first-class on Apple platforms.    |
-| UI            | SwiftUI on iOS 26+               | Liquid Glass, `@Observable`, structured concurrency.  |
-| Project gen   | XcodeGen                         | No more `.xcodeproj` merge conflicts.                 |
-| Dependencies  | Swift Package Manager            | Native, no Cocoa­Pods/Carthage layer.                 |
-| Backend       | Supabase (`supabase-swift`)      | Auth, Postgres, storage, realtime — all managed.      |
-| Persistence   | Keychain (`KeychainAccess`)      | Tokens; UserDefaults for non-secret prefs.            |
-| Image loading | Kingfisher                       | Caching, prefetching, SwiftUI integration.            |
-| Observability | Sentry-Cocoa + PostHog iOS       | Errors + product analytics.                           |
-| Testing       | Swift Testing + XCUITest         | Apple's modern test frameworks.                       |
-| Lint / format | SwiftLint (strict) + SwiftFormat | Auto-fix on save, enforced in CI.                     |
-| Git hooks     | Husky                            | Can't commit unformatted or broken code.              |
-| CI            | GitHub Actions on `macos-latest` | Native macOS runners with current Xcode preinstalled. |
+| Layer         | Choice                           | Why                                                           |
+| ------------- | -------------------------------- | ------------------------------------------------------------- |
+| Language      | Swift 6 (strict concurrency)     | Memory-safe, fast, first-class on Apple platforms.            |
+| UI            | SwiftUI on iOS 26+               | Liquid Glass, `@Observable`, structured concurrency.          |
+| Project gen   | XcodeGen                         | No more `.xcodeproj` merge conflicts.                         |
+| Dependencies  | Swift Package Manager            | Native, no Cocoa­Pods/Carthage layer.                         |
+| Backend       | Supabase (`supabase-swift`)      | Auth, Postgres, storage, realtime — all managed.              |
+| Persistence   | Keychain (`KeychainAccess`)      | Tokens; UserDefaults for non-secret prefs.                    |
+| Image loading | Kingfisher                       | Caching, prefetching, SwiftUI integration.                    |
+| Observability | Sentry-Cocoa + PostHog iOS       | Errors + product analytics.                                   |
+| Testing       | Swift Testing + XCUITest         | Apple's modern test frameworks.                               |
+| Lint / format | SwiftLint (strict) + SwiftFormat | Auto-fix on save, enforced in CI.                             |
+| Git hooks     | Husky                            | Can't commit unformatted or broken code.                      |
+| CI            | GitHub Actions on `macos-latest` | Native macOS runners with current Xcode preinstalled.         |
+| AI pair       | Claude Code (VS Code extension)  | Drives most coding sessions — see [`CLAUDE.md`](./CLAUDE.md). |
+| Project mgmt  | Notion HQ + Notion MCP           | Tasks, meetings, vision — Claude reads/writes via MCP.        |
 
 ## Future considerations
 
