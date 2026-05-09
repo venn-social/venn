@@ -1,0 +1,88 @@
+# =============================================================================
+# DocC docs — builds and publishes the API documentation site.
+# =============================================================================
+# Builds the DocC archive from the Swift sources (uses the doc comments and
+# the Documentation.docc catalog), transforms it for static hosting, and
+# deploys it to GitHub Pages.
+#
+# Hosted URL: https://venn-social.github.io/venn/documentation/venn/
+#
+# Repo setup (one-time, manual): Settings → Pages → Source = "GitHub Actions".
+# =============================================================================
+
+name: Docs
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Allow only one concurrent deployment.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    name: Build DocC archive
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up Xcode 26
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+      - name: Install tools
+        run: brew install xcodegen xcbeautify
+      - name: Generate Xcode project
+        run: cd ios && xcodegen generate
+      - name: Build DocC archive
+        run: |
+          set -o pipefail
+          xcodebuild docbuild \
+            -project ios/Venn.xcodeproj \
+            -scheme Venn \
+            -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=latest' \
+            -derivedDataPath build/DerivedData | xcbeautify --is-ci
+      - name: Transform for static hosting
+        run: |
+          set -euo pipefail
+          ARCHIVE=$(find build/DerivedData -name 'Venn.doccarchive' -type d -print -quit)
+          echo "Found archive at: $ARCHIVE"
+          mkdir -p build/docs-site
+          xcrun docc process-archive transform-for-static-hosting \
+            "$ARCHIVE" \
+            --output-path build/docs-site \
+            --hosting-base-path venn
+      - name: Add root index redirect
+        # The static-hosting transform puts the docs under
+        # /documentation/venn/. Land visitors of the bare site URL there
+        # instead of a 404 from GitHub Pages.
+        run: |
+          cat > build/docs-site/index.html <<'HTML'
+          <!doctype html>
+          <meta charset="utf-8">
+          <title>Venn — API documentation</title>
+          <meta http-equiv="refresh" content="0; url=./documentation/venn/">
+          <link rel="canonical" href="./documentation/venn/">
+          <p>Redirecting to <a href="./documentation/venn/">the docs</a>…</p>
+          HTML
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/docs-site
+
+  deploy:
+    name: Deploy to Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
