@@ -372,3 +372,4 @@ The integration token (`ntn_...`) is correct, but you forgot to **share the page
 - [`WORKFLOW.md`](./WORKFLOW.md) — the full git/PR flow (with the Notion task lifecycle).
 - [`DATABASE.md`](./DATABASE.md) — Supabase migrations workflow.
 - [`decisions/`](./decisions/) — Architectural Decision Records. Read [`0008-figma-first-frontend.md`](./decisions/0008-figma-first-frontend.md) before touching any UI.
+- **API docs** at [venn-social.github.io/venn](https://venn-social.github.io/venn/documentation/venn/) — auto-generated DocC site from the doc comments in the Swift source. Updated on every push to `main`. Build locally with `make docs` and open the resulting `build/Venn.doccarchive` in Xcode.

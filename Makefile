@@ -52,6 +52,15 @@ format: ## Auto-format all Swift files in place.
 format-check: ## Fail if any Swift file is unformatted.
 	swiftformat --lint ios
 
+docs: project ## Build DocC docs into build/Venn.doccarchive (open in Xcode).
+	set -o pipefail && $(XCODEBUILD) docbuild \
+		-project $(PROJECT) \
+		-scheme $(SCHEME) \
+		-destination '$(DESTINATION)' \
+		-derivedDataPath $(DERIVED_DATA) | $(XCBEAUTIFY)
+	@find $(DERIVED_DATA) -name 'Venn.doccarchive' -type d -print -quit | \
+		xargs -I{} cp -R {} build/Venn.doccarchive
+	@echo "Docs at build/Venn.doccarchive — open in Xcode."
 periphery: project ## Scan for dead code (unused functions, types, properties).
 	periphery scan
 
