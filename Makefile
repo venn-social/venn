@@ -13,7 +13,7 @@ DERIVED_DATA     := build/DerivedData
 XCODEBUILD       := xcodebuild
 XCBEAUTIFY       := xcbeautify --quiet --is-ci
 
-.PHONY: help setup doctor project packages lint format format-check test build verify clean
+.PHONY: help setup doctor project packages lint format format-check periphery test build verify clean
 
 help: ## Print this help.
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -28,6 +28,7 @@ setup: ## Install Homebrew tooling + node dev deps + resolve SPM. Run once after
 		brew "swiftlint"
 		brew "swiftformat"
 		brew "xcbeautify"
+		brew "periphery"
 	EOF
 	npm install
 	@$(MAKE) project
@@ -50,6 +51,9 @@ format: ## Auto-format all Swift files in place.
 
 format-check: ## Fail if any Swift file is unformatted.
 	swiftformat --lint ios
+
+periphery: project ## Scan for dead code (unused functions, types, properties).
+	periphery scan
 
 test: project ## Run XCTest suites in the iOS simulator.
 	set -o pipefail && $(XCODEBUILD) \
