@@ -90,16 +90,40 @@ struct ProfileEditViewModelTests {
     }
 
     @Test
-    func serviceFailureTransitionsToSaveFailed() async {
+    func nonAppErrorFailureFallsBackToSaveFailed() async {
+        // A raw Error (not an AppError) goes down the catch-all branch.
         struct Boom: Error {}
-        let service = FakeProfileService()
-        service.updateResult = .failure(Boom())
-        let viewModel = ProfileEditViewModel(
-            userID: .init(),
-            displayName: "Ada",
-            bio: nil,
-            service: service
-        )
+        let viewModel = makeViewModel(failingWith: Boom())
+        viewModel.displayName = "Ada Lovelace"
+
+        await viewModel.save()
+
+        #expect(viewModel.state == .error(.saveFailed))
+    }
+
+    @Test
+    func appErrorNetworkMapsToOffline() async {
+        let viewModel = makeViewModel(failingWith: AppError.network)
+        viewModel.displayName = "Ada Lovelace"
+
+        await viewModel.save()
+
+        #expect(viewModel.state == .error(.offline))
+    }
+
+    @Test
+    func appErrorRateLimitedMapsToSaveFailed() async {
+        let viewModel = makeViewModel(failingWith: AppError.rateLimited)
+        viewModel.displayName = "Ada Lovelace"
+
+        await viewModel.save()
+
+        #expect(viewModel.state == .error(.saveFailed))
+    }
+
+    @Test
+    func appErrorValidationMapsToSaveFailed() async {
+        let viewModel = makeViewModel(failingWith: AppError.validation("server says no"))
         viewModel.displayName = "Ada Lovelace"
 
         await viewModel.save()
@@ -118,6 +142,19 @@ struct ProfileEditViewModelTests {
             displayName: displayName,
             bio: bio,
             service: FakeProfileService()
+        )
+    }
+
+    /// Pre-loads the fake to fail on update with the given error so the
+    /// AppError-mapping tests can stay one-line.
+    private func makeViewModel(failingWith error: any Error) -> ProfileEditViewModel {
+        let service = FakeProfileService()
+        service.updateResult = .failure(error)
+        return ProfileEditViewModel(
+            userID: .init(),
+            displayName: "Ada",
+            bio: nil,
+            service: service
         )
     }
 }

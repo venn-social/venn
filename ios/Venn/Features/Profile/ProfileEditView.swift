@@ -120,6 +120,7 @@ struct ProfileEditView: View {
         switch reason {
         case .invalidDisplayName: "Display name must be 1–40 characters."
         case .invalidBio: "Bio must be 160 characters or fewer."
+        case .offline: "You're offline. Check your connection and try again."
         case .saveFailed: "Couldn't save your changes. Please try again."
         }
     }
