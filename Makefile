@@ -13,7 +13,7 @@ DERIVED_DATA     := build/DerivedData
 XCODEBUILD       := xcodebuild
 XCBEAUTIFY       := xcbeautify --quiet --is-ci
 
-.PHONY: help setup doctor project packages lint format format-check periphery test build verify clean
+.PHONY: help setup doctor project packages lint format format-check periphery codegen test build verify clean
 
 help: ## Print this help.
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -63,6 +63,9 @@ docs: project ## Build DocC docs into build/Venn.doccarchive (open in Xcode).
 	@echo "Docs at build/Venn.doccarchive — open in Xcode."
 periphery: project ## Scan for dead code (unused functions, types, properties).
 	periphery scan
+
+codegen: ## Regenerate Swift types from the Supabase schema (requires SUPABASE_DB_URL in .env).
+	npm run db:types
 
 test: project ## Run XCTest suites in the iOS simulator.
 	set -o pipefail && $(XCODEBUILD) \
