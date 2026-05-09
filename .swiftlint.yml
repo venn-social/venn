@@ -121,6 +121,9 @@ identifier_name:
     - to
 
 trailing_comma:
-  mandatory_comma: false
+  # Require trailing commas in multi-line collection literals so SwiftLint
+  # agrees with SwiftFormat's `--trailingcommas always`. The two tools used
+  # to fight over multi-line array/dict literals — this aligns them.
+  mandatory_comma: true
 
 reporter: "xcode"
