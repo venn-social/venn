@@ -1,0 +1,47 @@
+# =============================================================================
+# Periphery — dead-code analyzer for Swift.
+# =============================================================================
+# Run with `make periphery`. Tuned to suppress legitimate false positives
+# while still surfacing genuinely orphaned code.
+#
+# Re-tune as the codebase grows. Goal: every warning is actionable
+# (delete the code, or document why it stays).
+# =============================================================================
+
+project: ios/Venn.xcodeproj
+schemes:
+  - Venn
+
+# Test files index but their reachability is checked against the production
+# code under test, so dead test code shows up as findings rather than being
+# suppressed wholesale.
+
+# Don't flag value-holding properties on Codable models — they exist to
+# round-trip JSON to and from Supabase, so being read-only in Swift is fine.
+retain_assign_only_property_types:
+  - String
+  - URL
+  - UUID
+  - Date
+  - Int
+  - Bool
+  - Double
+
+# Skip indexing build artifacts, package checkouts, and snapshot baselines.
+index_exclude:
+  - "**/*?.build/**/*"
+  - "**/SourcePackages/checkouts/**"
+  - "**/__Snapshots__/**"
+  - "build/**"
+
+# Don't surface warnings for design-system tokens or SwiftUI #Preview
+# helpers. Theme.* declares a full token palette upfront; preview helpers
+# are reachable from #Preview blocks that Periphery can't always see.
+report_exclude:
+  - "ios/Venn/Resources/Theme.swift"
+  - "**/*PreviewService*"
+  - "**/Preview*Service*"
+
+# Show clean output by default; switch to `xcode` for IDE integration
+# or `github-actions` if we ever wire it into CI.
+format: xcode

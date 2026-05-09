@@ -92,7 +92,7 @@ This sets up both an SSH key (for `git clone`/`git push`) and an OAuth token (fo
 ## 4. Install the Swift toolchain helpers
 
 ```bash
-brew install xcodegen swiftlint swiftformat xcbeautify
+brew install xcodegen swiftlint swiftformat xcbeautify periphery
 ```
 
 What each does:
@@ -101,6 +101,7 @@ What each does:
 - **swiftlint** — strict lint rules for Swift code (requires full Xcode, which is why we installed it first).
 - **swiftformat** — auto-formats Swift code.
 - **xcbeautify** — pretty output from `xcodebuild` (the raw output is unreadable).
+- **periphery** — dead-code analyzer. Run `make periphery` periodically (especially before larger refactors) to find unused functions/types/properties.
 
 Verify:
 
@@ -109,6 +110,7 @@ xcodegen --version
 swiftlint version
 swiftformat --version
 xcbeautify --version
+periphery version
 ```
 
 ---
