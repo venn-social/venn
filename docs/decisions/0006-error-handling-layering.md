@@ -1,6 +1,6 @@
 # 0006 — Error handling: `AppError` at the service boundary, `State.error(reason)` at the view boundary
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-05-08
 - **Deciders:** Charles Salomon
 
@@ -23,18 +23,20 @@ Two error types, two boundaries:
 
 The view-model's job is to translate: catch `AppError`, decide which `Reason` it maps to (validation vs network vs auth vs server vs unknown), set `state = .error(.<reason>)`. Views pattern-match on `state` and render appropriate UI per reason — inline error label for validation, full-screen retry for network, "session expired" sheet for auth.
 
-`AppError` shape:
+`AppError` shape (as implemented in `ios/Venn/Models/AppError.swift`):
 
 ```swift
-enum AppError: Error, Sendable {
-    case network          // connectivity, timeout, DNS
-    case unauthorized     // 401 / session expired / RLS denied
-    case validation(String) // server returned a 4xx with a message we should show
+enum AppError: Error, Equatable {
+    case network            // connectivity, timeout, DNS
+    case unauthorized       // 401 / session expired / RLS denied
+    case validation(String) // 4xx with a server message we should show
     case rateLimited
-    case server           // 5xx
-    case unknown(Error)
+    case server             // 5xx
+    case unknown(message: String)
 }
 ```
+
+`Sendable` conformance is inferred automatically — Swift 6 synthesises it for internal value types whose payloads are all `Sendable`, and `String` is. We deliberately use `unknown(message: String)` rather than `unknown(Error)` so this synthesis works; an `Error` payload (which is not `Sendable`) would block it under strict concurrency. The original error's `localizedDescription` is captured at the boundary.
 
 Mapping happens once, at the service boundary:
 
