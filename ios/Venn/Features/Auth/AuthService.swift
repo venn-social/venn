@@ -31,6 +31,12 @@ protocol AuthServicing: Sendable {
 }
 
 /// Production implementation backed by `supabase-swift`'s `GoTrueClient`.
+///
+/// Throwing methods funnel third-party errors through `AppError.from(_:)`
+/// so callers see a single semantic error type (ADR 0006). The exception
+/// is `currentSession()` — that method swallows errors via `try?` because
+/// "couldn't read session" and "no session" are both treated as
+/// signed-out at the call site, so there's no error to surface.
 struct AuthService: AuthServicing {
     let client: SupabaseClient
 
@@ -51,14 +57,26 @@ struct AuthService: AuthServicing {
     }
 
     func sendMagicLink(email: String, redirectTo: URL) async throws {
-        try await client.auth.signInWithOTP(email: email, redirectTo: redirectTo)
+        do {
+            try await client.auth.signInWithOTP(email: email, redirectTo: redirectTo)
+        } catch {
+            throw AppError.from(error)
+        }
     }
 
     func handleCallback(_ url: URL) async throws {
-        try await client.auth.session(from: url)
+        do {
+            try await client.auth.session(from: url)
+        } catch {
+            throw AppError.from(error)
+        }
     }
 
     func signOut() async throws {
-        try await client.auth.signOut()
+        do {
+            try await client.auth.signOut()
+        } catch {
+            throw AppError.from(error)
+        }
     }
 }
