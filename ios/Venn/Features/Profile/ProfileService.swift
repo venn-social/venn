@@ -21,17 +21,25 @@ protocol ProfileServicing: Sendable {
 }
 
 /// Production implementation backed by the Supabase Postgrest client.
+///
+/// All throwing methods funnel third-party errors through
+/// `AppError.from(_:)` so callers see a single semantic error type.
+/// See ADR 0006.
 struct ProfileService: ProfileServicing {
     let client: SupabaseClient
 
     func profile(for userID: UUID) async throws -> UserProfile {
-        try await client
-            .from("profiles")
-            .select()
-            .eq("id", value: userID)
-            .single()
-            .execute()
-            .value
+        do {
+            return try await client
+                .from("profiles")
+                .select()
+                .eq("id", value: userID)
+                .single()
+                .execute()
+                .value
+        } catch {
+            throw AppError.from(error)
+        }
     }
 
     func updateProfile(
@@ -40,11 +48,15 @@ struct ProfileService: ProfileServicing {
         bio: String?
     ) async throws {
         let payload = ProfileUpdate(displayName: displayName, bio: bio)
-        try await client
-            .from("profiles")
-            .update(payload)
-            .eq("id", value: userID)
-            .execute()
+        do {
+            try await client
+                .from("profiles")
+                .update(payload)
+                .eq("id", value: userID)
+                .execute()
+        } catch {
+            throw AppError.from(error)
+        }
     }
 }
 
