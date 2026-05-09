@@ -202,6 +202,8 @@ final class FakeAuthService: AuthServicing, @unchecked Sendable {
         sendContinuation = nil
     }
 
+    // periphery:ignore - protocol-conformance stub for tests that don't
+    // exercise the deep-link callback path.
     func handleCallback(_: URL) async throws {}
 
     func signOut() async throws {}

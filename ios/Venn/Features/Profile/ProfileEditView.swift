@@ -139,6 +139,8 @@ struct ProfileEditView: View {
     )
 }
 
+/// Periphery flags this as unused — it's reachable only from the
+/// `#Preview` macro above, which periphery cannot statically resolve.
 private struct PreviewProfileService: ProfileServicing {
     func profile(for _: UUID) async throws -> UserProfile {
         UserProfile(

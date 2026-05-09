@@ -127,6 +127,8 @@ struct AuthView: View {
     return AuthView(viewModel: viewModel)
 }
 
+/// Periphery flags this as unused — it's reachable only from the
+/// `#Preview` macro above, which periphery cannot statically resolve.
 private struct PreviewAuthService: AuthServicing {
     var sessionChanges: AsyncStream<Session?> {
         AsyncStream { _ in }
