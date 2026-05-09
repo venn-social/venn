@@ -27,15 +27,32 @@ struct ProfileViewModelTests {
     }
 
     @Test
-    func loadFailureTransitionsToError() async {
+    func loadFailureWithNonAppErrorFallsBackToUnknown() async {
+        // A raw Error (not an AppError) goes down the catch-all branch.
         struct Boom: Error {}
-        let service = FakeProfileService()
-        service.result = .failure(Boom())
-        let viewModel = ProfileViewModel(userID: .init(), service: service)
+        let viewModel = makeViewModel(failingWith: Boom())
 
         await viewModel.load()
 
-        #expect(viewModel.state == .error)
+        #expect(viewModel.state == .error(.unknown))
+    }
+
+    @Test
+    func loadFailureWithAppErrorNetworkMapsToOffline() async {
+        let viewModel = makeViewModel(failingWith: AppError.network)
+
+        await viewModel.load()
+
+        #expect(viewModel.state == .error(.offline))
+    }
+
+    @Test
+    func loadFailureWithAppErrorServerMapsToUnknown() async {
+        let viewModel = makeViewModel(failingWith: AppError.server)
+
+        await viewModel.load()
+
+        #expect(viewModel.state == .error(.unknown))
     }
 
     @Test
@@ -45,7 +62,7 @@ struct ProfileViewModelTests {
         service.result = .failure(Boom())
         let viewModel = ProfileViewModel(userID: .init(), service: service)
         await viewModel.load()
-        #expect(viewModel.state == .error)
+        #expect(viewModel.state == .error(.unknown))
 
         // Switch the service to succeed and reload.
         service.result = .success(makeProfile(username: "ada"))
@@ -59,6 +76,14 @@ struct ProfileViewModelTests {
     }
 
     // MARK: - helpers
+
+    /// Pre-loads the fake to fail with the given error so error-path tests
+    /// don't have to repeat the setup boilerplate.
+    private func makeViewModel(failingWith error: any Error) -> ProfileViewModel {
+        let service = FakeProfileService()
+        service.result = .failure(error)
+        return ProfileViewModel(userID: .init(), service: service)
+    }
 
     private func makeProfile(username: String) -> UserProfile {
         UserProfile(

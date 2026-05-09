@@ -68,8 +68,8 @@ struct ProfileView: View {
                 LoadingView(caption: "Loading your profile…")
             case let .loaded(profile):
                 loadedView(profile)
-            case .error:
-                errorView { Task { await viewModel.load() } }
+            case let .error(reason):
+                errorView(reason: reason) { Task { await viewModel.load() } }
             }
         } else {
             // Pre-bootstrap (we don't have a session yet, somehow). Show
@@ -127,14 +127,31 @@ struct ProfileView: View {
         }
     }
 
-    private func errorView(retry: @escaping () -> Void) -> some View {
+    private func errorView(
+        reason: ProfileViewModel.ErrorReason,
+        retry: @escaping () -> Void
+    ) -> some View {
         EmptyStateView(
             systemImage: "exclamationmark.triangle",
-            title: "Couldn't load your profile",
-            message: "Check your connection and try again.",
+            title: errorTitle(for: reason),
+            message: errorMessage(for: reason),
             actionTitle: "Try again",
             action: retry
         )
+    }
+
+    private func errorTitle(for reason: ProfileViewModel.ErrorReason) -> LocalizedStringKey {
+        switch reason {
+        case .offline: "You're offline"
+        case .unknown: "Couldn't load your profile"
+        }
+    }
+
+    private func errorMessage(for reason: ProfileViewModel.ErrorReason) -> LocalizedStringKey {
+        switch reason {
+        case .offline: "Check your connection and try again."
+        case .unknown: "Something went wrong. Please try again."
+        }
     }
 
     /// First letter of the display name (or handle), uppercased. Used as a
