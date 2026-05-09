@@ -28,6 +28,8 @@ final class SupabaseClientProvider: @unchecked Sendable {
         return SupabaseClientProvider(client: client)
     }()
 
+    // periphery:ignore - reachable only from the #Preview macro, which
+    // periphery cannot statically resolve.
     /// Used in SwiftUI previews. Points at preview values; never makes a real
     /// network call in a preview because the URL is not real.
     static let preview: SupabaseClientProvider = {

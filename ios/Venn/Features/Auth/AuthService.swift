@@ -22,6 +22,8 @@ protocol AuthServicing: Sendable {
     /// returned URL to complete sign-in.
     func sendMagicLink(email: String, redirectTo: URL) async throws
 
+    // periphery:ignore - call site pending; magic-link deep-link wiring is
+    // tracked separately (rate-limit-blocked on Supabase email).
     /// Completes sign-in from the URL the magic-link email opened the app
     /// with. Called from `App.onOpenURL`.
     func handleCallback(_ url: URL) async throws
