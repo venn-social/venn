@@ -154,27 +154,59 @@ Don't reference the current task, fix, or PR ("added for the X flow", "fixes iss
 
 ## Error handling
 
-Define a single `AppError` type that wraps anything that can fail. Map third-party errors at the boundary (in services).
+Two boundaries, two error shapes. See ADR [0006 — error handling layering](./decisions/0006-error-handling-layering.md) for the full reasoning.
+
+**At the service boundary**: every `<Feature>Service` method throws [`AppError`](../ios/Venn/Models/AppError.swift) (`Sendable`, `Equatable`, semantic). The mapper `AppError.from(_:)` translates Supabase / `URLError` / unknown errors into the right case. Add new mappings there, not at call sites.
 
 ```swift
-enum AppError: LocalizedError, Sendable {
-    case network(message: String)
-    case unauthorized
-    case validation(message: String)
-    case unknown(underlying: Error)
-
-    var errorDescription: String? {
-        switch self {
-        case .network(let m): m
-        case .unauthorized:   "Please sign in again."
-        case .validation(let m): m
-        case .unknown:        "Something went wrong."
+struct ProfileService: ProfileServicing {
+    func profile(for userID: UUID) async throws -> UserProfile {
+        do {
+            return try await client.from("profiles").select().eq("id", value: userID)
+                .single().execute().value
+        } catch {
+            throw AppError.from(error)
         }
     }
 }
 ```
 
-View-models hold `var error: AppError?`. Views show it in an `.alert(...)`.
+**At the view-model boundary**: each view-model owns an `enum State` with an `error(Reason)` case. The `Reason` enum is feature-specific and only carries reasons that surface in the UI (validation, retryable, terminal). The view-model catches `AppError` and translates it into one of its `Reason` cases.
+
+```swift
+@MainActor @Observable
+final class ProfileViewModel {
+    enum State: Equatable {
+        case loading
+        case loaded(UserProfile)
+        case error(Reason)
+    }
+    enum Reason: Equatable { case offline, notFound, unknown }
+
+    private(set) var state: State = .loading
+    private let service: any ProfileServicing
+
+    func load() async {
+        state = .loading
+        do {
+            state = .loaded(try await service.profile(for: userID))
+        } catch let error as AppError {
+            state = .error(reason(for: error))
+        } catch {
+            state = .error(.unknown)
+        }
+    }
+
+    private func reason(for error: AppError) -> Reason {
+        switch error {
+        case .network: .offline
+        case .validation, .server, .unauthorized, .rateLimited, .unknown: .unknown
+        }
+    }
+}
+```
+
+The view pattern-matches on `state` and renders per-`Reason` UI — inline error label for validation, full-screen retry for offline, "session expired" sheet for auth, etc. Views never see `AppError` directly.
 
 ## Tests
 
