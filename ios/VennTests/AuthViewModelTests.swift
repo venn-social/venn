@@ -97,14 +97,40 @@ struct AuthViewModelTests {
     }
 
     @Test
-    func submitWithNetworkErrorGoesToError() async {
+    func submitWithNonAppErrorFallsBackToSendFailed() async {
+        // A raw Error (not an AppError) goes down the catch-all branch.
         struct Boom: Error {}
-        let service = FakeAuthService()
-        service.sendMagicLinkResult = .failure(Boom())
-        let viewModel = AuthViewModel(
-            service: service,
-            redirectURL: URL(staticString: "social.venn.app://auth-callback")
-        )
+        let viewModel = makeViewModel(failingWith: Boom())
+        viewModel.email = "charles@example.com"
+
+        await viewModel.submit()
+
+        #expect(viewModel.state == .error(.sendFailed))
+    }
+
+    @Test
+    func submitWithAppErrorNetworkMapsToOffline() async {
+        let viewModel = makeViewModel(failingWith: AppError.network)
+        viewModel.email = "charles@example.com"
+
+        await viewModel.submit()
+
+        #expect(viewModel.state == .error(.offline))
+    }
+
+    @Test
+    func submitWithAppErrorRateLimitedMapsToRateLimited() async {
+        let viewModel = makeViewModel(failingWith: AppError.rateLimited)
+        viewModel.email = "charles@example.com"
+
+        await viewModel.submit()
+
+        #expect(viewModel.state == .error(.rateLimited))
+    }
+
+    @Test
+    func submitWithAppErrorUnknownMapsToSendFailed() async {
+        let viewModel = makeViewModel(failingWith: AppError.unknown(message: "x"))
         viewModel.email = "charles@example.com"
 
         await viewModel.submit()
@@ -127,6 +153,17 @@ struct AuthViewModelTests {
     private func makeViewModel() -> AuthViewModel {
         AuthViewModel(
             service: FakeAuthService(),
+            redirectURL: URL(staticString: "social.venn.app://auth-callback")
+        )
+    }
+
+    /// Pre-loads the fake to fail with the given error so error-path tests
+    /// don't have to repeat the setup boilerplate.
+    private func makeViewModel(failingWith error: any Error) -> AuthViewModel {
+        let service = FakeAuthService()
+        service.sendMagicLinkResult = .failure(error)
+        return AuthViewModel(
+            service: service,
             redirectURL: URL(staticString: "social.venn.app://auth-callback")
         )
     }
