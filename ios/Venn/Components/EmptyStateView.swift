@@ -29,9 +29,15 @@ struct EmptyStateView: View {
 
     var body: some View {
         VStack(spacing: Theme.Spacing.lg) {
-            Image(systemName: systemImage)
-                .font(.system(size: 56))
-                .foregroundStyle(Theme.Color.textSecondary)
+            ZStack {
+                RoundedRectangle(cornerRadius: Theme.Radius.sm)
+                    .fill(Theme.Color.surfaceStrong)
+                    .frame(width: 74, height: 74)
+                Image(systemName: systemImage)
+                    .font(Theme.Font.title)
+                    .foregroundStyle(Theme.Color.accent)
+            }
+
             VStack(spacing: Theme.Spacing.xs) {
                 Text(title)
                     .font(Theme.Font.title3)
@@ -48,6 +54,8 @@ struct EmptyStateView: View {
         }
         .padding(Theme.Spacing.xl)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(.ultraThinMaterial, in: .rect(cornerRadius: Theme.Radius.sm))
+        .padding(Theme.Spacing.lg)
         .accessibilityIdentifier("empty_state")
     }
 }

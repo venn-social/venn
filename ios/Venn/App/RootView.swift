@@ -13,6 +13,18 @@ struct RootView: View {
     private var clientProvider
 
     var body: some View {
+        #if DEBUG
+            if ProcessInfo.processInfo.arguments.contains("-authFlow") {
+                routedContent
+            } else {
+                DesignPreviewView()
+            }
+        #else
+            routedContent
+        #endif
+    }
+
+    @ViewBuilder private var routedContent: some View {
         switch authState.status {
         case .unknown:
             LoadingView(caption: "Loading…")

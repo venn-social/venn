@@ -66,7 +66,7 @@ struct VennOverlap: View {
 
     private func soloCircle(_ set: Set) -> some View {
         Circle()
-            .fill(Theme.Color.accent.opacity(0.85))
+            .fill(Theme.Gradient.overlap)
             .frame(width: circleSize, height: circleSize)
             .overlay(
                 Text(verbatim: "\(set.count)")
@@ -83,13 +83,13 @@ struct VennOverlap: View {
             // The two soft lobes. .blendMode(.plusLighter) makes the lens
             // region intensify the accent color where they overlap.
             Circle()
-                .fill(Theme.Color.accent.opacity(0.55))
+                .fill(Theme.Color.graphite.opacity(0.72))
                 .frame(width: circleSize, height: circleSize)
                 .offset(x: -lobeOffset)
                 .blendMode(.plusLighter)
 
             Circle()
-                .fill(Theme.Color.accent.opacity(0.55))
+                .fill(Theme.Color.graphite.opacity(0.34))
                 .frame(width: circleSize, height: circleSize)
                 .offset(x: lobeOffset)
                 .blendMode(.plusLighter)
@@ -124,7 +124,7 @@ struct VennOverlap: View {
         case let .pair(yours, theirs, shared):
             VStack(spacing: Theme.Spacing.xs) {
                 legendRow(label: yours.label, count: yours.count - shared)
-                legendRow(label: "in common", count: shared, emphasised: true)
+                legendRow(label: "in common", count: shared)
                 legendRow(label: theirs.label, count: theirs.count - shared)
             }
         }
@@ -138,11 +138,11 @@ struct VennOverlap: View {
         HStack {
             Text(label)
                 .font(emphasised ? Theme.Font.body.weight(.semibold) : Theme.Font.body)
-                .foregroundStyle(emphasised ? Theme.Color.accent : Theme.Color.textPrimary)
+                .foregroundStyle(Theme.Color.textPrimary)
             Spacer()
             Text(verbatim: "\(count)")
                 .font(emphasised ? Theme.Font.body.weight(.semibold) : Theme.Font.body)
-                .foregroundStyle(emphasised ? Theme.Color.accent : Theme.Color.textSecondary)
+                .foregroundStyle(Theme.Color.textSecondary)
                 .monospacedDigit()
         }
     }

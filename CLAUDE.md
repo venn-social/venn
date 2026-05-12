@@ -72,6 +72,7 @@ The "why" behind this layout is in [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.
 13. **Functions small and pure where possible.** Max 80 lines per function is a SwiftLint warning. Prefer composition over giant procedures. Use value types (`struct`) over reference types (`class`) unless you genuinely need identity.
 14. **Schema changes go through migrations.** Every change to the Supabase schema (new column, new table, new RLS policy, new RPC) is a SQL file in `supabase/migrations/` shipped in a PR. Never run SQL directly against production via the dashboard. See [`docs/DATABASE.md`](./docs/DATABASE.md).
 15. **Frontend design goes through Figma first — no improvising.** Any net-new UI surface (screen, component, sheet, empty state, error state, or a meaningful re-skin) must be designed in Figma before code is written. The implementation PR description must include the Figma node URL. Tweaks within existing design-system tokens (already-defined spacing, color, type) don't require a new frame — but a new layout, a new component, or a fresh visual direction does. **If a Figma source doesn't exist yet, pause and design it in Figma — never "just stub something reasonable."** The reasoning lives in [`docs/decisions/0008-figma-first-frontend.md`](./docs/decisions/0008-figma-first-frontend.md) (to be written in the upcoming foundations PR).
+16. **Frontend code is component-first and split by folder.** Never build large SwiftUI screens by stacking private one-off subviews in a single file. Each tab or flow lives in its own `Features/<Name>/` folder, and meaningful screen sections get their own files. Reusable UI belongs in `Components/`, feature-only UI belongs in that feature folder, and repeated layout/styling must be extracted before it is copied. If a view file is becoming hard to scan, split it immediately.
 
 ## Common commands (from repo root)
 
@@ -99,6 +100,9 @@ npm run db:push           # apply pending migrations to the linked remote
 
 - Always create a new branch first: `git checkout -b feat/<what-youre-doing>`.
 - Match the existing folder structure. If you're adding a feature, create `ios/Venn/Features/<Name>/` with its own `<Name>Service.swift`, `<Name>ViewModel.swift`, `<Name>View.swift`.
+- For frontend work, design the file structure before coding. Create subfolders for major flows (`Features/Profile/Library/`, `Features/Explorer/Search/`) when a feature starts to grow, and keep individual SwiftUI files focused on one component or one screen section.
+- Before adding a new button, card, row, avatar, stat, chip, or surface style, search `ios/Venn/Components/` and the current feature folder for an existing primitive to reuse. If two screens need the same UI shape, extract it to `Components/` instead of duplicating it.
+- Avoid "prototype sprawl": debug-only or placeholder UI must be isolated behind `#if DEBUG` or clearly named `Prototype`, and it must not leak fake data into production services, models, or real view-models.
 - If the change touches Supabase, add or update a service rather than calling the client inline.
 - Add a unit test for any new pure function or service.
 - Run `make verify` before suggesting the user commit.

@@ -6,6 +6,12 @@ See the [product vision](https://www.notion.so/product-vision-34bc60c854a2810993
 
 > **2026-05-01:** the repo migrated from React Native + Expo to native Swift. The pre-migration codebase is preserved on the [`archive/rn-expo`](https://github.com/venn-social/venn/tree/archive/rn-expo) branch. See [ADR 0002](./docs/decisions/0002-swift-over-react-native.md) for the reasoning.
 
+## Current frontend status
+
+The first native frontend pass is intentionally a **prototype shell**, not a complete product implementation. In Debug builds, the app can boot straight into a sample three-tab experience — **Feed**, **Explorer**, and **Profile** — so the team can review layout, navigation, and visual direction quickly in the iOS Simulator without signing in.
+
+This prototype uses placeholder/sample data and reusable SwiftUI components to explore the product shape. The real backend work still needs to be wired in: production auth routing, Supabase-backed feed activity, search/recommendation data, watchlist/data-room persistence, profile stats, and overlap calculations. Treat the current UI as the frontend foundation we will connect to services and migrations in follow-up PRs.
+
 ## For first-time contributors
 
 The team works **AI-pair-first**: most code is written in conversation with Claude inside VS Code, not by hand. You don't need to be an engineer to contribute productively — you do need the toolchain installed.

@@ -15,7 +15,7 @@ struct AuthView: View {
     var body: some View {
         Screen {
             VStack(spacing: Theme.Spacing.xl) {
-                Spacer(minLength: 0)
+                Spacer()
 
                 header
 
@@ -26,19 +26,26 @@ struct AuthView: View {
                     sentConfirmation
                 }
 
-                Spacer(minLength: 0)
+                Spacer()
+
+                Text("Private beta")
+                    .font(Theme.Font.caption.weight(.semibold))
+                    .foregroundStyle(Theme.Color.textSecondary)
+                    .padding(.horizontal, Theme.Spacing.md)
+                    .padding(.vertical, Theme.Spacing.sm)
+                    .background(Theme.Color.surface, in: .capsule)
             }
         }
     }
 
     private var header: some View {
-        VStack(spacing: Theme.Spacing.md) {
-            Image(systemName: "circle.hexagongrid.fill")
-                .font(.system(size: 64))
-                .foregroundStyle(Theme.Color.accent)
+        VStack(spacing: Theme.Spacing.lg) {
+            VennMark(size: 84)
+
             Text(verbatim: "venn")
                 .font(Theme.Font.largeTitle)
                 .foregroundStyle(Theme.Color.textPrimary)
+
             Text("Where your tastes meet your friends'.")
                 .font(Theme.Font.callout)
                 .foregroundStyle(Theme.Color.textSecondary)
@@ -56,9 +63,13 @@ struct AuthView: View {
                 .focused($emailFieldFocused)
                 .padding(Theme.Spacing.md)
                 .background(
-                    Theme.Color.surface,
-                    in: .rect(cornerRadius: Theme.Radius.md)
+                    Theme.Color.surfaceStrong,
+                    in: .rect(cornerRadius: Theme.Radius.sm)
                 )
+                .overlay {
+                    RoundedRectangle(cornerRadius: Theme.Radius.sm)
+                        .stroke(Theme.Color.separator, lineWidth: 1)
+                }
                 .accessibilityIdentifier("auth_email_field")
 
             if case let .error(reason) = viewModel.state {
@@ -78,12 +89,18 @@ struct AuthView: View {
                 Task { await viewModel.submit() }
             }
         }
+        .padding(Theme.Spacing.lg)
+        .background(.ultraThinMaterial, in: .rect(cornerRadius: Theme.Radius.sm))
+        .overlay {
+            RoundedRectangle(cornerRadius: Theme.Radius.sm)
+                .stroke(.white.opacity(0.72), lineWidth: 1)
+        }
     }
 
     private var sentConfirmation: some View {
         VStack(spacing: Theme.Spacing.md) {
             Image(systemName: "envelope.badge")
-                .font(.system(size: 48))
+                .font(Theme.Font.largeTitle)
                 .foregroundStyle(Theme.Color.accent)
             Text("Check your inbox")
                 .font(Theme.Font.title2)
@@ -97,6 +114,8 @@ struct AuthView: View {
             }
             .padding(.top, Theme.Spacing.md)
         }
+        .padding(Theme.Spacing.lg)
+        .background(.ultraThinMaterial, in: .rect(cornerRadius: Theme.Radius.sm))
         .accessibilityIdentifier("auth_sent_confirmation")
     }
 
