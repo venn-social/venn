@@ -86,7 +86,7 @@ jobs:
       # on project.yml so a Dependabot version bump invalidates cleanly.
       # restore-keys gives partial hits on unrelated edits to project.yml.
       - name: Cache SPM + DerivedData
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             build/DerivedData
@@ -131,7 +131,7 @@ jobs:
       # account). The artifact is keyed on the commit SHA so multiple
       # PR runs don't clash.
       - name: Upload .app artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: venn-${{ github.sha }}
           path: build/DerivedData/Build/Products/Debug-iphonesimulator/Venn.app
