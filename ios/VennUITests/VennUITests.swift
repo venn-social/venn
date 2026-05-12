@@ -6,9 +6,13 @@ final class VennUITests: XCTestCase {
     }
 
     @MainActor
-    func testAppLaunchesAndShowsTitle() {
+    func testAppLaunchesIntoPrototypeFeed() {
         let app = XCUIApplication()
         app.launch()
-        XCTAssertTrue(app.staticTexts["venn"].waitForExistence(timeout: 5))
+
+        XCTAssertTrue(app.staticTexts["Feed"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Today"].exists)
+        XCTAssertTrue(app.tabBars.buttons["Explorer"].exists)
+        XCTAssertTrue(app.tabBars.buttons["Profile"].exists)
     }
 }
