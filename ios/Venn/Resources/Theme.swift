@@ -16,26 +16,53 @@ enum Theme {
     /// Brand and surface colors. Resolves through the asset catalog or the
     /// system semantic colors so light/dark mode adapt automatically.
     enum Color {
-        /// Brand accent. Backed by `AccentColor` in `Assets.xcassets`, which
-        /// is also the color SwiftUI uses by default for `Button`,
-        /// `ProgressView`, etc.
-        static let accent = SwiftUI.Color.accentColor
+        static let ink = SwiftUI.Color.primary
+        static let graphite = SwiftUI.Color(red: 0.11, green: 0.11, blue: 0.11)
+        static let paper = SwiftUI.Color(.systemBackground)
+        static let mist = SwiftUI.Color(.secondarySystemBackground)
+        static let ash = SwiftUI.Color(.tertiarySystemBackground)
+        static let violet = SwiftUI.Color(red: 0.12, green: 0.12, blue: 0.13)
+        static let coral = SwiftUI.Color(red: 0.29, green: 0.29, blue: 0.31)
+        static let citron = SwiftUI.Color(red: 0.91, green: 0.91, blue: 0.88)
+        static let aqua = SwiftUI.Color(red: 0.40, green: 0.41, blue: 0.43)
+
+        /// Brand accent. Used for primary actions and the center of the Venn
+        /// overlap motif.
+        static let accent = violet
 
         /// Default screen background.
-        static let background = SwiftUI.Color(.systemBackground)
+        static let background = paper
 
         /// Background for surfaces sitting on top of `background` — cards,
         /// sheets, grouped sections.
-        static let surface = SwiftUI.Color(.secondarySystemBackground)
+        static let surface = mist
+        static let surfaceStrong = ash
 
         /// Primary text color.
-        static let textPrimary = SwiftUI.Color(.label)
+        static let textPrimary = ink
 
         /// Less-prominent text — captions, metadata, helper copy.
-        static let textSecondary = SwiftUI.Color(.secondaryLabel)
+        static let textSecondary = SwiftUI.Color.secondary
 
         /// 1pt separator hairline.
-        static let separator = SwiftUI.Color(.separator)
+        static let separator = SwiftUI.Color(.separator).opacity(0.7)
+    }
+
+    enum Gradient {
+        static let wash = LinearGradient(
+            colors: [
+                Color.paper,
+                Color.paper,
+            ],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+
+        static let overlap = LinearGradient(
+            colors: [Color.graphite, Color.graphite],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
     }
 
     /// 4-pt spacing scale. Padding, gaps, and stack `spacing:` should pick
@@ -56,8 +83,8 @@ enum Theme {
     enum Radius {
         static let sm: CGFloat = 8
         static let md: CGFloat = 12
-        static let lg: CGFloat = 20
-        static let xl: CGFloat = 28
+        static let lg: CGFloat = 16
+        static let xl: CGFloat = 24
         static let pill: CGFloat = 999
     }
 

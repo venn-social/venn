@@ -12,12 +12,16 @@ struct SecondaryButton: View {
         Button(action: action) {
             Text(title)
                 .font(Theme.Font.headline)
-                .foregroundStyle(Theme.Color.accent)
+                .foregroundStyle(Theme.Color.textPrimary)
                 .frame(maxWidth: .infinity, minHeight: 52)
                 .background(
-                    Theme.Color.accent.opacity(0.12),
-                    in: .rect(cornerRadius: Theme.Radius.md)
+                    Theme.Color.surfaceStrong,
+                    in: .capsule
                 )
+                .overlay {
+                    Capsule()
+                        .stroke(Theme.Color.separator, lineWidth: 1)
+                }
                 .opacity(isEnabled ? 1 : 0.5)
         }
         .buttonStyle(.plain)

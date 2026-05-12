@@ -44,7 +44,12 @@ ios/
 │   │   │   ├── AuthViewModel.swift          (b) ViewModel: @Observable, owns state.
 │   │   │   └── AuthView.swift               (c) View: pure SwiftUI.
 │   │   ├── Feed/
+│   │   │   ├── FeedView.swift               Screen composition only.
+│   │   │   └── FeedActivityRow.swift        Feature-only view pieces.
 │   │   └── Profile/
+│   │       ├── ProfileView.swift            Screen composition + routing.
+│   │       ├── ProfileHeaderView.swift      Section component.
+│   │       └── Library/                     Subflow when the feature grows.
 │   ├── Components/                        Reusable UI primitives. No business logic.
 │   │                                      Examples: Screen, Button, Avatar, Card.
 │   ├── Services/                          Cross-feature service surface.
@@ -64,8 +69,40 @@ ios/
 
 - **Features are self-contained.** Adding "Notifications" means adding a single folder. Removing it means deleting a folder. No grepping for "is anything outside this feature using `NotificationsViewModel`?"
 - **Components are dumb.** Anything in `Components/` can be dropped into a different app with no work. If a component reaches into a feature's types, that's a smell.
+- **Screens are composition roots.** A `*View.swift` file should read like a table of contents for the screen: header, content, empty/error states, navigation. Meaningful sections and rows live in their own files once they are more than a few lines or likely to be reused.
+- **Frontend folders grow downward.** If `Features/Profile/` starts gaining library, settings, edit, or detail flows, add subfolders such as `Features/Profile/Library/` or `Features/Profile/Edit/`. Do not keep adding sibling files to one flat folder until it becomes hard to navigate.
+- **Reuse before creating.** Search `Components/` first for buttons, cards, rows, avatar, metric, chip, empty/loading, and surface primitives. If a component is useful to two features, move it to `Components/`. If it depends on feature-specific types, keep it in that feature folder and pass plain values into it.
 - **Services don't know SwiftUI.** A service can be tested without spinning up a view. When a service grows large, it's split by domain — `AuthService`, `FeedService`, `ProfileService` — never by layer.
 - **`Models/` is for shared types only.** A type used by exactly one feature lives in that feature.
+
+---
+
+## Frontend Composition
+
+SwiftUI code must stay professional, navigable, and easy for future AI agents to edit safely.
+
+Use this default shape for any meaningful feature:
+
+```
+Features/<Feature>/
+├── <Feature>View.swift              Screen composition and navigation.
+├── <Feature>ViewModel.swift         State, formatting, and user actions.
+├── <Feature>Service.swift           I/O boundary, if the feature touches data.
+├── <Feature>PrototypeView.swift     DEBUG-only design/demo surface, if needed.
+├── <Section>View.swift              Header, list section, filter bar, etc.
+└── <Subflow>/                       Detail screens or multi-screen flows.
+```
+
+Rules:
+
+- Keep screen files small enough to scan. If a `body` contains multiple large `VStack` / `List` / `ScrollView` sections, extract those sections into named views.
+- Prefer one primary type per file. Tiny private helpers are fine, but a reusable row/card/section should not live as a private type at the bottom of a screen file.
+- Do not copy UI shapes. The second time you need a layout, extract it. The third time should never be copy/paste.
+- `Components/` may not import feature models or services. It accepts plain values and closures so it stays reusable.
+- Feature-only UI can depend on feature-local models and view-models, but it should still be split into files when it has a distinct responsibility.
+- Prototype data must be isolated in preview/debug files or static fixtures. Do not mix fake sample content into production services or domain models.
+
+When in doubt, make the code easier for a future contributor to find and replace. The app should feel like a set of well-named building blocks, not one-off SwiftUI sketches.
 
 ---
 

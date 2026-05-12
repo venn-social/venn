@@ -6,14 +6,36 @@ import SwiftUI
 struct FeedView: View {
     var body: some View {
         NavigationStack {
-            Screen(padding: .init()) {
-                EmptyStateView(
-                    systemImage: "square.stack.3d.up",
-                    title: "Nothing here yet",
-                    message: "Posts from people you follow will appear here."
-                )
+            Screen {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: Theme.Spacing.lg) {
+                        Text("Today")
+                            .font(Theme.Font.largeTitle)
+                            .foregroundStyle(Theme.Color.textPrimary)
+
+                        VStack(spacing: Theme.Spacing.md) {
+                            ActivityCard(
+                                name: "Maya",
+                                action: "logged",
+                                title: "Past Lives",
+                                detail: "quiet, devastating, exactly the right kind of Sunday movie",
+                                rating: "4.5"
+                            )
+                            ActivityCard(
+                                name: "Theo",
+                                action: "rated",
+                                title: "The Bear",
+                                detail: "season 2 has the restaurant anxiety and the family ache",
+                                rating: "4.0"
+                            )
+                        }
+                    }
+                    .padding(.vertical, Theme.Spacing.lg)
+                    .padding(.bottom, Theme.Spacing.xxxl)
+                }
             }
             .navigationTitle("Feed")
+            .navigationBarTitleDisplayMode(.inline)
         }
     }
 }

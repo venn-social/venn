@@ -26,7 +26,7 @@ struct PrimaryButton: View {
             .font(Theme.Font.headline)
             .foregroundStyle(.white)
             .frame(maxWidth: .infinity, minHeight: 52)
-            .background(Theme.Color.accent, in: .rect(cornerRadius: Theme.Radius.md))
+            .background(Theme.Gradient.overlap, in: .capsule)
             .opacity(isEnabled ? 1 : 0.5)
         }
         .buttonStyle(.plain)

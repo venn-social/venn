@@ -1,9 +1,7 @@
 import SwiftUI
 
-/// Profile tab content. Loads the signed-in user's profile from Supabase
-/// and renders header + VennOverlap (solo, since this PR only handles the
-/// own-profile case). Other-user profiles with the pair overlap come in a
-/// follow-up PR once profile-by-username navigation lands.
+/// Profile tab content. Loads the signed-in user's profile from Supabase and
+/// renders identity, high-level stats, and category entry points.
 struct ProfileView: View {
     @Environment(AuthState.self)
     private var authState
@@ -81,48 +79,30 @@ struct ProfileView: View {
 
     private func loadedView(_ profile: UserProfile) -> some View {
         Screen {
-            VStack(spacing: Theme.Spacing.xl) {
-                header(profile)
+            ScrollView {
+                VStack(alignment: .leading, spacing: Theme.Spacing.xl) {
+                    ProfileHeaderView(
+                        name: profile.displayName ?? profile.username,
+                        handle: profile.username,
+                        bio: profile.bio
+                    )
 
-                VennOverlap(mode: .solo(.init(
-                    label: "Things you've logged",
-                    count: 0
-                )))
+                    HStack(spacing: Theme.Spacing.sm) {
+                        MetricTile(value: "0", label: "watched")
+                        MetricTile(value: "0", label: "saved")
+                        MetricTile(value: "0", label: "overlaps")
+                    }
 
-                SecondaryButton(title: "Sign out") {
-                    Task { await authState.signOut() }
+                    ProfileLibrarySection(categories: ProfileLibraryCategory.empty)
+
+                    SecondaryButton(title: "Sign out") {
+                        Task { await authState.signOut() }
+                    }
+
+                    Spacer(minLength: 0)
                 }
-
-                Spacer(minLength: 0)
-            }
-        }
-    }
-
-    private func header(_ profile: UserProfile) -> some View {
-        VStack(spacing: Theme.Spacing.sm) {
-            Circle()
-                .fill(Theme.Color.surface)
-                .frame(width: 96, height: 96)
-                .overlay(
-                    Text(verbatim: avatarInitial(profile))
-                        .font(Theme.Font.title.weight(.bold))
-                        .foregroundStyle(Theme.Color.textSecondary)
-                )
-
-            Text(verbatim: profile.displayName ?? profile.username)
-                .font(Theme.Font.title2)
-                .foregroundStyle(Theme.Color.textPrimary)
-
-            Text(verbatim: "@\(profile.username)")
-                .font(Theme.Font.callout)
-                .foregroundStyle(Theme.Color.textSecondary)
-
-            if let bio = profile.bio, !bio.isEmpty {
-                Text(verbatim: bio)
-                    .font(Theme.Font.body)
-                    .foregroundStyle(Theme.Color.textPrimary)
-                    .multilineTextAlignment(.center)
-                    .padding(.top, Theme.Spacing.xs)
+                .padding(.vertical, Theme.Spacing.lg)
+                .padding(.bottom, Theme.Spacing.xxxl * 2)
             }
         }
     }
@@ -152,13 +132,6 @@ struct ProfileView: View {
         case .offline: "Check your connection and try again."
         case .unknown: "Something went wrong. Please try again."
         }
-    }
-
-    /// First letter of the display name (or handle), uppercased. Used as a
-    /// placeholder until avatar uploads land.
-    private func avatarInitial(_ profile: UserProfile) -> String {
-        let source = profile.displayName ?? profile.username
-        return source.first.map { String($0).uppercased() } ?? "?"
     }
 
     private func ensureLoaded() async {

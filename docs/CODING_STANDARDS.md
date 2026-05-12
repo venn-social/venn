@@ -4,19 +4,23 @@ Most of these are enforced by SwiftLint, SwiftFormat, and the Swift compiler. Th
 
 ## Anti-patterns we reject
 
-| Pattern                                          | Why it's banned                                                         |
-| ------------------------------------------------ | ----------------------------------------------------------------------- |
-| Force unwraps (`!`) outside tests                | Crashes the app. Use `guard let` / `if let` / `??`.                     |
-| `try!`, `as!`                                    | Same — turns a recoverable error into a crash.                          |
-| `class` when `struct` would do                   | Reference semantics make state changes impossible to reason about.      |
-| Implicit `self` capture in closures              | Causes retain cycles. Use `[weak self]` for long-lived closures.        |
-| Empty `catch {}` blocks                          | Errors silently swallowed are the worst kind of bug.                    |
-| Singletons that aren't services                  | Untestable. Inject via `.environment(...)` instead.                     |
-| Stringly-typed identifiers (`"feed"`, `"posts"`) | Use enums or constants. Typos compile fine; behavior breaks at runtime. |
-| Long-lived `@State` in views                     | Use a view-model. `@State` is for trivial UI state only.                |
-| Reaching into other features' types              | Features are self-contained. Move the type to `Models/` if it's shared. |
-| `print(...)` left in production code             | Use `Logger` (os_log) or Sentry breadcrumbs. SwiftLint flags this.      |
-| Magic numbers                                    | Name them. `let maxAvatarSize: CGFloat = 96` beats `96`.                |
+| Pattern                                          | Why it's banned                                                             |
+| ------------------------------------------------ | --------------------------------------------------------------------------- |
+| Force unwraps (`!`) outside tests                | Crashes the app. Use `guard let` / `if let` / `??`.                         |
+| `try!`, `as!`                                    | Same — turns a recoverable error into a crash.                              |
+| `class` when `struct` would do                   | Reference semantics make state changes impossible to reason about.          |
+| Implicit `self` capture in closures              | Causes retain cycles. Use `[weak self]` for long-lived closures.            |
+| Empty `catch {}` blocks                          | Errors silently swallowed are the worst kind of bug.                        |
+| Singletons that aren't services                  | Untestable. Inject via `.environment(...)` instead.                         |
+| Stringly-typed identifiers (`"feed"`, `"posts"`) | Use enums or constants. Typos compile fine; behavior breaks at runtime.     |
+| Long-lived `@State` in views                     | Use a view-model. `@State` is for trivial UI state only.                    |
+| Reaching into other features' types              | Features are self-contained. Move the type to `Models/` if it's shared.     |
+| `print(...)` left in production code             | Use `Logger` (os_log) or Sentry breadcrumbs. SwiftLint flags this.          |
+| Magic numbers                                    | Name them. `let maxAvatarSize: CGFloat = 96` beats `96`.                    |
+| Large SwiftUI screen files                       | Hard to review and easy for AI tools to damage. Split sections into files.  |
+| Copy-pasted UI shapes                            | Creates inconsistent UX. Extract rows/cards/chips/buttons into components.  |
+| Feature UI inside `Components/`                  | Shared components must not depend on feature-specific models or services.   |
+| Fake prototype data in production paths          | Confuses real flows. Keep sample UI behind `#if DEBUG` or preview fixtures. |
 
 ## Patterns we like
 
@@ -111,6 +115,53 @@ struct FeedView: View {
     }
 }
 ```
+
+### SwiftUI views are small, split, and reusable
+
+Good frontend code is built from named parts. The screen owns navigation and composition; sections, rows, cards, and reusable primitives live in their own files.
+
+```swift
+// Good — screen composition is easy to scan
+struct ProfileView: View {
+    var body: some View {
+        Screen {
+            ScrollView {
+                VStack(spacing: Theme.Spacing.xl) {
+                    ProfileHeaderView(profile: viewModel.profile)
+                    ProfileStatsView(stats: viewModel.stats)
+                    ProfileLibrarySection(categories: viewModel.categories)
+                }
+            }
+        }
+    }
+}
+```
+
+```swift
+// Bad — one screen file becomes a dumping ground for every visual decision
+struct ProfileView: View {
+    var body: some View {
+        ScrollView {
+            VStack {
+                // 80 lines of header UI
+                // 90 lines of stats UI
+                // 120 lines of category rows
+                // duplicated buttons and hand-tuned padding
+            }
+        }
+    }
+}
+```
+
+Frontend extraction rules:
+
+- Extract a view when it has a name the product team would understand: `ProfileHeaderView`, `ActivityCard`, `LibraryCategoryCard`, `ExplorerRecommendationCard`.
+- Put reusable primitives in `ios/Venn/Components/`. They should accept plain strings, numbers, images, bindings, and closures; they should not import or know feature models.
+- Put feature-specific UI in `ios/Venn/Features/<Feature>/`, or in a subfolder when a flow grows (`Library/`, `Settings/`, `Detail/`).
+- Keep `private struct` helpers only for truly tiny one-file details. If another screen could plausibly use it, make it a real component file now.
+- Use `Theme` tokens for all color, spacing, radius, and type. Never hand-tune a slightly different version of an existing component.
+- Prefer composition over flags. If a component has too many booleans, split it into clearer components.
+- Keep debug/prototype screens behind `#if DEBUG` and name them `Prototype` or `Preview` so nobody mistakes them for production UX.
 
 ## Imports
 
