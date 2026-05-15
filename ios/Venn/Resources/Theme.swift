@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// Design tokens for venn — the single source of truth for color, spacing,
 /// corner radius, and typography. Every screen and component reads from
@@ -16,15 +17,34 @@ enum Theme {
     /// Brand and surface colors. Resolves through the asset catalog or the
     /// system semantic colors so light/dark mode adapt automatically.
     enum Color {
+        private static func adaptive(light: UIColor, dark: UIColor) -> SwiftUI.Color {
+            SwiftUI.Color(uiColor: UIColor { traits in
+                traits.userInterfaceStyle == .dark ? dark : light
+            })
+        }
+
         static let ink = SwiftUI.Color.primary
-        static let graphite = SwiftUI.Color(red: 0.11, green: 0.11, blue: 0.11)
+        static let graphite = adaptive(
+            light: UIColor(red: 0.11, green: 0.11, blue: 0.11, alpha: 1),
+            dark: UIColor(red: 0.96, green: 0.96, blue: 0.94, alpha: 1)
+        )
         static let paper = SwiftUI.Color(.systemBackground)
         static let mist = SwiftUI.Color(.secondarySystemBackground)
         static let ash = SwiftUI.Color(.tertiarySystemBackground)
-        static let violet = SwiftUI.Color(red: 0.12, green: 0.12, blue: 0.13)
-        static let coral = SwiftUI.Color(red: 0.29, green: 0.29, blue: 0.31)
-        static let citron = SwiftUI.Color(red: 0.91, green: 0.91, blue: 0.88)
-        static let aqua = SwiftUI.Color(red: 0.40, green: 0.41, blue: 0.43)
+        static let violet = graphite
+        static let coral = adaptive(
+            light: UIColor(red: 0.29, green: 0.29, blue: 0.31, alpha: 1),
+            dark: UIColor(red: 0.74, green: 0.74, blue: 0.72, alpha: 1)
+        )
+        static let citron = adaptive(
+            light: UIColor(red: 0.91, green: 0.91, blue: 0.88, alpha: 1),
+            dark: UIColor(red: 0.16, green: 0.16, blue: 0.15, alpha: 1)
+        )
+        static let aqua = adaptive(
+            light: UIColor(red: 0.40, green: 0.41, blue: 0.43, alpha: 1),
+            dark: UIColor(red: 0.64, green: 0.65, blue: 0.67, alpha: 1)
+        )
+        static let onAccent = adaptive(light: .white, dark: .black)
 
         /// Brand accent. Used for primary actions and the center of the Venn
         /// overlap motif.

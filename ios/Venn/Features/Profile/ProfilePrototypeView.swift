@@ -19,6 +19,8 @@ import SwiftUI
                                 MetricTile(value: "18", label: "overlaps")
                             }
 
+                            ProfileAppearanceSection()
+
                             ProfileLibrarySection(categories: ProfileLibraryCategory.prototype)
                         }
                         .padding(.vertical, Theme.Spacing.lg)
@@ -33,5 +35,6 @@ import SwiftUI
 
     #Preview {
         ProfilePrototypeView()
+            .environment(AppearanceSettings())
     }
 #endif

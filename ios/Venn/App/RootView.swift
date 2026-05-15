@@ -5,14 +5,32 @@ import SwiftUI
 /// model with the live `AuthService` only when the user is actually signed
 /// out, so we don't construct it during the splash flash.
 struct RootView: View {
+    private static let launchSplashDuration: Duration = .seconds(5)
+
     @Environment(AuthState.self)
     private var authState
     @Environment(AppConfig.self)
     private var config
     @Environment(SupabaseClientProvider.self)
     private var clientProvider
+    @State private var isShowingLaunchSplash = true
 
     var body: some View {
+        ZStack {
+            if isShowingLaunchSplash {
+                LaunchVideoSplashView()
+                    .transition(.opacity)
+            } else {
+                appContent
+                    .transition(.opacity)
+            }
+        }
+        .task {
+            await dismissLaunchSplash()
+        }
+    }
+
+    @ViewBuilder private var appContent: some View {
         #if DEBUG
             if ProcessInfo.processInfo.arguments.contains("-authFlow") {
                 routedContent
@@ -37,6 +55,21 @@ struct RootView: View {
             MainView()
         }
     }
+
+    @MainActor
+    private func dismissLaunchSplash() async {
+        guard isShowingLaunchSplash else { return }
+        if ProcessInfo.processInfo.arguments.contains("-skipLaunchSplash") {
+            isShowingLaunchSplash = false
+            return
+        }
+
+        try? await Task.sleep(for: Self.launchSplashDuration)
+        guard !Task.isCancelled else { return }
+        withAnimation(.easeInOut(duration: 0.35)) {
+            isShowingLaunchSplash = false
+        }
+    }
 }
 
 #Preview("signed out") {
@@ -47,4 +80,5 @@ struct RootView: View {
         .environment(AppConfig.preview)
         .environment(provider)
         .environment(state)
+        .environment(AppearanceSettings())
 }

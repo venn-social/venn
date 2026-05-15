@@ -71,7 +71,7 @@ struct VennOverlap: View {
             .overlay(
                 Text(verbatim: "\(set.count)")
                     .font(Theme.Font.title.weight(.bold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Theme.Color.onAccent)
             )
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(set.label)
@@ -110,7 +110,7 @@ struct VennOverlap: View {
     private func lobeLabel(count: Int) -> some View {
         Text(verbatim: "\(count)")
             .font(Theme.Font.title2.weight(.bold))
-            .foregroundStyle(.white)
+            .foregroundStyle(Theme.Color.onAccent)
     }
 
     // MARK: - Legend

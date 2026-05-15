@@ -12,7 +12,7 @@ struct AvatarBadge: View {
             .overlay {
                 Text(initial)
                     .font(font)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Theme.Color.onAccent)
             }
             .accessibilityLabel(Text(name))
     }

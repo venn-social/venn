@@ -160,6 +160,7 @@ Frontend extraction rules:
 - Put feature-specific UI in `ios/Venn/Features/<Feature>/`, or in a subfolder when a flow grows (`Library/`, `Settings/`, `Detail/`).
 - Keep `private struct` helpers only for truly tiny one-file details. If another screen could plausibly use it, make it a real component file now.
 - Use `Theme` tokens for all color, spacing, radius, and type. Never hand-tune a slightly different version of an existing component.
+- Use shared iOS interaction primitives before writing new effects: `GlassSurface` / `.vennGlass(...)` for Liquid Glass surfaces, `GlassSegmentedControl` for chip-like segmented choices, `VennPressButtonStyle` for tappable controls, and `.vennScrollDepth()` / `.vennSelectionFeedback(...)` for motion and sensory feedback.
 - Prefer composition over flags. If a component has too many booleans, split it into clearer components.
 - Keep debug/prototype screens behind `#if DEBUG` and name them `Prototype` or `Preview` so nobody mistakes them for production UX.
 

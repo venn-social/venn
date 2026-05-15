@@ -10,7 +10,7 @@ struct ExplorerRecommendationCard: View {
             HStack {
                 Image(systemName: category.icon)
                     .font(Theme.Font.title3)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Theme.Color.onAccent)
                     .frame(width: 46, height: 46)
                     .background(Theme.Color.graphite, in: .rect(cornerRadius: Theme.Radius.sm))
                 Spacer()

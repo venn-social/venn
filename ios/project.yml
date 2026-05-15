@@ -75,6 +75,7 @@ targets:
           - "Resources/GeneratedConfig.xcconfig"
     resources:
       - path: Venn/Resources/Assets.xcassets
+      - path: Venn/Resources/Videos
       - path: Venn/Resources/Localizable.xcstrings
     dependencies:
       - package: Supabase

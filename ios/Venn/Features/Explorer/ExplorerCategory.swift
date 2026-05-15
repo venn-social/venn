@@ -1,6 +1,6 @@
 import SwiftUI
 
-enum ExplorerCategory: String, CaseIterable, Identifiable {
+enum ExplorerCategory: String, CaseIterable, Hashable, Identifiable {
     case movies
     case music
     case books

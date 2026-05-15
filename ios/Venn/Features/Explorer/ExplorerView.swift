@@ -38,24 +38,12 @@ struct ExplorerView: View {
     }
 
     private var categoryPicker: some View {
-        HStack(spacing: Theme.Spacing.sm) {
-            ForEach(ExplorerCategory.allCases) { category in
-                Button {
-                    selectedCategory = category
-                } label: {
-                    Label(category.title, systemImage: category.icon)
-                        .font(Theme.Font.caption.weight(.semibold))
-                        .labelStyle(.titleAndIcon)
-                        .foregroundStyle(selectedCategory == category ? .white : Theme.Color.textPrimary)
-                        .frame(maxWidth: .infinity, minHeight: 42)
-                        .background(
-                            selectedCategory == category ? Theme.Color.graphite : Theme.Color.surfaceStrong,
-                            in: .capsule
-                        )
-                }
-                .buttonStyle(.plain)
-            }
-        }
+        GlassSegmentedControl(
+            items: ExplorerCategory.allCases,
+            selection: $selectedCategory,
+            title: \.title,
+            systemImage: \.icon
+        )
     }
 
     private var recommendationStack: some View {
@@ -69,6 +57,7 @@ struct ExplorerView: View {
                 title: selectedCategory.sampleTitle,
                 detail: selectedCategory.sampleDetail
             )
+            .vennScrollDepth()
         }
     }
 
@@ -79,11 +68,13 @@ struct ExplorerView: View {
                 title: "Add to watched",
                 detail: "Keep a permanent record of what you consumed."
             )
+            .vennScrollDepth()
             ExplorerActionRow(
                 icon: "bookmark",
                 title: "Save to watchlist",
                 detail: "A softer maybe list for later."
             )
+            .vennScrollDepth()
         }
     }
 }

@@ -21,6 +21,7 @@ struct FeedView: View {
                                 detail: "quiet, devastating, exactly the right kind of Sunday movie",
                                 rating: "4.5"
                             )
+                            .vennScrollDepth()
                             ActivityCard(
                                 name: "Theo",
                                 action: "rated",
@@ -28,6 +29,7 @@ struct FeedView: View {
                                 detail: "season 2 has the restaurant anxiety and the family ache",
                                 rating: "4.0"
                             )
+                            .vennScrollDepth()
                         }
                     }
                     .padding(.vertical, Theme.Spacing.lg)

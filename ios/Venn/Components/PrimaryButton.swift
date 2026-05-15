@@ -20,11 +20,11 @@ struct PrimaryButton: View {
                     .opacity(isLoading ? 0 : 1)
                 if isLoading {
                     ProgressView()
-                        .tint(.white)
+                        .tint(Theme.Color.onAccent)
                 }
             }
             .font(Theme.Font.headline)
-            .foregroundStyle(.white)
+            .foregroundStyle(Theme.Color.onAccent)
             .frame(maxWidth: .infinity, minHeight: 52)
             .background(Theme.Gradient.overlap, in: .capsule)
             .opacity(isEnabled ? 1 : 0.5)
