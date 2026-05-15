@@ -10,14 +10,16 @@ import Testing
 /// Commit the recorded `__Snapshots__/` files alongside the test file —
 /// they ARE the regression baseline.
 ///
-/// Layout strategy: every assertion uses `.image(layout: .fixed(...))`
-/// instead of `.device(...)`. Fixed-size frames are deterministic across
-/// host machines; full-device renders aren't because of safe-area insets,
-/// status-bar variations, and dynamic-type defaults.
+/// **Determinism**: every assertion goes through `assertComponent` which
+/// pins the color scheme to `.light` and uses a fixed-size frame. Without
+/// the color-scheme pin, our newly-adaptive Theme colors (e.g.
+/// `Theme.Color.onAccent`) render differently depending on the host
+/// simulator's default appearance, which differs between local Macs and
+/// the GitHub Actions runner.
 ///
-/// `perceptualPrecision: 0.95` lets sub-pixel font-rendering noise pass
-/// while still flagging real visual diffs. Tighten if tests start
-/// missing real regressions.
+/// `perceptualPrecision: 0.92` is the documented floor (see the saved
+/// memory `feedback_snapshot_precision`). It tolerates SF-Symbol hinting
+/// drift between machines while still flagging real visual diffs.
 @MainActor
 @Suite(.snapshots(record: .missing, diffTool: .ksdiff))
 struct ComponentSnapshotTests {
@@ -25,129 +27,141 @@ struct ComponentSnapshotTests {
 
     @Test
     func primaryButton_idle() {
-        let view = PrimaryButton(title: "Continue") {}
-            .padding(Theme.Spacing.lg)
-            .background(Theme.Color.background)
-
-        assertSnapshot(of: view, as: .image(
-            perceptualPrecision: 0.95,
-            layout: .fixed(width: 360, height: 96)
-        ))
+        assertComponent(
+            PrimaryButton(title: "Continue") {},
+            width: 360,
+            height: 96
+        )
     }
 
     @Test
     func primaryButton_loading() {
-        let view = PrimaryButton(title: "Continue", isLoading: true) {}
-            .padding(Theme.Spacing.lg)
-            .background(Theme.Color.background)
-
-        assertSnapshot(of: view, as: .image(
-            perceptualPrecision: 0.95,
-            layout: .fixed(width: 360, height: 96)
-        ))
+        assertComponent(
+            PrimaryButton(title: "Continue", isLoading: true) {},
+            width: 360,
+            height: 96
+        )
     }
 
     @Test
     func primaryButton_disabled() {
-        let view = PrimaryButton(title: "Continue", isEnabled: false) {}
-            .padding(Theme.Spacing.lg)
-            .background(Theme.Color.background)
-
-        assertSnapshot(of: view, as: .image(
-            perceptualPrecision: 0.95,
-            layout: .fixed(width: 360, height: 96)
-        ))
+        assertComponent(
+            PrimaryButton(title: "Continue", isEnabled: false) {},
+            width: 360,
+            height: 96
+        )
     }
 
     // MARK: - SecondaryButton
 
     @Test
     func secondaryButton_idle() {
-        let view = SecondaryButton(title: "Sign out") {}
-            .padding(Theme.Spacing.lg)
-            .background(Theme.Color.background)
-
-        assertSnapshot(of: view, as: .image(
-            perceptualPrecision: 0.95,
-            layout: .fixed(width: 360, height: 96)
-        ))
+        assertComponent(
+            SecondaryButton(title: "Sign out") {},
+            width: 360,
+            height: 96
+        )
     }
 
     @Test
     func secondaryButton_disabled() {
-        let view = SecondaryButton(title: "Sign out", isEnabled: false) {}
-            .padding(Theme.Spacing.lg)
-            .background(Theme.Color.background)
-
-        assertSnapshot(of: view, as: .image(
-            perceptualPrecision: 0.95,
-            layout: .fixed(width: 360, height: 96)
-        ))
+        assertComponent(
+            SecondaryButton(title: "Sign out", isEnabled: false) {},
+            width: 360,
+            height: 96
+        )
     }
 
     // MARK: - EmptyStateView
 
     @Test
     func emptyState_noAction() {
-        let view = EmptyStateView(
-            systemImage: "tray",
-            title: "Nothing here yet",
-            message: "Posts from people you follow will appear here."
+        assertComponent(
+            EmptyStateView(
+                systemImage: "tray",
+                title: "Nothing here yet",
+                message: "Posts from people you follow will appear here."
+            ),
+            width: 390,
+            height: 500
         )
-        .background(Theme.Color.background)
-
-        assertSnapshot(of: view, as: .image(
-            perceptualPrecision: 0.95,
-            layout: .fixed(width: 390, height: 500)
-        ))
     }
 
     @Test
     func emptyState_withAction() {
-        let view = EmptyStateView(
-            systemImage: "person.2",
-            title: "No friends yet",
-            message: "Find friends to see where your tastes overlap.",
-            actionTitle: "Find friends"
-        ) {}
-            .background(Theme.Color.background)
-
-        assertSnapshot(of: view, as: .image(
-            perceptualPrecision: 0.95,
-            layout: .fixed(width: 390, height: 560)
-        ))
+        assertComponent(
+            EmptyStateView(
+                systemImage: "person.2",
+                title: "No friends yet",
+                message: "Find friends to see where your tastes overlap.",
+                actionTitle: "Find friends"
+            ) {},
+            width: 390,
+            height: 560
+        )
     }
 
     // MARK: - VennOverlap (the brand primitive)
 
     @Test
     func vennOverlap_solo() {
-        let view = VennOverlap(mode: .solo(.init(
-            label: "Things you've logged",
-            count: 47
-        )))
-        .padding(Theme.Spacing.lg)
-        .background(Theme.Color.background)
-
-        assertSnapshot(of: view, as: .image(
-            perceptualPrecision: 0.95,
-            layout: .fixed(width: 390, height: 360)
-        ))
+        assertComponent(
+            VennOverlap(mode: .solo(.init(
+                label: "Things you've logged",
+                count: 47
+            ))),
+            width: 390,
+            height: 360
+        )
     }
 
     @Test
     func vennOverlap_pair() {
-        let view = VennOverlap(mode: .pair(
-            yours: .init(label: "Only you", count: 47),
-            theirs: .init(label: "Only Vivian", count: 32),
-            shared: 12
-        ))
-        .padding(Theme.Spacing.lg)
-        .background(Theme.Color.background)
+        assertComponent(
+            VennOverlap(mode: .pair(
+                yours: .init(label: "Only you", count: 47),
+                theirs: .init(label: "Only Vivian", count: 32),
+                shared: 12
+            )),
+            width: 390,
+            height: 360
+        )
+    }
 
-        assertSnapshot(of: view, as: .image(
-            perceptualPrecision: 0.95,
-            layout: .fixed(width: 390, height: 360)
-        ))
+    // MARK: - helpers
+
+    /// Centralises the test fixture so every assertion shares the same
+    /// color scheme, padding shape, background, and precision threshold.
+    ///
+    /// `testName` defaults to `#function` of the caller (which is the
+    /// `@Test` method's name), so each test gets its own snapshot file.
+    /// Without this, every test would collide on `assertComponent.png`.
+    private func assertComponent<V: View>(
+        _ view: V,
+        width: CGFloat,
+        height: CGFloat,
+        testName: String = #function,
+        fileID: StaticString = #fileID,
+        filePath: StaticString = #filePath,
+        line: UInt = #line,
+        column: UInt = #column
+    ) {
+        let composed = view
+            .padding(Theme.Spacing.lg)
+            .background(Theme.Color.background)
+            .environment(\.colorScheme, .light)
+
+        assertSnapshot(
+            of: composed,
+            as: .image(
+                perceptualPrecision: 0.92,
+                layout: .fixed(width: width, height: height)
+            ),
+            fileID: fileID,
+            file: filePath,
+            testName: testName,
+            line: line,
+            column: column
+        )
     }
 }
