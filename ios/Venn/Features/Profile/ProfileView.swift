@@ -93,6 +93,8 @@ struct ProfileView: View {
                         MetricTile(value: "0", label: "overlaps")
                     }
 
+                    ProfileAppearanceSection()
+
                     ProfileLibrarySection(categories: ProfileLibraryCategory.empty)
 
                     SecondaryButton(title: "Sign out") {
@@ -152,4 +154,5 @@ struct ProfileView: View {
     return ProfileView()
         .environment(state)
         .environment(provider)
+        .environment(AppearanceSettings())
 }

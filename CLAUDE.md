@@ -102,6 +102,7 @@ npm run db:push           # apply pending migrations to the linked remote
 - Match the existing folder structure. If you're adding a feature, create `ios/Venn/Features/<Name>/` with its own `<Name>Service.swift`, `<Name>ViewModel.swift`, `<Name>View.swift`.
 - For frontend work, design the file structure before coding. Create subfolders for major flows (`Features/Profile/Library/`, `Features/Explorer/Search/`) when a feature starts to grow, and keep individual SwiftUI files focused on one component or one screen section.
 - Before adding a new button, card, row, avatar, stat, chip, or surface style, search `ios/Venn/Components/` and the current feature folder for an existing primitive to reuse. If two screens need the same UI shape, extract it to `Components/` instead of duplicating it.
+- Before adding Liquid Glass, haptics, press states, segmented controls, or scroll motion, reuse the shared frontend primitives in `Components/Glass/`, `Components/Controls/`, and `Components/Interaction/`.
 - Avoid "prototype sprawl": debug-only or placeholder UI must be isolated behind `#if DEBUG` or clearly named `Prototype`, and it must not leak fake data into production services, models, or real view-models.
 - If the change touches Supabase, add or update a service rather than calling the client inline.
 - Add a unit test for any new pure function or service.

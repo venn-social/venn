@@ -17,6 +17,7 @@ import SwiftUI
                 }
             }
             .tint(Theme.Color.accent)
+            .vennTabFeedback(trigger: selection)
         }
 
         private static var initialSelection: MainTab {
@@ -33,5 +34,6 @@ import SwiftUI
 
     #Preview {
         DesignPreviewView()
+            .environment(AppearanceSettings())
     }
 #endif

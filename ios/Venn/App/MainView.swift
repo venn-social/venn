@@ -28,6 +28,7 @@ struct MainView: View {
             }
         }
         .tint(Theme.Color.accent)
+        .vennTabFeedback(trigger: selection)
         .accessibilityIdentifier("main_tab_view")
     }
 }
@@ -39,4 +40,5 @@ struct MainView: View {
         .environment(AppConfig.preview)
         .environment(provider)
         .environment(state)
+        .environment(AppearanceSettings())
 }

@@ -93,7 +93,7 @@ struct AuthView: View {
         .background(.ultraThinMaterial, in: .rect(cornerRadius: Theme.Radius.sm))
         .overlay {
             RoundedRectangle(cornerRadius: Theme.Radius.sm)
-                .stroke(.white.opacity(0.72), lineWidth: 1)
+                .stroke(Theme.Color.separator, lineWidth: 1)
         }
     }
 
