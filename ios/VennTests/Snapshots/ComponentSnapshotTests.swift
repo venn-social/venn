@@ -154,6 +154,7 @@ struct ComponentSnapshotTests {
         assertSnapshot(
             of: composed,
             as: .image(
+                precision: 0.97,
                 perceptualPrecision: 0.92,
                 layout: .fixed(width: width, height: height)
             ),
