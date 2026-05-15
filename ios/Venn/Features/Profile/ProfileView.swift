@@ -63,7 +63,7 @@ struct ProfileView: View {
         if let viewModel {
             switch viewModel.state {
             case .loading:
-                LoadingView(caption: "Loading your profile…")
+                DeferredLoadingView(caption: "Loading your profile…")
             case let .loaded(profile):
                 loadedView(profile)
             case let .error(reason):
@@ -101,6 +101,8 @@ struct ProfileView: View {
                         Task { await authState.signOut() }
                     }
 
+                    versionFooter
+
                     Spacer(minLength: 0)
                 }
                 .padding(.vertical, Theme.Spacing.lg)
@@ -135,6 +137,25 @@ struct ProfileView: View {
         case .unknown: "Something went wrong. Please try again."
         }
     }
+
+    private var versionFooter: some View {
+        Text(verbatim: Self.versionString)
+            .font(Theme.Font.footnote)
+            .foregroundStyle(Theme.Color.textSecondary)
+            .frame(maxWidth: .infinity, alignment: .center)
+            .padding(.top, Theme.Spacing.md)
+            .accessibilityIdentifier("profile_version_footer")
+    }
+
+    /// "venn 1.2.3 (4)" — short marketing version + build number from the
+    /// app bundle. Falls back to a placeholder if the Info.plist values
+    /// aren't readable (only happens in some preview contexts).
+    private static let versionString: String = {
+        let info = Bundle.main.infoDictionary
+        let version = info?["CFBundleShortVersionString"] as? String ?? "—"
+        let build = info?["CFBundleVersion"] as? String ?? "—"
+        return "venn \(version) (\(build))"
+    }()
 
     private func ensureLoaded() async {
         if viewModel == nil, case let .signedIn(session) = authState.status {
