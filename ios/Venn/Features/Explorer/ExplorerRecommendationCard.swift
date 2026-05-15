@@ -19,7 +19,7 @@ struct ExplorerRecommendationCard: View {
                     .foregroundStyle(Theme.Color.textPrimary)
                     .padding(.horizontal, Theme.Spacing.md)
                     .padding(.vertical, Theme.Spacing.sm)
-                    .background(Theme.Color.surfaceStrong, in: .capsule)
+                    .vennGlass(.regular, in: .capsule)
             }
 
             VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
@@ -37,10 +37,9 @@ struct ExplorerRecommendationCard: View {
             }
         }
         .padding(Theme.Spacing.lg)
-        .background(Theme.Color.surface, in: .rect(cornerRadius: Theme.Radius.sm))
         .overlay {
             RoundedRectangle(cornerRadius: Theme.Radius.sm)
-                .stroke(Theme.Color.separator, lineWidth: 0.5)
+                .stroke(Theme.Color.separator, lineWidth: 1.5)
         }
     }
 }

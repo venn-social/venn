@@ -25,16 +25,21 @@ enum AppThemeVariant {
         }
     }
 
+    /// Pale-lavender-white (light) / pure black (dark). Matches the FIRST
+    /// frame of the launch + loading videos so the iOS launch screen → SwiftUI
+    /// splash background → video transition is seamless. Without this, the
+    /// SwiftUI splash background (previously pure white) flashed white before
+    /// the video's slightly off-white background loaded in.
     var backgroundColor: Color {
         switch self {
-        case .light: .white
+        case .light: Color(red: 0.918, green: 0.933, blue: 0.961)
         case .dark: .black
         }
     }
 
     var uiBackgroundColor: UIColor {
         switch self {
-        case .light: .white
+        case .light: UIColor(red: 0.918, green: 0.933, blue: 0.961, alpha: 1)
         case .dark: .black
         }
     }

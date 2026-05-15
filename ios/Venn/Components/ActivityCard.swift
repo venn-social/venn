@@ -25,7 +25,7 @@ struct ActivityCard: View {
                         .foregroundStyle(Theme.Color.textPrimary)
                         .padding(.horizontal, Theme.Spacing.sm)
                         .padding(.vertical, Theme.Spacing.xs)
-                        .background(Theme.Color.surfaceStrong, in: .capsule)
+                        .vennGlass(.regular, in: .capsule)
                 }
             }
 
@@ -39,10 +39,9 @@ struct ActivityCard: View {
         }
         .padding(Theme.Spacing.lg)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Theme.Color.surface, in: .rect(cornerRadius: Theme.Radius.sm))
         .overlay {
             RoundedRectangle(cornerRadius: Theme.Radius.sm)
-                .stroke(Theme.Color.separator, lineWidth: 0.5)
+                .stroke(Theme.Color.separator, lineWidth: 1.5)
         }
     }
 }

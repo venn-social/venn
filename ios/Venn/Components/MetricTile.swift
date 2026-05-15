@@ -17,7 +17,10 @@ struct MetricTile: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, Theme.Spacing.md)
-        .background(Theme.Color.surfaceStrong, in: .rect(cornerRadius: Theme.Radius.sm))
+        .overlay {
+            RoundedRectangle(cornerRadius: Theme.Radius.sm)
+                .stroke(Theme.Color.separator, lineWidth: 1.5)
+        }
     }
 }
 

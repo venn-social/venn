@@ -26,9 +26,13 @@ import SwiftUI
                         .padding(.vertical, Theme.Spacing.lg)
                         .padding(.bottom, Theme.Spacing.xxxl * 2)
                     }
+                    .scrollContentBackground(.hidden)
                 }
                 .navigationTitle("Profile")
                 .navigationBarTitleDisplayMode(.inline)
+                .containerBackground(for: .navigation) {
+                    GlassSkyBackground()
+                }
             }
         }
     }

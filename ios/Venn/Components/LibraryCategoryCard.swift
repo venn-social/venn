@@ -16,7 +16,7 @@ struct LibraryCategoryCard: View {
                     .font(Theme.Font.headline)
                     .foregroundStyle(Theme.Color.textPrimary)
                     .frame(width: 36, height: 36)
-                    .background(Theme.Color.surfaceStrong, in: .rect(cornerRadius: Theme.Radius.sm))
+                    .vennGlass(.regular, in: .rect(cornerRadius: Theme.Radius.sm))
 
                 VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
                     Text(verbatim: title)
@@ -48,10 +48,9 @@ struct LibraryCategoryCard: View {
             .padding(.top, Theme.Spacing.sm)
             .padding(.bottom, Theme.Spacing.md)
         }
-        .background(Theme.Color.surface, in: .rect(cornerRadius: Theme.Radius.sm))
         .overlay {
             RoundedRectangle(cornerRadius: Theme.Radius.sm)
-                .stroke(Theme.Color.separator, lineWidth: 0.5)
+                .stroke(Theme.Color.separator, lineWidth: 1.5)
         }
     }
 
@@ -60,7 +59,7 @@ struct LibraryCategoryCard: View {
             .font(Theme.Font.caption.weight(.semibold))
             .foregroundStyle(Theme.Color.textPrimary)
             .frame(maxWidth: .infinity, minHeight: 34)
-            .background(Theme.Color.surfaceStrong, in: .capsule)
+            .vennGlass(.regular, in: .capsule)
     }
 }
 
