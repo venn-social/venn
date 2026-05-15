@@ -17,6 +17,11 @@ struct RootView: View {
 
     var body: some View {
         ZStack {
+            // Atmospheric gradient sits beneath everything, including the
+            // tab bar and nav bar, so Liquid Glass surfaces refract it.
+            // Splash covers the gradient during launch — no clash.
+            GlassSkyBackground()
+
             if isShowingLaunchSplash {
                 LaunchVideoSplashView()
                     .transition(.opacity)

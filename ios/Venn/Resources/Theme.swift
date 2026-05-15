@@ -46,6 +46,29 @@ enum Theme {
         )
         static let onAccent = adaptive(light: .white, dark: .black)
 
+        /// Reduce-Transparency fallback solid for the glass-sky background.
+        /// Approximates the gradient mid-tone so reduced-transparency users
+        /// see a coherent surface instead of stark white/black.
+        static let skySolid = adaptive(
+            light: UIColor(red: 0.90, green: 0.93, blue: 0.97, alpha: 1),
+            dark: UIColor(red: 0.06, green: 0.08, blue: 0.19, alpha: 1)
+        )
+
+        // MARK: - Glass-sky gradient stops (private; consumed by Theme.Gradient.sky)
+
+        fileprivate static let skyTop = adaptive(
+            light: UIColor(red: 0.94, green: 0.96, blue: 1.00, alpha: 1),
+            dark: UIColor(red: 0.04, green: 0.05, blue: 0.12, alpha: 1)
+        )
+        fileprivate static let skyMid = adaptive(
+            light: UIColor(red: 0.86, green: 0.91, blue: 0.97, alpha: 1),
+            dark: UIColor(red: 0.11, green: 0.23, blue: 0.50, alpha: 1)
+        )
+        fileprivate static let skyBottom = adaptive(
+            light: UIColor(red: 0.77, green: 0.82, blue: 0.89, alpha: 1),
+            dark: UIColor(red: 0.02, green: 0.04, blue: 0.10, alpha: 1)
+        )
+
         /// Brand accent. Used for primary actions and the center of the Venn
         /// overlap motif.
         static let accent = violet
@@ -82,6 +105,24 @@ enum Theme {
             colors: [Color.graphite, Color.graphite],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
+        )
+
+        /// App-wide background for the "glass-floating-over-sky" treatment.
+        /// Cool atmospheric stops (pale morning sky in light mode, deep
+        /// night sky in dark) read top-to-bottom. The mid stop in dark mode
+        /// lives in the same blue family as the brand accent so refractions
+        /// through Liquid Glass surfaces stay on-brand.
+        ///
+        /// Rendered edge-to-edge by `GlassSkyBackground`. Reduce
+        /// Transparency users get `Color.skySolid` instead.
+        static let sky = LinearGradient(
+            stops: [
+                .init(color: Color.skyTop, location: 0),
+                .init(color: Color.skyMid, location: 0.5),
+                .init(color: Color.skyBottom, location: 1),
+            ],
+            startPoint: .top,
+            endPoint: .bottom
         )
     }
 
