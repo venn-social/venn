@@ -63,7 +63,7 @@ struct ProfileView: View {
         if let viewModel {
             switch viewModel.state {
             case .loading:
-                LoadingView(caption: "Loading your profile…")
+                DeferredLoadingView(caption: "Loading your profile…")
             case let .loaded(profile):
                 loadedView(profile)
             case let .error(reason):

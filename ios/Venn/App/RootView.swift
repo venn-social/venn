@@ -27,7 +27,7 @@ struct RootView: View {
     @ViewBuilder private var routedContent: some View {
         switch authState.status {
         case .unknown:
-            LoadingView(caption: "Loading…")
+            DeferredLoadingView(caption: "Loading…")
         case .signedOut:
             AuthView(viewModel: AuthViewModel(
                 service: AuthService(client: clientProvider.client),
