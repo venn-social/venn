@@ -5,34 +5,37 @@ import Testing
 
 /// Snapshot baselines for the design-system primitives.
 ///
-/// Snapshots are recorded on first run (a missing snapshot fails the test
-/// once and creates the file); every run after compares pixel-for-pixel.
-/// Commit the recorded `__Snapshots__/` files alongside the test file —
-/// they ARE the regression baseline.
+/// **Source of truth = CI.** Snapshots that drift between local Macs and
+/// the GitHub Actions runner are routine for views that involve
+/// gradients, blend modes, or animations (PrimaryButton's capsule fill,
+/// VennOverlap's `.plusLighter` lobes). Trying to find a single
+/// precision threshold that satisfied both environments was a losing
+/// game (PR #68 burned 4 CI cycles on this). The record-on-CI workflow
+/// instead pins the baseline to what CI actually renders.
+///
+/// **Workflow when a snapshot fails:**
+/// 1. CI uploads the newly-rendered images as an artifact named
+///    `snapshot-baselines-<sha>` — see `.github/workflows/ci.yml`.
+/// 2. Download the artifact: `gh run download <run-id> -n
+///    snapshot-baselines-<sha>`.
+/// 3. Inspect the new PNGs visually. If they reflect intentional
+///    visual changes, copy them into
+///    `ios/VennTests/Snapshots/__Snapshots__/ComponentSnapshotTests/`.
+/// 4. Commit + push. CI re-runs and the new baselines match.
+///
+/// `record: .failed` makes the framework auto-write a snapshot whenever
+/// comparison fails, so step 1 happens automatically.
 ///
 /// **Determinism**: every assertion goes through `assertComponent` which
-/// pins the color scheme to `.light` and uses a fixed-size frame. Without
-/// the color-scheme pin, our newly-adaptive Theme colors (e.g.
-/// `Theme.Color.onAccent`) render differently depending on the host
-/// simulator's default appearance, which differs between local Macs and
-/// the GitHub Actions runner.
+/// pins the color scheme to `.light` and uses a fixed-size frame.
+/// Without the color-scheme pin, adaptive Theme colors render
+/// differently depending on the simulator's default appearance.
 ///
-/// **Precision**: `precision: 0.95, perceptualPrecision: 0.80`. Looser
-/// than the documented 0.92 floor in `feedback_snapshot_precision`
-/// because the brand-layer work introduced gradients (PrimaryButton's
-/// capsule fill) and blend-mode rendering (VennOverlap's `.plusLighter`
-/// lobes) that drift more than 0.92 tolerates between local Macs and
-/// the GitHub Actions runner.
-///
-/// **What this catches:** layout regressions, color/typography swaps,
-/// missing or extra elements, structural changes — anything that shifts
-/// more than ~5% of pixels or moves a pixel by more than ~20% in colour.
-/// **What this misses:** subtle gradient-stop tweaks, small shadow
-/// adjustments, single-pixel border changes. For those, eye the
-/// simulator. Tighten back if the tests start letting real regressions
-/// through; switch to record-on-CI if cross-machine drift gets worse.
+/// **Precision**: `precision: 0.95, perceptualPrecision: 0.80`. Once
+/// baselines come from CI itself, this tolerance is effectively just
+/// belt-and-suspenders against any leftover noise.
 @MainActor
-@Suite(.snapshots(record: .missing, diffTool: .ksdiff))
+@Suite(.snapshots(record: .failed, diffTool: .ksdiff))
 struct ComponentSnapshotTests {
     // MARK: - PrimaryButton
 

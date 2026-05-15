@@ -107,6 +107,22 @@ jobs:
             -resultBundlePath build/test-results.xcresult \
             -enableCodeCoverage YES \
             test | xcbeautify --is-ci
+      # When snapshot tests fail, the suite (configured with
+      # `record: .failed`) writes the freshly-rendered images into
+      # __Snapshots__/ alongside the existing baselines. Upload that
+      # directory so a maintainer can `gh run download <run-id> -n
+      # snapshot-baselines-<sha>`, inspect the diffs, and commit the
+      # CI-rendered baselines if the changes are intentional.
+      # Cross-machine pixel drift is the rule, not the exception, for
+      # gradient + blend-mode views — CI is the source of truth.
+      - name: Upload snapshot baselines on test failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: snapshot-baselines-${{ github.sha }}
+          path: ios/VennTests/Snapshots/__Snapshots__/
+          retention-days: 14
+          if-no-files-found: ignore
       # Read the xccov report and fail the job if coverage drops below the
       # repo-wide threshold. The threshold is intentionally conservative
       # (we don't unit-test SwiftUI views) and can be ratcheted up as the
