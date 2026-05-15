@@ -35,7 +35,18 @@ import Testing
 /// baselines come from CI itself, this tolerance is effectively just
 /// belt-and-suspenders against any leftover noise.
 @MainActor
-@Suite(.snapshots(record: .failed, diffTool: .ksdiff))
+@Suite(
+    .snapshots(record: .failed, diffTool: .ksdiff),
+    .disabled(
+        if: ProcessInfo.processInfo.environment["CI"] != "true",
+        """
+        Snapshot baselines are recorded on the GitHub Actions runner and \
+        won't match local rendering for views with gradients or blend modes. \
+        Run on CI only. To record new baselines locally for development, \
+        set CI=true in your shell before invoking the tests.
+        """
+    )
+)
 struct ComponentSnapshotTests {
     // MARK: - PrimaryButton
 
