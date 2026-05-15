@@ -5,7 +5,7 @@ import SwiftUI
 /// model with the live `AuthService` only when the user is actually signed
 /// out, so we don't construct it during the splash flash.
 struct RootView: View {
-    private static let launchSplashDuration: Duration = .seconds(5)
+    private static let launchSplashDuration: Duration = .seconds(2)
 
     @Environment(AuthState.self)
     private var authState

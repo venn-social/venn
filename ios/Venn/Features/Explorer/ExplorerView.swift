@@ -19,10 +19,14 @@ struct ExplorerView: View {
                     .padding(.vertical, Theme.Spacing.lg)
                     .padding(.bottom, Theme.Spacing.xxxl)
                 }
+                .scrollContentBackground(.hidden)
             }
             .navigationTitle("Explorer")
             .navigationBarTitleDisplayMode(.inline)
             .searchable(text: $query, prompt: Text("Search movies, music, books"))
+            .containerBackground(for: .navigation) {
+                GlassSkyBackground()
+            }
         }
     }
 

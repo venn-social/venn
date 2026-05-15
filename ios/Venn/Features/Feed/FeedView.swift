@@ -35,9 +35,13 @@ struct FeedView: View {
                     .padding(.vertical, Theme.Spacing.lg)
                     .padding(.bottom, Theme.Spacing.xxxl)
                 }
+                .scrollContentBackground(.hidden)
             }
             .navigationTitle("Feed")
             .navigationBarTitleDisplayMode(.inline)
+            .containerBackground(for: .navigation) {
+                GlassSkyBackground()
+            }
         }
     }
 }

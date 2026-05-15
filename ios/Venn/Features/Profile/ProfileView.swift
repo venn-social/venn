@@ -41,6 +41,9 @@ struct ProfileView: View {
                         )
                     }
                 }
+                .containerBackground(for: .navigation) {
+                    GlassSkyBackground()
+                }
         }
         .task { await ensureLoaded() }
     }
@@ -108,6 +111,7 @@ struct ProfileView: View {
                 .padding(.vertical, Theme.Spacing.lg)
                 .padding(.bottom, Theme.Spacing.xxxl * 2)
             }
+            .scrollContentBackground(.hidden)
         }
     }
 

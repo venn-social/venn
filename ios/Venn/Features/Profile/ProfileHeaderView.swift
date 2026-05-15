@@ -28,7 +28,10 @@ struct ProfileHeaderView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(Theme.Spacing.lg)
-        .background(Theme.Color.surface, in: .rect(cornerRadius: Theme.Radius.sm))
+        .overlay {
+            RoundedRectangle(cornerRadius: Theme.Radius.sm)
+                .stroke(Theme.Color.separator, lineWidth: 1.5)
+        }
     }
 }
 
