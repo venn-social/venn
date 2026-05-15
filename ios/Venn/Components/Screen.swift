@@ -33,10 +33,6 @@ struct Screen<Content: View>: View {
         content()
             .padding(padding)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background {
-                Theme.Gradient.wash
-                    .ignoresSafeArea()
-            }
     }
 }
 
