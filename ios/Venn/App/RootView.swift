@@ -5,7 +5,12 @@ import SwiftUI
 /// model with the live `AuthService` only when the user is actually signed
 /// out, so we don't construct it during the splash flash.
 struct RootView: View {
-    private static let launchSplashDuration: Duration = .seconds(2)
+    /// Safety fallback. Splash normally dismisses on `LaunchVideoSplashView`
+    /// `onCompletion` (when the launch video finishes — `venn-launch-light`
+    /// is ~8.3s, `venn-launch-dark` is ~5s). This timer only fires if the
+    /// video fails to load and the completion callback never arrives; set
+    /// generously above the longest video's duration.
+    private static let launchSplashFallbackDuration: Duration = .seconds(12)
 
     @Environment(AuthState.self)
     private var authState
@@ -23,7 +28,7 @@ struct RootView: View {
             GlassSkyBackground()
 
             if isShowingLaunchSplash {
-                LaunchVideoSplashView()
+                LaunchVideoSplashView(onCompletion: dismissLaunchSplash)
                     .transition(.opacity)
             } else {
                 appContent
@@ -31,7 +36,7 @@ struct RootView: View {
             }
         }
         .task {
-            await dismissLaunchSplash()
+            await waitForLaunchSplashFallback()
         }
     }
 
@@ -62,18 +67,24 @@ struct RootView: View {
     }
 
     @MainActor
-    private func dismissLaunchSplash() async {
+    private func dismissLaunchSplash() {
+        guard isShowingLaunchSplash else { return }
+        withAnimation(.easeInOut(duration: 0.35)) {
+            isShowingLaunchSplash = false
+        }
+    }
+
+    @MainActor
+    private func waitForLaunchSplashFallback() async {
         guard isShowingLaunchSplash else { return }
         if ProcessInfo.processInfo.arguments.contains("-skipLaunchSplash") {
             isShowingLaunchSplash = false
             return
         }
 
-        try? await Task.sleep(for: Self.launchSplashDuration)
+        try? await Task.sleep(for: Self.launchSplashFallbackDuration)
         guard !Task.isCancelled else { return }
-        withAnimation(.easeInOut(duration: 0.35)) {
-            isShowingLaunchSplash = false
-        }
+        dismissLaunchSplash()
     }
 }
 
