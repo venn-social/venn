@@ -6,6 +6,7 @@ struct VennApp: App {
     @State private var clientProvider: SupabaseClientProvider
     @State private var authState: AuthState
     @State private var appearanceSettings: AppearanceSettings
+    @State private var scrollState: ScrollState
     private let authService: AuthService
 
     init() {
@@ -19,6 +20,7 @@ struct VennApp: App {
         _clientProvider = State(initialValue: provider)
         _authState = State(initialValue: AuthState(service: service))
         _appearanceSettings = State(initialValue: AppearanceSettings())
+        _scrollState = State(initialValue: ScrollState())
         authService = service
     }
 
@@ -29,6 +31,7 @@ struct VennApp: App {
                 .environment(clientProvider)
                 .environment(authState)
                 .environment(appearanceSettings)
+                .environment(scrollState)
                 .preferredColorScheme(appearanceSettings.mode.preferredColorScheme)
                 .task { await authState.bootstrap() }
                 .onOpenURL { url in

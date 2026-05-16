@@ -36,6 +36,7 @@ struct FeedView: View {
                     .padding(.bottom, Theme.Spacing.xxxl)
                 }
                 .scrollContentBackground(.hidden)
+                .tracksGlassSkyParallax()
             }
             .navigationTitle("Feed")
             .navigationBarTitleDisplayMode(.inline)

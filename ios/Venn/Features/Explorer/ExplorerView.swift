@@ -20,6 +20,7 @@ struct ExplorerView: View {
                     .padding(.bottom, Theme.Spacing.xxxl)
                 }
                 .scrollContentBackground(.hidden)
+                .tracksGlassSkyParallax()
             }
             .navigationTitle("Explorer")
             .navigationBarTitleDisplayMode(.inline)

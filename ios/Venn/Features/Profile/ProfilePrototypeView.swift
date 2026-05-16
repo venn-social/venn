@@ -27,6 +27,7 @@ import SwiftUI
                         .padding(.bottom, Theme.Spacing.xxxl * 2)
                     }
                     .scrollContentBackground(.hidden)
+                    .tracksGlassSkyParallax()
                 }
                 .navigationTitle("Profile")
                 .navigationBarTitleDisplayMode(.inline)

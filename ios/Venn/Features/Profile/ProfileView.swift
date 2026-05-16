@@ -112,6 +112,7 @@ struct ProfileView: View {
                 .padding(.bottom, Theme.Spacing.xxxl * 2)
             }
             .scrollContentBackground(.hidden)
+            .tracksGlassSkyParallax()
         }
     }
 
