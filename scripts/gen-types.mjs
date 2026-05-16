@@ -93,7 +93,21 @@ function renderTable(tableName, cols) {
     `    struct Row: Codable, Equatable {`,
   ];
 
-  for (const c of cols) {
+  // Skip jsonb columns. Swift's `Data` (the obvious mapping) requires the
+  // wire value to be a base64 String, but Postgrest returns jsonb as a
+  // JSON object/array. Until a column has a known shape worth modelling
+  // as a dedicated Decodable struct, omit it from the row DTO — extra
+  // JSON keys in the response are ignored on decode, so consumers can
+  // add a typed sub-DTO when they need access.
+  const decodable = cols.filter((c) => c.udt_name !== "jsonb" && c.udt_name !== "json");
+  const skipped = cols.filter((c) => c.udt_name === "jsonb" || c.udt_name === "json");
+  for (const c of skipped) {
+    lines.push(
+      `        // ${c.column_name}: ${c.udt_name} (omitted — decode via a dedicated DTO when needed)`
+    );
+  }
+
+  for (const c of decodable) {
     const swiftName = camelCase(c.column_name);
     const swiftType = mapType(c);
     const optional = c.is_nullable === "YES" ? "?" : "";
@@ -101,13 +115,13 @@ function renderTable(tableName, cols) {
   }
 
   // CodingKeys when any column requires a snake_case → camelCase remap.
-  const remapped = cols.filter(
+  const remapped = decodable.filter(
     (c) => camelCase(c.column_name) !== c.column_name
   );
   if (remapped.length > 0) {
     lines.push("");
     lines.push("        enum CodingKeys: String, CodingKey {");
-    for (const c of cols) {
+    for (const c of decodable) {
       const swiftName = camelCase(c.column_name);
       if (swiftName === c.column_name) {
         lines.push(`            case ${swiftName}`);

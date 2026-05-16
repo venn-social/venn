@@ -5,7 +5,7 @@ import Foundation
 ///
 /// Lives in `Models/` because more than one feature reads profiles (Auth,
 /// Profile, Feed for post authors).
-struct UserProfile: Decodable, Identifiable, Equatable {
+struct UserProfile: Decodable, Identifiable, Equatable, Hashable {
     let id: UUID
     let username: String
     let displayName: String?
