@@ -20,6 +20,7 @@ struct ProfileAppearanceSection: View {
             )
             .accessibilityIdentifier("appearance_theme_picker")
         }
+        .sensoryFeedback(.selection, trigger: appearanceSettings.mode)
     }
 
     private var selection: Binding<AppThemeMode> {

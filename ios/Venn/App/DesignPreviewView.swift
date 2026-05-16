@@ -18,6 +18,7 @@ import SwiftUI
             }
             .tint(Theme.Color.accent)
             .vennTabFeedback(trigger: selection)
+            .swipeBetweenTabs(selection: $selection)
         }
 
         private static var initialSelection: MainTab {
