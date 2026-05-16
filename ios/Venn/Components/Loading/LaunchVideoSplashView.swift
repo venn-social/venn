@@ -1,7 +1,16 @@
 import SwiftUI
 
 /// Full-screen brand splash shown once at app startup.
+///
+/// `onCompletion` fires when the launch video finishes playing, or after a
+/// short hold for Reduce Motion users (who see `StaticLaunchMark` instead of
+/// the video). Owners drive splash dismissal off this callback rather than a
+/// hardcoded timer so the brand intro always plays to its natural end.
 struct LaunchVideoSplashView: View {
+    private static let reduceMotionHoldDuration: Duration = .seconds(1.5)
+
+    var onCompletion: (@MainActor () -> Void)?
+
     @Environment(AppearanceSettings.self)
     private var appearanceSettings
     @Environment(\.accessibilityReduceMotion)
@@ -18,10 +27,16 @@ struct LaunchVideoSplashView: View {
 
             if reduceMotion {
                 StaticLaunchMark(color: variant.markColor)
+                    .task {
+                        try? await Task.sleep(for: Self.reduceMotionHoldDuration)
+                        guard !Task.isCancelled else { return }
+                        onCompletion?()
+                    }
             } else {
                 VennVideoPlayer(
                     resource: variant.launchVideo,
-                    backgroundColor: variant.uiBackgroundColor
+                    backgroundColor: variant.uiBackgroundColor,
+                    onCompletion: onCompletion
                 )
                 .id(variant.launchVideo.name)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)

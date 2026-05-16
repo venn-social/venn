@@ -10,6 +10,7 @@ struct VennVideoPlayer: UIViewRepresentable {
     var loops = false
     var videoGravity: AVLayerVideoGravity = .resizeAspectFill
     var backgroundColor: UIColor = .black
+    var onCompletion: (@MainActor () -> Void)?
 
     func makeCoordinator() -> Coordinator {
         Coordinator()
@@ -33,6 +34,7 @@ struct VennVideoPlayer: UIViewRepresentable {
 
     static func dismantleUIView(_ uiView: VennVideoContainerView, coordinator: Coordinator) {
         coordinator.looper = nil
+        coordinator.removeEndObserver()
         uiView.player?.pause()
         uiView.player = nil
     }
@@ -43,6 +45,7 @@ struct VennVideoPlayer: UIViewRepresentable {
         view.resource = resource
         view.loops = loops
         coordinator.looper = nil
+        coordinator.removeEndObserver()
 
         guard let url = resource.url else {
             view.player = nil
@@ -57,15 +60,34 @@ struct VennVideoPlayer: UIViewRepresentable {
             let item = AVPlayerItem(url: url)
             coordinator.looper = AVPlayerLooper(player: player, templateItem: item)
         } else {
-            player.insert(AVPlayerItem(url: url), after: nil)
+            let item = AVPlayerItem(url: url)
+            if let onCompletion {
+                coordinator.endObserver = NotificationCenter.default.addObserver(
+                    forName: .AVPlayerItemDidPlayToEndTime,
+                    object: item,
+                    queue: .main
+                ) { _ in
+                    Task { @MainActor in onCompletion() }
+                }
+            }
+            player.insert(item, after: nil)
         }
 
         view.player = player
         player.play()
     }
 
+    @MainActor
     final class Coordinator {
         var looper: AVPlayerLooper?
+        var endObserver: NSObjectProtocol?
+
+        func removeEndObserver() {
+            if let endObserver {
+                NotificationCenter.default.removeObserver(endObserver)
+                self.endObserver = nil
+            }
+        }
     }
 }
 
