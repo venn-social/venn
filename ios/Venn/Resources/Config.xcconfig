@@ -5,12 +5,15 @@
 // (gitignored, regenerated at build time by the pre-build script).
 // =============================================================================
 
-#include? "GeneratedConfig.xcconfig"
-
-// Defaults. The generated file overrides these at build time when .env is set.
+// Defaults. The generated file (included AFTER, so it wins) overrides
+// these at build time when .env is set. In xcconfig, later declarations
+// override earlier ones — putting the include first means the defaults
+// override the generated values, which is the opposite of what you want.
 SUPABASE_URL = https:/$()/example.supabase.co
 SUPABASE_ANON_KEY = unset
 APP_ENV = development
 SENTRY_DSN =
 POSTHOG_API_KEY =
 POSTHOG_HOST = https:/$()/us.i.posthog.com
+
+#include? "GeneratedConfig.xcconfig"
