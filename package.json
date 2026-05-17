@@ -19,7 +19,8 @@
     "db:new": "supabase migration new",
     "db:push": "supabase db push",
     "db:pull": "supabase db pull",
-    "db:types": "node --env-file=.env scripts/gen-types.mjs"
+    "db:types": "node --env-file=.env scripts/gen-types.mjs",
+    "db:seed": "node --env-file=.env scripts/seed-remote.mjs"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.0.0",
