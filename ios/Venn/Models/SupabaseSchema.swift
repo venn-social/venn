@@ -9,24 +9,67 @@ import Foundation
 
 // swiftlint:disable nesting
 
+enum FollowsSchema {
+    /// Row shape for the `public.follows` table.
+    struct Row: Codable, Equatable {
+        let followerId: UUID
+        let followeeId: UUID
+        let createdAt: Date
+
+        enum CodingKeys: String, CodingKey {
+            case followerId = "follower_id"
+            case followeeId = "followee_id"
+            case createdAt = "created_at"
+        }
+    }
+}
+
+enum MediaSchema {
+    /// Row shape for the `public.media` table.
+    struct Row: Codable, Equatable {
+        // metadata: jsonb (omitted — decode via a dedicated DTO when needed)
+        let id: UUID
+        let kind: String
+        let title: String
+        let year: Int?
+        let primaryCreator: String?
+        let coverUrl: String?
+        let externalId: String?
+        let externalSource: String?
+        let createdAt: Date
+
+        enum CodingKeys: String, CodingKey {
+            case id
+            case kind
+            case title
+            case year
+            case primaryCreator = "primary_creator"
+            case coverUrl = "cover_url"
+            case externalId = "external_id"
+            case externalSource = "external_source"
+            case createdAt = "created_at"
+        }
+    }
+}
+
 enum PostsSchema {
     /// Row shape for the `public.posts` table.
     struct Row: Codable, Equatable {
         let id: UUID
         let authorId: UUID
-        let caption: String
-        let mediaUrl: String?
-        let likeCount: Int
-        let commentCount: Int
+        let mediaId: UUID
+        let action: String
+        let rating: Double?
+        let caption: String?
         let createdAt: Date
 
         enum CodingKeys: String, CodingKey {
             case id
             case authorId = "author_id"
+            case mediaId = "media_id"
+            case action
+            case rating
             case caption
-            case mediaUrl = "media_url"
-            case likeCount = "like_count"
-            case commentCount = "comment_count"
             case createdAt = "created_at"
         }
     }
