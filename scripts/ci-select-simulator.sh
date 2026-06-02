@@ -50,7 +50,23 @@ if [[ -z "$udid" ]]; then
 fi
 
 xcrun simctl boot "$udid" >/dev/null 2>&1 || true
-xcrun simctl bootstatus "$udid" -b
+
+for _ in {1..30}; do
+  state="$(
+    xcrun simctl list devices available -j |
+      jq -r --arg udid "$udid" '[.devices[][] | select(.udid == $udid) | .state][0] // empty'
+  )"
+
+  if [[ "$state" == "Booted" ]]; then
+    break
+  fi
+
+  sleep 2
+done
+
+if [[ "${state:-}" != "Booted" ]]; then
+  echo "::warning::Simulator did not report Booted before timeout; xcodebuild will continue with the selected destination."
+fi
 
 destination="platform=iOS Simulator,id=$udid"
 echo "Selected simulator destination: $destination"
