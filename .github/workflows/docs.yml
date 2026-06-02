@@ -41,13 +41,15 @@ jobs:
         run: brew install xcodegen xcbeautify
       - name: Generate Xcode project
         run: cd ios && xcodegen generate
+      - name: Prepare docs simulator
+        run: bash scripts/ci-select-simulator.sh "Venn Docs iPhone"
       - name: Build DocC archive
         run: |
           set -o pipefail
           xcodebuild docbuild \
             -project ios/Venn.xcodeproj \
             -scheme Venn \
-            -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=latest' \
+            -destination "$TEST_DESTINATION" \
             -derivedDataPath build/DerivedData | xcbeautify --is-ci
       - name: Transform for static hosting
         run: |
