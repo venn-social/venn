@@ -1,5 +1,9 @@
-import SwiftUI
+import Foundation
 
+/// Top-level Explorer category. Three for now (Movies / Music / Books) to
+/// match the segmented control's tight rhythm. The schema also supports
+/// `show`; it surfaces through Feed and lands in Explorer when the
+/// design refresh expands the picker.
 enum ExplorerCategory: String, CaseIterable, Hashable, Identifiable {
     case movies
     case music
@@ -25,19 +29,13 @@ enum ExplorerCategory: String, CaseIterable, Hashable, Identifiable {
         }
     }
 
-    var sampleTitle: String {
+    /// Map the UI category to the schema's `MediaKind`. "Music" surfaces
+    /// albums today — there's no track-level media in the catalog yet.
+    var mediaKind: MediaKind {
         switch self {
-        case .movies: "Aftersun"
-        case .music: "Dragon New Warm Mountain I Believe in You"
-        case .books: "Tomorrow, and Tomorrow, and Tomorrow"
-        }
-    }
-
-    var sampleDetail: String {
-        switch self {
-        case .movies: "Because you and Maya both logged soft heartbreak movies."
-        case .music: "Because your friends keep saving sprawling, warm albums."
-        case .books: "Because your overlap skews toward friendship stories with sharp edges."
+        case .movies: .movie
+        case .music: .album
+        case .books: .book
         }
     }
 }

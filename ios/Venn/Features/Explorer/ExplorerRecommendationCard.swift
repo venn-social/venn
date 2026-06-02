@@ -1,5 +1,8 @@
 import SwiftUI
 
+/// Single recommendation tile. Stays a thin presentational primitive —
+/// takes already-formatted strings so the same shape works for real
+/// media and for prototype/preview content.
 struct ExplorerRecommendationCard: View {
     let category: ExplorerCategory
     let title: String
@@ -14,21 +17,17 @@ struct ExplorerRecommendationCard: View {
                     .frame(width: 46, height: 46)
                     .background(Theme.Color.graphite, in: .rect(cornerRadius: Theme.Radius.sm))
                 Spacer()
-                Text("82% match")
-                    .font(Theme.Font.caption.weight(.bold))
-                    .foregroundStyle(Theme.Color.textPrimary)
-                    .padding(.horizontal, Theme.Spacing.md)
-                    .padding(.vertical, Theme.Spacing.sm)
-                    .vennGlass(.regular, in: .capsule)
             }
 
             VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
                 Text(title)
                     .font(Theme.Font.title3)
                     .foregroundStyle(Theme.Color.textPrimary)
-                Text(detail)
-                    .font(Theme.Font.body)
-                    .foregroundStyle(Theme.Color.textSecondary)
+                if !detail.isEmpty {
+                    Text(detail)
+                        .font(Theme.Font.body)
+                        .foregroundStyle(Theme.Color.textSecondary)
+                }
             }
 
             HStack(spacing: Theme.Spacing.sm) {
@@ -44,11 +43,29 @@ struct ExplorerRecommendationCard: View {
     }
 }
 
+extension ExplorerRecommendationCard {
+    /// Build a card from a domain `Media`. Detail line is "year · creator"
+    /// when both are present, or whichever single one we have.
+    init(media: Media, category: ExplorerCategory) {
+        self.init(
+            category: category,
+            title: media.title,
+            detail: Self.detail(for: media)
+        )
+    }
+
+    private static func detail(for media: Media) -> String {
+        [media.year.map(String.init), media.primaryCreator]
+            .compactMap(\.self)
+            .joined(separator: " · ")
+    }
+}
+
 #Preview {
     ExplorerRecommendationCard(
         category: .movies,
         title: "Aftersun",
-        detail: "Because you and Maya both logged soft heartbreak movies."
+        detail: "2022 · Charlotte Wells"
     )
     .padding(Theme.Spacing.lg)
 }

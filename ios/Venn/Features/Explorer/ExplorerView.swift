@@ -1,10 +1,17 @@
 import SwiftUI
 
-/// Frontend prototype for the Explorer tab: recommendations plus search for
-/// movies, music, and books the user has watched/read/listened to or wants to.
+/// Explorer tab. Loads recent media of the selected kind from
+/// `ExplorerService` and renders them as a stack of recommendation
+/// cards. Reloads when the user switches the category picker. Search
+/// is decorative for now — wiring full-text search needs Postgres
+/// `tsvector` infra that hasn't landed yet.
 struct ExplorerView: View {
+    @Environment(SupabaseClientProvider.self)
+    private var clientProvider
+
     @State private var query = ""
     @State private var selectedCategory: ExplorerCategory = .movies
+    @State private var viewModel: ExplorerViewModel?
 
     var body: some View {
         NavigationStack {
@@ -28,6 +35,10 @@ struct ExplorerView: View {
             .containerBackground(for: .navigation) {
                 GlassSkyBackground()
             }
+        }
+        .task { await ensureLoaded() }
+        .onChange(of: selectedCategory) { _, newCategory in
+            Task { await viewModel?.load(kind: newCategory.mediaKind) }
         }
     }
 
@@ -57,13 +68,55 @@ struct ExplorerView: View {
                 .font(Theme.Font.title3)
                 .foregroundStyle(Theme.Color.textPrimary)
 
-            ExplorerRecommendationCard(
-                category: selectedCategory,
-                title: selectedCategory.sampleTitle,
-                detail: selectedCategory.sampleDetail
-            )
-            .vennScrollDepth()
+            if let viewModel {
+                switch viewModel.state {
+                case .loading:
+                    DeferredLoadingView(caption: "Looking for something good…")
+                case let .loaded(media):
+                    if media.isEmpty {
+                        emptyView
+                    } else {
+                        loadedList(media)
+                    }
+                case let .error(reason):
+                    errorView(reason: reason) {
+                        Task { await viewModel.load(kind: selectedCategory.mediaKind) }
+                    }
+                }
+            }
         }
+    }
+
+    private func loadedList(_ media: [Media]) -> some View {
+        VStack(spacing: Theme.Spacing.md) {
+            ForEach(media) { item in
+                ExplorerRecommendationCard(media: item, category: selectedCategory)
+                    .vennScrollDepth()
+            }
+        }
+    }
+
+    private var emptyView: some View {
+        EmptyStateView(
+            systemImage: "magnifyingglass",
+            title: "Nothing here yet",
+            message: "We don't have any \(selectedCategory.title.lowercased()) in the catalog yet."
+        )
+    }
+
+    private func errorView(
+        reason: ExplorerViewModel.ErrorReason,
+        retry: @escaping () -> Void
+    ) -> some View {
+        EmptyStateView(
+            systemImage: reason == .offline ? "wifi.slash" : "exclamationmark.triangle",
+            title: reason == .offline ? "You're offline" : "Couldn't load recommendations",
+            message: reason == .offline
+                ? "Reconnect to see what's new."
+                : "Something went wrong. Try again in a moment.",
+            actionTitle: "Try again",
+            action: retry
+        )
     }
 
     private var quickActions: some View {
@@ -82,8 +135,19 @@ struct ExplorerView: View {
             .vennScrollDepth()
         }
     }
+
+    private func ensureLoaded() async {
+        if viewModel == nil {
+            let viewModel = ExplorerViewModel(
+                service: ExplorerService(client: clientProvider.client)
+            )
+            self.viewModel = viewModel
+            await viewModel.load(kind: selectedCategory.mediaKind)
+        }
+    }
 }
 
 #Preview {
     ExplorerView()
+        .environment(SupabaseClientProvider.preview)
 }
