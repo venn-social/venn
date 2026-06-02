@@ -27,23 +27,57 @@ struct ProfileLibraryCategory: Identifiable {
     let icon: String
     let title: String
     let subtitle: String
+    /// Schema `MediaKind` this row counts. Nil for categories that
+    /// aren't in the MVP scope yet (Restaurants, Games) — those keep
+    /// rendering their empty-state copy regardless of real metrics.
+    let mediaKind: MediaKind?
     var primaryActionTitle = "Watchlist"
     var secondaryActionTitle = "Data Room"
 }
 
 extension ProfileLibraryCategory {
     static let prototype: [ProfileLibraryCategory] = [
-        .init(id: "movies", icon: "film", title: "Movies", subtitle: "42 watched · 12 watchlist"),
-        .init(id: "music", icon: "music.note", title: "Music", subtitle: "51 listened · 9 saved"),
-        .init(id: "books", icon: "book.closed", title: "Books", subtitle: "18 read · 7 reading list"),
-        .init(id: "restaurants", icon: "fork.knife", title: "Restaurants", subtitle: "17 tried · 6 bucket list"),
+        .init(id: "movies", icon: "film", title: "Movies", subtitle: "42 watched · 12 watchlist", mediaKind: .movie),
+        .init(id: "music", icon: "music.note", title: "Music", subtitle: "51 listened · 9 saved", mediaKind: .album),
+        .init(id: "books", icon: "book.closed", title: "Books", subtitle: "18 read · 7 reading list", mediaKind: .book),
+        .init(
+            id: "restaurants",
+            icon: "fork.knife",
+            title: "Restaurants",
+            subtitle: "17 tried · 6 bucket list",
+            mediaKind: nil
+        ),
     ]
 
     static let empty: [ProfileLibraryCategory] = [
-        .init(id: "movies", icon: "film", title: "Movies", subtitle: "Watchlist and watched history"),
-        .init(id: "music", icon: "music.note", title: "Music", subtitle: "Saved albums and listening history"),
-        .init(id: "books", icon: "book.closed", title: "Books", subtitle: "Reading list and finished books"),
-        .init(id: "restaurants", icon: "fork.knife", title: "Restaurants", subtitle: "Bucket list and tried spots"),
+        .init(
+            id: "movies",
+            icon: "film",
+            title: "Movies",
+            subtitle: "Watchlist and watched history",
+            mediaKind: .movie
+        ),
+        .init(
+            id: "music",
+            icon: "music.note",
+            title: "Music",
+            subtitle: "Saved albums and listening history",
+            mediaKind: .album
+        ),
+        .init(
+            id: "books",
+            icon: "book.closed",
+            title: "Books",
+            subtitle: "Reading list and finished books",
+            mediaKind: .book
+        ),
+        .init(
+            id: "restaurants",
+            icon: "fork.knife",
+            title: "Restaurants",
+            subtitle: "Bucket list and tried spots",
+            mediaKind: nil
+        ),
     ]
 }
 

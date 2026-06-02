@@ -16,19 +16,21 @@ struct ProfileViewModelTests {
     @Test
     func loadSuccessTransitionsToLoaded() async {
         let profile = makeProfile(username: "ada")
+        let metrics = makeMetrics(logged: 5, saved: 2, rated: 3)
         let service = FakeProfileService()
         service.result = .success(profile)
+        service.metricsResult = .success(metrics)
         let viewModel = ProfileViewModel(userID: profile.id, service: service)
 
         await viewModel.load()
 
-        #expect(viewModel.state == .loaded(profile))
+        #expect(viewModel.state == .loaded(.init(profile: profile, metrics: metrics)))
         #expect(service.lastRequestedID == profile.id)
+        #expect(service.lastMetricsID == profile.id)
     }
 
     @Test
     func loadFailureWithNonAppErrorFallsBackToUnknown() async {
-        // A raw Error (not an AppError) goes down the catch-all branch.
         struct Boom: Error {}
         let viewModel = makeViewModel(failingWith: Boom())
 
@@ -56,7 +58,22 @@ struct ProfileViewModelTests {
     }
 
     @Test
-    func reloadAfterErrorReturnsToLoading() async {
+    func metricsFailureAloneStillFailsTheLoad() async {
+        // Profile + metrics fan out via `async let`; either failing
+        // collapses the whole load to .error. This documents that —
+        // we don't render a partial state.
+        let service = FakeProfileService()
+        service.result = .success(makeProfile(username: "ada"))
+        service.metricsResult = .failure(AppError.network)
+        let viewModel = ProfileViewModel(userID: .init(), service: service)
+
+        await viewModel.load()
+
+        #expect(viewModel.state == .error(.offline))
+    }
+
+    @Test
+    func reloadAfterErrorReturnsToLoaded() async {
         struct Boom: Error {}
         let service = FakeProfileService()
         service.result = .failure(Boom())
@@ -64,8 +81,8 @@ struct ProfileViewModelTests {
         await viewModel.load()
         #expect(viewModel.state == .error(.unknown))
 
-        // Switch the service to succeed and reload.
         service.result = .success(makeProfile(username: "ada"))
+        service.metricsResult = .success(.empty)
         await viewModel.load()
 
         if case .loaded = viewModel.state {
@@ -77,11 +94,10 @@ struct ProfileViewModelTests {
 
     // MARK: - helpers
 
-    /// Pre-loads the fake to fail with the given error so error-path tests
-    /// don't have to repeat the setup boilerplate.
     private func makeViewModel(failingWith error: any Error) -> ProfileViewModel {
         let service = FakeProfileService()
         service.result = .failure(error)
+        service.metricsResult = .failure(error)
         return ProfileViewModel(userID: .init(), service: service)
     }
 
@@ -95,6 +111,15 @@ struct ProfileViewModelTests {
             createdAt: Date(timeIntervalSince1970: 0)
         )
     }
+
+    private func makeMetrics(logged: Int, saved: Int, rated: Int) -> ProfileMetrics {
+        ProfileMetrics(
+            totalLogged: logged,
+            totalSaved: saved,
+            totalRated: rated,
+            perCategory: [:]
+        )
+    }
 }
 
 final class FakeProfileService: ProfileServicing, @unchecked Sendable {
@@ -106,7 +131,9 @@ final class FakeProfileService: ProfileServicing, @unchecked Sendable {
 
     var result: Result<UserProfile, Error> = .failure(NotConfigured())
     var updateResult: Result<Void, Error> = .success(())
+    var metricsResult: Result<ProfileMetrics, Error> = .success(.empty)
     private(set) var lastRequestedID: UUID?
+    private(set) var lastMetricsID: UUID?
     private(set) var updateCalls: [UpdateCall] = []
 
     func profile(for userID: UUID) async throws -> UserProfile {
@@ -121,6 +148,11 @@ final class FakeProfileService: ProfileServicing, @unchecked Sendable {
     ) async throws {
         updateCalls.append(.init(userID: userID, displayName: displayName, bio: bio))
         try updateResult.get()
+    }
+
+    func metrics(for userID: UUID) async throws -> ProfileMetrics {
+        lastMetricsID = userID
+        return try metricsResult.get()
     }
 
     private struct NotConfigured: Error {}
