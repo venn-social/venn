@@ -96,13 +96,15 @@ jobs:
             ${{ runner.os }}-spm-
       - name: Generate Xcode project
         run: cd ios && xcodegen generate
+      - name: Prepare test simulator
+        run: bash scripts/ci-select-simulator.sh
       - name: Run tests
         run: |
           set -o pipefail
           xcodebuild \
             -project ios/Venn.xcodeproj \
             -scheme Venn \
-            -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=latest' \
+            -destination "$TEST_DESTINATION" \
             -derivedDataPath build/DerivedData \
             -resultBundlePath build/test-results.xcresult \
             -enableCodeCoverage YES \
