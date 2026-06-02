@@ -18,6 +18,12 @@ protocol ProfileServicing: Sendable {
         displayName: String?,
         bio: String?
     ) async throws
+
+    /// Aggregate counts for the profile tiles + library section. One
+    /// query, aggregated client-side. Cheap until any user crosses
+    /// ~10k posts — at that point this becomes a Postgres RPC with
+    /// GROUP BY done server-side.
+    func metrics(for userID: UUID) async throws -> ProfileMetrics
 }
 
 /// Production implementation backed by the Supabase Postgrest client.
@@ -54,6 +60,24 @@ struct ProfileService: ProfileServicing {
                 .update(payload)
                 .eq("id", value: userID)
                 .execute()
+        } catch {
+            throw AppError.from(error)
+        }
+    }
+
+    func metrics(for userID: UUID) async throws -> ProfileMetrics {
+        do {
+            // `media!inner(kind)` forces an inner join so rows without
+            // a matching media (shouldn't happen given the FK, but
+            // defensive) drop out. We only pull `action` + `kind`
+            // because that's all the aggregation needs.
+            let rows: [ProfileMetricsRow] = try await client
+                .from("posts")
+                .select("action, media!inner(kind)")
+                .eq("author_id", value: userID)
+                .execute()
+                .value
+            return ProfileMetrics(rows: rows)
         } catch {
             throw AppError.from(error)
         }

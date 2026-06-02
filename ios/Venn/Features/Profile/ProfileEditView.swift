@@ -154,4 +154,8 @@ private struct PreviewProfileService: ProfileServicing {
     }
 
     func updateProfile(userID _: UUID, displayName _: String?, bio _: String?) async throws {}
+
+    func metrics(for _: UUID) async throws -> ProfileMetrics {
+        .empty
+    }
 }

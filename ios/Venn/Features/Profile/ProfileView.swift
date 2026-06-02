@@ -50,10 +50,11 @@ struct ProfileView: View {
 
     private func presentEditSheet() {
         guard let viewModel,
-              case let .loaded(profile) = viewModel.state
+              case let .loaded(snapshot) = viewModel.state
         else {
             return
         }
+        let profile = snapshot.profile
         editViewModel = ProfileEditViewModel(
             userID: profile.id,
             displayName: profile.displayName,
@@ -67,8 +68,8 @@ struct ProfileView: View {
             switch viewModel.state {
             case .loading:
                 DeferredLoadingView(caption: "Loading your profile…")
-            case let .loaded(profile):
-                loadedView(profile)
+            case let .loaded(snapshot):
+                loadedView(snapshot)
             case let .error(reason):
                 errorView(reason: reason) { Task { await viewModel.load() } }
             }
@@ -80,8 +81,10 @@ struct ProfileView: View {
         }
     }
 
-    private func loadedView(_ profile: UserProfile) -> some View {
-        Screen {
+    private func loadedView(_ snapshot: ProfileSnapshot) -> some View {
+        let profile = snapshot.profile
+        let metrics = snapshot.metrics
+        return Screen {
             ScrollView {
                 VStack(alignment: .leading, spacing: Theme.Spacing.xl) {
                     ProfileHeaderView(
@@ -91,14 +94,14 @@ struct ProfileView: View {
                     )
 
                     HStack(spacing: Theme.Spacing.sm) {
-                        MetricTile(value: "0", label: "watched")
-                        MetricTile(value: "0", label: "saved")
-                        MetricTile(value: "0", label: "overlaps")
+                        MetricTile(value: "\(metrics.totalLogged)", label: "logged")
+                        MetricTile(value: "\(metrics.totalSaved)", label: "saved")
+                        MetricTile(value: "\(metrics.totalRated)", label: "rated")
                     }
 
                     ProfileAppearanceSection()
 
-                    ProfileLibrarySection(categories: ProfileLibraryCategory.empty)
+                    ProfileLibrarySection(categories: Self.libraryCategories(from: metrics))
 
                     SecondaryButton(title: "Sign out") {
                         Task { await authState.signOut() }
@@ -155,6 +158,28 @@ struct ProfileView: View {
     /// "venn 1.2.3 (4)" — short marketing version + build number from the
     /// app bundle. Falls back to a placeholder if the Info.plist values
     /// aren't readable (only happens in some preview contexts).
+    /// Translate aggregate metrics into the per-row data the existing
+    /// `ProfileLibrarySection` expects. Subtitle is "X watched · Y
+    /// watchlist" when there's any activity, otherwise the empty-state
+    /// copy carried by `ProfileLibraryCategory.empty`.
+    private static func libraryCategories(from metrics: ProfileMetrics) -> [ProfileLibraryCategory] {
+        ProfileLibraryCategory.empty.map { template in
+            guard let kind = template.mediaKind,
+                  let counts = metrics.perCategory[kind],
+                  counts.watched + counts.watchlist > 0
+            else { return template }
+            return ProfileLibraryCategory(
+                id: template.id,
+                icon: template.icon,
+                title: template.title,
+                subtitle: "\(counts.watched) watched · \(counts.watchlist) watchlist",
+                mediaKind: template.mediaKind,
+                primaryActionTitle: template.primaryActionTitle,
+                secondaryActionTitle: template.secondaryActionTitle
+            )
+        }
+    }
+
     private static let versionString: String = {
         let info = Bundle.main.infoDictionary
         let version = info?["CFBundleShortVersionString"] as? String ?? "—"

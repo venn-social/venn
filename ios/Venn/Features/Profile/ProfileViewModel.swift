@@ -1,17 +1,28 @@
 import Foundation
 import Observation
 
-/// Loads and exposes a profile row. Stateless beyond the `state` enum so
-/// `ProfileView` can pattern-match on it directly.
+/// Bundle of everything `ProfileView` needs once a profile has loaded —
+/// the row itself plus the aggregate metrics for the tiles + library
+/// section. Carried by `ProfileViewModel.State.loaded` so the view
+/// renders the full surface from a single state transition.
+struct ProfileSnapshot: Equatable {
+    let profile: UserProfile
+    let metrics: ProfileMetrics
+}
+
+/// Loads and exposes a profile row plus its aggregate metrics.
+/// Stateless beyond the `state` enum so `ProfileView` can pattern-
+/// match on it directly.
 ///
-/// `userID` is the profile to load — usually the current user, but the
-/// same view-model is reused once profile-by-username navigation lands.
+/// `userID` is the profile to load — usually the current user, but
+/// the same view-model is reused once profile-by-username navigation
+/// lands.
 @MainActor
 @Observable
 final class ProfileViewModel {
     enum State: Equatable {
         case loading
-        case loaded(UserProfile)
+        case loaded(ProfileSnapshot)
         case error(ErrorReason)
     }
 
@@ -33,13 +44,19 @@ final class ProfileViewModel {
         self.service = service
     }
 
-    /// Fetches the profile and updates `state`. Safe to call again on
-    /// retry — flips state back to `.loading` first.
+    /// Fetches the profile and its metrics in parallel and updates
+    /// `state`. Safe to call again on retry — flips state back to
+    /// `.loading` first.
     func load() async {
         state = .loading
         do {
-            let profile = try await service.profile(for: userID)
-            state = .loaded(profile)
+            async let profile = service.profile(for: userID)
+            async let metrics = service.metrics(for: userID)
+            let snapshot = try await ProfileSnapshot(
+                profile: profile,
+                metrics: metrics
+            )
+            state = .loaded(snapshot)
         } catch let error as AppError {
             state = .error(reason(for: error))
         } catch {
