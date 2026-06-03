@@ -42,7 +42,11 @@ struct RootView: View {
 
     @ViewBuilder private var appContent: some View {
         #if DEBUG
-            if ProcessInfo.processInfo.arguments.contains("-authFlow") {
+            if ProcessInfo.processInfo.arguments.contains("-previewStyle") {
+                // Visual style preview of the refreshed design language.
+                // DEBUG-only design reference — see Features/StylePreview.
+                StylePreviewShell()
+            } else if ProcessInfo.processInfo.arguments.contains("-authFlow") {
                 routedContent
             } else {
                 DesignPreviewView()
