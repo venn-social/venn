@@ -8,6 +8,7 @@ import Observation
 struct ProfileSnapshot: Equatable {
     let profile: UserProfile
     let metrics: ProfileMetrics
+    let recentEntries: [Media]
 }
 
 /// Loads and exposes a profile row plus its aggregate metrics.
@@ -52,9 +53,11 @@ final class ProfileViewModel {
         do {
             async let profile = service.profile(for: userID)
             async let metrics = service.metrics(for: userID)
+            async let recentEntries = service.recentEntries(for: userID, limit: 9)
             let snapshot = try await ProfileSnapshot(
                 profile: profile,
-                metrics: metrics
+                metrics: metrics,
+                recentEntries: recentEntries
             )
             state = .loaded(snapshot)
         } catch let error as AppError {

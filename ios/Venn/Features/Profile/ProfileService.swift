@@ -24,6 +24,10 @@ protocol ProfileServicing: Sendable {
     /// ~10k posts — at that point this becomes a Postgres RPC with
     /// GROUP BY done server-side.
     func metrics(for userID: UUID) async throws -> ProfileMetrics
+
+    /// The author's most recently logged media, newest first, capped at
+    /// `limit`. Powers the "Recently logged" gallery on the profile.
+    func recentEntries(for userID: UUID, limit: Int) async throws -> [Media]
 }
 
 /// Production implementation backed by the Supabase Postgrest client.
@@ -82,6 +86,28 @@ struct ProfileService: ProfileServicing {
             throw AppError.from(error)
         }
     }
+
+    func recentEntries(for userID: UUID, limit: Int) async throws -> [Media] {
+        do {
+            let rows: [RecentEntryRow] = try await client
+                .from("posts")
+                .select("media!inner(*)")
+                .eq("author_id", value: userID)
+                .order("created_at", ascending: false)
+                .limit(limit)
+                .execute()
+                .value
+            return rows.compactMap { Media(row: $0.media) }
+        } catch {
+            throw AppError.from(error)
+        }
+    }
+}
+
+/// Wire-format row for the recent-entries query — only the embedded media
+/// is selected, since that's all the gallery renders.
+private struct RecentEntryRow: Decodable {
+    let media: MediaSchema.Row
 }
 
 /// Wire-format payload for `updateProfile`. The custom `encode(to:)`

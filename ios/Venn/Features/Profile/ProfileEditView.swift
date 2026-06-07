@@ -158,4 +158,8 @@ private struct PreviewProfileService: ProfileServicing {
     func metrics(for _: UUID) async throws -> ProfileMetrics {
         .empty
     }
+
+    func recentEntries(for _: UUID, limit _: Int) async throws -> [Media] {
+        []
+    }
 }

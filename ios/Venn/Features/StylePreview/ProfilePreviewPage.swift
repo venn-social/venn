@@ -9,12 +9,12 @@
             NavigationStack {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 20) {
-                        ProfileIdentityBlock(
+                        StyleIdentityBlock(
                             name: "Maya Chen",
                             handle: "@maya",
                             bio: "movies that linger, loud dinners, albums with one perfect skip"
                         )
-                        ProfileStatStrip(logged: "128", saved: "34", rated: "19")
+                        StyleStatStrip(logged: "128", saved: "34", rated: "19")
                         TasteOverlapBadge(percent: 62, subtitle: "with people you follow")
                         recentlyLogged
                     }
@@ -42,7 +42,7 @@
     }
 
     /// Avatar, name and handle on one line, with the bio beneath.
-    private struct ProfileIdentityBlock: View {
+    private struct StyleIdentityBlock: View {
         @Environment(\.colorScheme)
         private var scheme
         let name: String
@@ -82,7 +82,7 @@
     }
 
     /// Evenly-weighted stat strip with hairline dividers in a soft container.
-    private struct ProfileStatStrip: View {
+    private struct StyleStatStrip: View {
         @Environment(\.colorScheme)
         private var scheme
         let logged: String

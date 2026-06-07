@@ -24,7 +24,7 @@ struct ProfileViewModelTests {
 
         await viewModel.load()
 
-        #expect(viewModel.state == .loaded(.init(profile: profile, metrics: metrics)))
+        #expect(viewModel.state == .loaded(.init(profile: profile, metrics: metrics, recentEntries: [])))
         #expect(service.lastRequestedID == profile.id)
         #expect(service.lastMetricsID == profile.id)
     }
@@ -132,6 +132,7 @@ final class FakeProfileService: ProfileServicing, @unchecked Sendable {
     var result: Result<UserProfile, Error> = .failure(NotConfigured())
     var updateResult: Result<Void, Error> = .success(())
     var metricsResult: Result<ProfileMetrics, Error> = .success(.empty)
+    var recentEntriesResult: Result<[Media], Error> = .success([])
     private(set) var lastRequestedID: UUID?
     private(set) var lastMetricsID: UUID?
     private(set) var updateCalls: [UpdateCall] = []
@@ -153,6 +154,10 @@ final class FakeProfileService: ProfileServicing, @unchecked Sendable {
     func metrics(for userID: UUID) async throws -> ProfileMetrics {
         lastMetricsID = userID
         return try metricsResult.get()
+    }
+
+    func recentEntries(for _: UUID, limit _: Int) async throws -> [Media] {
+        try recentEntriesResult.get()
     }
 
     private struct NotConfigured: Error {}

@@ -27,23 +27,20 @@ final class VennUITests: XCTestCase {
 
     @MainActor
     func testExplorerTabRenders() {
+        // The category control renders independently of the Supabase fetch,
+        // so it's the CI-safe chrome to assert on (no creds in CI).
         let app = launchApp(extraArgs: ["-previewExplorer"])
-        XCTAssertTrue(
-            app.staticTexts["Recommended for you"].waitForExistence(timeout: 12)
-        )
-        XCTAssertTrue(app.buttons["Music"].exists)
+        XCTAssertTrue(app.buttons["Music"].waitForExistence(timeout: 12))
         XCTAssertTrue(app.buttons["Books"].exists)
     }
 
     @MainActor
     func testProfileTabRenders() {
-        // Profile in DesignPreviewView is still the prototype view, so
-        // we can keep the rich content assertions here.
+        // Profile now renders the real, data-backed ProfileView. CI has no
+        // Supabase creds, so we only assert on chrome (the tab label) — same
+        // shape as the Feed tab test.
         let app = launchApp(extraArgs: ["-previewProfile"])
         XCTAssertTrue(app.staticTexts["Profile"].waitForExistence(timeout: 12))
-        XCTAssertTrue(app.staticTexts["Maya Chen"].exists)
-        XCTAssertTrue(app.staticTexts["Library"].exists)
-        XCTAssertTrue(app.staticTexts["Data Room"].exists)
     }
 
     // MARK: - helpers
