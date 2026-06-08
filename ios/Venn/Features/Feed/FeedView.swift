@@ -36,7 +36,7 @@ struct FeedView: View {
                 errorView(reason: reason) { Task { await viewModel.load() } }
             }
         } else {
-            LoadingView()
+            DeferredLoadingView()
         }
     }
 

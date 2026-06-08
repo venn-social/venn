@@ -11,6 +11,7 @@ struct ExplorerView: View {
     private var clientProvider
 
     @State private var selectedCategory: ExplorerCategory = .movies
+    @State private var query = ""
     @State private var viewModel: ExplorerViewModel?
 
     var body: some View {
@@ -18,6 +19,7 @@ struct ExplorerView: View {
             Screen {
                 ScrollView {
                     VStack(alignment: .leading, spacing: Theme.Spacing.lg) {
+                        SearchField(text: $query, prompt: "Search movies, music, books")
                         categoryPicker
                         catalog
                     }

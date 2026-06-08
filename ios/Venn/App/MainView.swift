@@ -86,5 +86,4 @@ struct MainView: View {
         .environment(AppConfig.preview)
         .environment(provider)
         .environment(state)
-        .environment(AppearanceSettings())
 }

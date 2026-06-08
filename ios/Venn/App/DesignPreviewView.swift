@@ -84,7 +84,6 @@ import SwiftUI
 
     #Preview {
         DesignPreviewView()
-            .environment(AppearanceSettings())
             .environment(SupabaseClientProvider.preview)
     }
 #endif

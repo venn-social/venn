@@ -53,7 +53,7 @@ struct ProfileView: View {
         } else {
             // Pre-bootstrap (no session yet). Show loading rather than
             // crashing — RootView would normally have routed away from here.
-            LoadingView()
+            DeferredLoadingView()
         }
     }
 

@@ -83,7 +83,6 @@
         ZStack { GlassSkyBackground()
             ExplorePreviewPage()
         }
-        .environment(AppearanceSettings())
         .preferredColorScheme(.light)
     }
 
@@ -91,7 +90,6 @@
         ZStack { GlassSkyBackground()
             ExplorePreviewPage()
         }
-        .environment(AppearanceSettings())
         .preferredColorScheme(.dark)
     }
 #endif

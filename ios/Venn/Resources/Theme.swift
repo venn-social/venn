@@ -46,18 +46,6 @@ enum Theme {
         static let mist = SwiftUI.Color(.secondarySystemBackground)
         static let ash = SwiftUI.Color(.tertiarySystemBackground)
         static let violet = graphite
-        static let coral = adaptive(
-            light: UIColor(red: 0.29, green: 0.29, blue: 0.31, alpha: 1),
-            dark: UIColor(red: 0.74, green: 0.74, blue: 0.72, alpha: 1)
-        )
-        static let citron = adaptive(
-            light: UIColor(red: 0.91, green: 0.91, blue: 0.88, alpha: 1),
-            dark: UIColor(red: 0.16, green: 0.16, blue: 0.15, alpha: 1)
-        )
-        static let aqua = adaptive(
-            light: UIColor(red: 0.40, green: 0.41, blue: 0.43, alpha: 1),
-            dark: UIColor(red: 0.64, green: 0.65, blue: 0.67, alpha: 1)
-        )
         static let onAccent = adaptive(light: .white, dark: .black)
 
         /// Reduce-Transparency fallback solid for the glass-sky background.
@@ -121,15 +109,6 @@ enum Theme {
     }
 
     enum Gradient {
-        static let wash = LinearGradient(
-            colors: [
-                Color.paper,
-                Color.paper,
-            ],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
-
         static let overlap = LinearGradient(
             colors: [Color.graphite, Color.graphite],
             startPoint: .topLeading,

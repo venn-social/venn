@@ -127,7 +127,6 @@
         ZStack { GlassSkyBackground()
             ProfilePreviewPage()
         }
-        .environment(AppearanceSettings())
         .preferredColorScheme(.light)
     }
 
@@ -135,7 +134,6 @@
         ZStack { GlassSkyBackground()
             ProfilePreviewPage()
         }
-        .environment(AppearanceSettings())
         .preferredColorScheme(.dark)
     }
 #endif
