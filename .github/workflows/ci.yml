@@ -98,7 +98,7 @@ jobs:
       # from .env" phase injects real Supabase credentials. Without these the
       # UI tests can't render loaded (data-backed) views, which tanks line
       # coverage. Only the two required keys; telemetry stays off in CI.
-      - name: Write .env from secrets
+      - name: Write .env + generate config from secrets
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
@@ -107,6 +107,17 @@ jobs:
             echo "SUPABASE_URL=${SUPABASE_URL}"
             echo "SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}"
           } > .env
+          # The Xcode "Generate Config from .env" preBuild script writes this
+          # same file, but xcconfig is resolved BEFORE preBuild scripts run —
+          # so on a fresh CI checkout the first build would fall back to the
+          # placeholder creds and the UI tests couldn't load data. Generate it
+          # here, ahead of the build, mirroring that script.
+          OUT="ios/Venn/Resources/GeneratedConfig.xcconfig"
+          mkdir -p "$(dirname "$OUT")"
+          {
+            echo "// Auto-generated from .env in CI — do not commit."
+            grep -E '^[A-Z_][A-Z0-9_]*=' .env | sed 's|//|/$()/|g'
+          } > "$OUT"
       - name: Generate Xcode project
         run: cd ios && xcodegen generate
       - name: Prepare test simulator
