@@ -54,33 +54,6 @@ struct MusicBrainzServiceTests {
         #expect(MusicBrainzService.candidate(from: group).primaryCreator == nil)
     }
 
-    // MARK: - Year parsing helper
-
-    @Test
-    func yearParsesFromFullDate() {
-        #expect(MusicBrainzService.year(from: "1997-05-21") == 1997)
-    }
-
-    @Test
-    func yearParsesFromYearMonth() {
-        #expect(MusicBrainzService.year(from: "2001-06") == 2001)
-    }
-
-    @Test
-    func yearParsesFromYearOnly() {
-        #expect(MusicBrainzService.year(from: "1969") == 1969)
-    }
-
-    @Test
-    func yearReturnsNilForNil() {
-        #expect(MusicBrainzService.year(from: nil) == nil)
-    }
-
-    @Test
-    func yearReturnsNilForShortString() {
-        #expect(MusicBrainzService.year(from: "199") == nil)
-    }
-
     // MARK: - MediaCandidate id
 
     @Test

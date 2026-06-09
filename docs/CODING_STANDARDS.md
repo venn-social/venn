@@ -307,7 +307,7 @@ $$;
 
 Inside an Edge Function or RPC: call `rl_check('post_create:' || auth.uid()::text, 10, '1 minute')` and return 429 if false.
 
-The client-side limiter in `Utils/RateLimit.swift` is UX feedback only.
+Client-side throttling (search debounce, disabled buttons mid-flight) is UX feedback only — the server-side check above is the real limit.
 
 ## PR review rubric
 

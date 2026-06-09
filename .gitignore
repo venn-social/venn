@@ -89,4 +89,7 @@ desktop.ini
 .cache/
 
 # --- Claude / AI tooling local state (do not commit) ------------------------
+# memory/ is per-person Claude session memory — it can contain personal info
+# (emails, names) and is meaningless to other machines. Keep it local.
 .claude/local/
+memory/

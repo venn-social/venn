@@ -13,7 +13,7 @@ DERIVED_DATA     := build/DerivedData
 XCODEBUILD       := xcodebuild
 XCBEAUTIFY       := xcbeautify --quiet --is-ci
 
-.PHONY: help setup doctor project packages lint format format-check periphery codegen test build verify clean
+.PHONY: help setup doctor project packages lint format format-check periphery codegen test build verify clean prune-branches prune-branches-force
 
 help: ## Print this help.
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -88,3 +88,9 @@ verify: doctor lint format-check test ## Run before opening any PR.
 
 clean: ## Remove derived data and the generated Xcode project.
 	rm -rf build $(DERIVED_DATA) ios/Venn.xcodeproj
+
+prune-branches: ## List local branches whose remote was deleted (squash-merged PRs).
+	@bash scripts/prune-branches.sh
+
+prune-branches-force: ## Delete local branches whose remote was deleted.
+	@bash scripts/prune-branches.sh delete

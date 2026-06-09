@@ -28,7 +28,7 @@ Conventions:
 - View-models depend on `any <Feature>Servicing`, never on the concrete struct. The same view-model unit-tests with the fake and ships with the real service.
 - Fakes live in the test target only. Production code never imports test doubles.
 
-If a service has only one implementation and is trivially testable (pure functions, no I/O), it doesn't need a protocol. `Sanitize` is a static-method enum; `RateLimit` is a struct with a clock dependency injected directly. Both are testable without an extra layer.
+If a service has only one implementation and is trivially testable (pure functions, no I/O), it doesn't need a protocol. `Sanitize` and `ExternalAPI` are static-method enums — testable without an extra layer.
 
 ## Consequences
 

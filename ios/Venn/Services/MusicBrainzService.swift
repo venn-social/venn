@@ -30,7 +30,7 @@ struct MusicBrainzService: MusicBrainzServicing {
     func searchAlbums(query: String, page: Int = 1) async throws -> [MediaCandidate] {
         let offset = (page - 1) * Self.pageSize
         let url = Self.searchURL(query: query, limit: Self.pageSize, offset: offset)
-        let data = try await fetch(url: url)
+        let data = try await ExternalAPI.fetch(url: url, session: session, userAgent: Self.userAgent)
         let response = try JSONDecoder().decode(MBReleaseGroupSearchResponse.self, from: data)
         return response.releaseGroups.map(Self.candidate(from:))
     }
@@ -41,19 +41,13 @@ struct MusicBrainzService: MusicBrainzServicing {
         MediaCandidate(
             title: group.title,
             primaryCreator: group.artistCredit?.first?.name,
-            year: year(from: group.firstReleaseDate),
+            year: ExternalAPI.year(from: group.firstReleaseDate),
             coverURL: nil,
             overview: nil,
             externalID: group.id,
             externalSource: .musicbrainz,
             kind: .album
         )
-    }
-
-    /// Extract the four-digit year from "YYYY-MM-DD", "YYYY-MM", or "YYYY".
-    static func year(from dateString: String?) -> Int? {
-        guard let s = dateString, s.count >= 4 else { return nil }
-        return Int(s.prefix(4))
     }
 
     private static func searchURL(query: String, limit: Int, offset: Int) -> URL {
@@ -69,31 +63,6 @@ struct MusicBrainzService: MusicBrainzServicing {
             preconditionFailure("Invalid MusicBrainz search URL")
         }
         return url
-    }
-
-    private func fetch(url: URL) async throws -> Data {
-        var request = URLRequest(url: url)
-        request.setValue(Self.userAgent, forHTTPHeaderField: "User-Agent")
-        do {
-            let (data, response) = try await session.data(for: request)
-            if let http = response as? HTTPURLResponse {
-                switch http.statusCode {
-                case 200..<300:
-                    break
-                case 429, 503:
-                    throw AppError.rateLimited
-                case 400..<500:
-                    throw AppError.validation("HTTP \(http.statusCode)")
-                default:
-                    throw AppError.server
-                }
-            }
-            return data
-        } catch let error as AppError {
-            throw error
-        } catch {
-            throw AppError.from(error)
-        }
     }
 }
 

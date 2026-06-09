@@ -22,19 +22,7 @@ struct ProfileSnapshot: Equatable {
 @MainActor
 @Observable
 final class ProfileViewModel {
-    enum State: Equatable {
-        case loading
-        case loaded(ProfileSnapshot)
-        case error(ErrorReason)
-    }
-
-    /// UI-layer reason a profile load failed. View renders different copy
-    /// per reason; everything outside `.offline` collapses to `.unknown`
-    /// because the user can't act on the distinction.
-    enum ErrorReason: Equatable {
-        case offline
-        case unknown
-    }
+    typealias State = LoadState<ProfileSnapshot>
 
     private(set) var state: State = .loading
     let userID: UUID
@@ -64,20 +52,9 @@ final class ProfileViewModel {
             )
             state = .loaded(snapshot)
         } catch let error as AppError {
-            state = .error(reason(for: error))
+            state = .error(LoadErrorReason(error))
         } catch {
             state = .error(.unknown)
-        }
-    }
-
-    /// Translate a service-layer `AppError` into a UI-layer `ErrorReason`.
-    /// Today only network failures get distinct copy; everything else is
-    /// "something went wrong, retry." Add cases here as the view earns
-    /// per-reason affordances.
-    private func reason(for error: AppError) -> ErrorReason {
-        switch error {
-        case .network: .offline
-        case .unauthorized, .validation, .rateLimited, .server, .unknown: .unknown
         }
     }
 }

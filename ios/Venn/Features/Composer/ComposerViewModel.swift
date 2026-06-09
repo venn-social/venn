@@ -29,11 +29,7 @@ final class ComposerViewModel {
         case error(ErrorReason)
     }
 
-    enum ErrorReason: Equatable {
-        case offline
-        case rateLimited
-        case unknown
-    }
+    typealias ErrorReason = LoadErrorReason
 
     /// The three-way sentiment rating the user can express.
     /// Nil means the user tapped Skip — the post is logged without a rating.
@@ -54,10 +50,6 @@ final class ComposerViewModel {
     var caption = ""
     /// Whether to publish the log as a visible feed post (default on).
     var postToFeed = true
-
-    // Legacy fields kept for existing tests — view no longer exposes the slider.
-    var selectedAction: PostAction = .logged
-    var rating: Double?
 
     var canSubmit: Bool {
         guard selectedCandidate != nil else { return false }
@@ -105,8 +97,6 @@ final class ComposerViewModel {
     /// Capture the user's selection and reset all action/rating/caption fields.
     func pick(_ candidate: MediaCandidate) {
         selectedCandidate = candidate
-        selectedAction = .logged
-        rating = nil
         ratingChoice = nil
         caption = ""
         postToFeed = true
@@ -150,7 +140,7 @@ final class ComposerViewModel {
             )
             submitState = .submitted
         } catch let error as AppError {
-            submitState = .error(errorReason(for: error))
+            submitState = .error(LoadErrorReason(error))
         } catch {
             submitState = .error(.unknown)
         }
@@ -170,7 +160,7 @@ final class ComposerViewModel {
             )
             submitState = .submitted
         } catch let error as AppError {
-            submitState = .error(errorReason(for: error))
+            submitState = .error(LoadErrorReason(error))
         } catch {
             submitState = .error(.unknown)
         }
@@ -201,17 +191,9 @@ final class ComposerViewModel {
                 searchState = .results(merged)
             }
         } catch let error as AppError {
-            searchState = .error(errorReason(for: error))
+            searchState = .error(LoadErrorReason(error))
         } catch {
             searchState = .error(.unknown)
-        }
-    }
-
-    private func errorReason(for error: AppError) -> ErrorReason {
-        switch error {
-        case .network: .offline
-        case .rateLimited: .rateLimited
-        case .unauthorized, .validation, .server, .unknown: .unknown
         }
     }
 }

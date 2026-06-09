@@ -7,16 +7,7 @@ import Observation
 @MainActor
 @Observable
 final class LibraryViewModel {
-    enum State: Equatable {
-        case loading
-        case loaded([LibraryItem])
-        case error(ErrorReason)
-    }
-
-    enum ErrorReason: Equatable {
-        case offline
-        case unknown
-    }
+    typealias State = LoadState<[LibraryItem]>
 
     private(set) var state: State = .loading
 
@@ -43,7 +34,7 @@ final class LibraryViewModel {
             }
             state = .loaded(items)
         } catch let error as AppError {
-            state = .error(errorReason(for: error))
+            state = .error(LoadErrorReason(error))
         } catch {
             state = .error(.unknown)
         }
@@ -57,13 +48,6 @@ final class LibraryViewModel {
             try await service.removeFromLibrary(postID: item.post.id)
         } catch {
             await load()
-        }
-    }
-
-    private func errorReason(for error: AppError) -> ErrorReason {
-        switch error {
-        case .network: .offline
-        default: .unknown
         }
     }
 }
