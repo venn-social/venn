@@ -19,15 +19,12 @@ protocol ProfileServicing: Sendable {
         bio: String?
     ) async throws
 
-    /// Aggregate counts for the profile tiles + library section. One
-    /// query, aggregated client-side. Cheap until any user crosses
-    /// ~10k posts — at that point this becomes a Postgres RPC with
-    /// GROUP BY done server-side.
-    func metrics(for userID: UUID) async throws -> ProfileMetrics
+    /// Follower / following counts from the `follows` table.
+    func followCounts(for userID: UUID) async throws -> FollowCounts
 
-    /// The author's most recently logged media, newest first, capped at
-    /// `limit`. Powers the "Recently logged" gallery on the profile.
-    func recentEntries(for userID: UUID, limit: Int) async throws -> [Media]
+    /// The distinct media on a profile shelf (Collection or Watchlist),
+    /// newest first, capped at `limit`. Covers-only gallery.
+    func shelf(_ shelf: ProfileShelf, for userID: UUID, limit: Int) async throws -> [Media]
 }
 
 /// Production implementation backed by the Supabase Postgrest client.
@@ -69,44 +66,57 @@ struct ProfileService: ProfileServicing {
         }
     }
 
-    func metrics(for userID: UUID) async throws -> ProfileMetrics {
+    func followCounts(for userID: UUID) async throws -> FollowCounts {
         do {
-            // `media!inner(kind)` forces an inner join so rows without
-            // a matching media (shouldn't happen given the FK, but
-            // defensive) drop out. We only pull `action` + `kind`
-            // because that's all the aggregation needs.
-            let rows: [ProfileMetricsRow] = try await client
-                .from("posts")
-                .select("action, media!inner(kind)")
-                .eq("author_id", value: userID)
-                .execute()
-                .value
-            return ProfileMetrics(rows: rows)
+            async let followers = edgeCount(column: "followee_id", value: userID)
+            async let following = edgeCount(column: "follower_id", value: userID)
+            return try await FollowCounts(followers: followers, following: following)
         } catch {
             throw AppError.from(error)
         }
     }
 
-    func recentEntries(for userID: UUID, limit: Int) async throws -> [Media] {
+    func shelf(_ shelf: ProfileShelf, for userID: UUID, limit: Int) async throws -> [Media] {
         do {
-            let rows: [RecentEntryRow] = try await client
+            let rows: [ShelfMediaRow] = try await client
                 .from("posts")
-                .select("media!inner(*)")
+                .select("created_at, media!inner(*)")
                 .eq("author_id", value: userID)
+                .in("action", values: shelf.actions)
                 .order("created_at", ascending: false)
                 .limit(limit)
                 .execute()
                 .value
-            return rows.compactMap { Media(row: $0.media) }
+            // De-dup by media id (logging *and* rating the same title yields
+            // two rows) while preserving newest-first order.
+            var seen = Set<UUID>()
+            return rows.compactMap { row in
+                guard let media = Media(row: row.media),
+                      seen.insert(media.id).inserted
+                else {
+                    return nil
+                }
+                return media
+            }
         } catch {
             throw AppError.from(error)
         }
     }
+
+    /// Head-only count of `follows` rows matching `column == value`.
+    private func edgeCount(column: String, value: UUID) async throws -> Int {
+        try await client
+            .from("follows")
+            .select("*", head: true, count: .exact)
+            .eq(column, value: value)
+            .execute()
+            .count ?? 0
+    }
 }
 
-/// Wire-format row for the recent-entries query — only the embedded media
-/// is selected, since that's all the gallery renders.
-private struct RecentEntryRow: Decodable {
+/// Wire-format row for a shelf query — only the embedded media is selected,
+/// since the gallery renders covers only.
+private struct ShelfMediaRow: Decodable {
     let media: MediaSchema.Row
 }
 

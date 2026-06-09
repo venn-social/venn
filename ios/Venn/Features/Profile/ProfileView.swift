@@ -1,8 +1,9 @@
 import SwiftUI
 
-/// Profile tab content. Loads the signed-in user's profile from Supabase and
-/// renders a minimal identity block, high-level stats, and a gallery of
-/// recently-logged media — matching the refreshed, image-forward design.
+/// Profile tab. Loads the signed-in user's profile from Supabase and renders
+/// the identity header, follow counts, primary actions, and a Collection /
+/// Watchlist cover gallery. Share + settings live in a top bar; both, like
+/// the Add and Edit buttons, are wired in a later pass.
 struct ProfileView: View {
     @Environment(AuthState.self)
     private var authState
@@ -11,6 +12,7 @@ struct ProfileView: View {
 
     @State private var viewModel: ProfileViewModel?
     @State private var editViewModel: ProfileEditViewModel?
+    @State private var shelf: ProfileShelf = .collection
 
     var body: some View {
         NavigationStack {
@@ -51,37 +53,27 @@ struct ProfileView: View {
                 errorView(reason: reason) { Task { await viewModel.load() } }
             }
         } else {
-            // Pre-bootstrap (no session yet). Show loading rather than
-            // crashing — RootView would normally have routed away from here.
             DeferredLoadingView()
         }
     }
 
     private func loadedView(_ snapshot: ProfileSnapshot) -> some View {
         let profile = snapshot.profile
-        let metrics = snapshot.metrics
         return Screen {
             ScrollView {
-                VStack(alignment: .leading, spacing: Theme.Spacing.xl) {
+                VStack(alignment: .leading, spacing: Theme.Spacing.lg) {
+                    topBar
                     ProfileHeaderView(
                         name: profile.displayName ?? profile.username,
                         handle: profile.username,
-                        bio: profile.bio
-                    ) { presentEditSheet() }
-
-                    ProfileStatStrip(
-                        logged: metrics.totalLogged,
-                        saved: metrics.totalSaved,
-                        rated: metrics.totalRated
+                        followers: snapshot.followCounts.followers,
+                        following: snapshot.followCounts.following
                     )
-
-                    recentlyLogged(snapshot.recentEntries)
-
-                    SecondaryButton(title: "Sign out") {
-                        Task { await authState.signOut() }
-                    }
+                    actionButtons
+                    ShelfTabs(selection: $shelf)
+                    shelfGallery(snapshot)
                 }
-                .padding(.top, Theme.Spacing.md)
+                .padding(.top, Theme.Spacing.sm)
                 .padding(.bottom, Theme.Spacing.xxxl)
             }
             .scrollContentBackground(.hidden)
@@ -89,29 +81,53 @@ struct ProfileView: View {
         }
     }
 
-    private func recentlyLogged(_ entries: [Media]) -> some View {
-        VStack(alignment: .leading, spacing: Theme.Spacing.md) {
-            Text("Recently logged")
+    private var topBar: some View {
+        HStack {
+            iconButton("square.and.arrow.up", label: "Share") {}
+            Spacer()
+            iconButton("gearshape", label: "Settings") {}
+        }
+    }
+
+    private func iconButton(
+        _ systemImage: String,
+        label: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Image(systemName: systemImage)
                 .font(Theme.Font.title3)
                 .foregroundStyle(Theme.Color.textPrimary)
+        }
+        .accessibilityLabel(label)
+    }
 
-            if entries.isEmpty {
-                Text("Nothing logged yet.")
+    private var actionButtons: some View {
+        HStack(spacing: Theme.Spacing.md) {
+            PrimaryButton(title: "Add") {}
+            SecondaryButton(title: "Edit profile") { presentEditSheet() }
+        }
+    }
+
+    private func shelfGallery(_ snapshot: ProfileSnapshot) -> some View {
+        let items = shelf == .collection ? snapshot.collection : snapshot.watchlist
+        return Group {
+            if items.isEmpty {
+                Text(shelf == .collection ? "Nothing in your collection yet." : "Your watchlist is empty.")
                     .font(Theme.Font.callout)
                     .foregroundStyle(Theme.Color.textSecondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.top, Theme.Spacing.md)
             } else {
                 LazyVGrid(
-                    columns: Array(
-                        repeating: GridItem(.flexible(), spacing: Theme.Spacing.md),
-                        count: 3
-                    ),
-                    spacing: Theme.Spacing.md
+                    columns: Array(repeating: GridItem(.flexible(), spacing: Theme.Spacing.sm), count: 3),
+                    spacing: Theme.Spacing.sm
                 ) {
-                    ForEach(entries) { media in
+                    ForEach(items) { media in
                         MediaCoverTile(
                             title: media.title,
                             kind: media.kind,
-                            height: 120,
+                            height: 150,
                             cornerRadius: Theme.Radius.md
                         )
                     }
@@ -170,6 +186,27 @@ struct ProfileView: View {
             )
             self.viewModel = viewModel
             await viewModel.load()
+        }
+    }
+}
+
+/// Collection / Watchlist text tabs above the cover gallery.
+private struct ShelfTabs: View {
+    @Binding var selection: ProfileShelf
+
+    var body: some View {
+        HStack(spacing: Theme.Spacing.xl) {
+            ForEach(ProfileShelf.allCases) { shelf in
+                let isSelected = shelf == selection
+                Button {
+                    selection = shelf
+                } label: {
+                    Text(shelf.title)
+                        .font(Theme.Font.headline)
+                        .foregroundStyle(isSelected ? Theme.Color.textPrimary : Theme.Color.textSecondary)
+                }
+            }
+            Spacer()
         }
     }
 }

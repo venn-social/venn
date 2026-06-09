@@ -7,8 +7,9 @@ import Observation
 /// renders the full surface from a single state transition.
 struct ProfileSnapshot: Equatable {
     let profile: UserProfile
-    let metrics: ProfileMetrics
-    let recentEntries: [Media]
+    let followCounts: FollowCounts
+    let collection: [Media]
+    let watchlist: [Media]
 }
 
 /// Loads and exposes a profile row plus its aggregate metrics.
@@ -52,12 +53,14 @@ final class ProfileViewModel {
         state = .loading
         do {
             async let profile = service.profile(for: userID)
-            async let metrics = service.metrics(for: userID)
-            async let recentEntries = service.recentEntries(for: userID, limit: 9)
+            async let followCounts = service.followCounts(for: userID)
+            async let collection = service.shelf(.collection, for: userID, limit: 30)
+            async let watchlist = service.shelf(.watchlist, for: userID, limit: 30)
             let snapshot = try await ProfileSnapshot(
                 profile: profile,
-                metrics: metrics,
-                recentEntries: recentEntries
+                followCounts: followCounts,
+                collection: collection,
+                watchlist: watchlist
             )
             state = .loaded(snapshot)
         } catch let error as AppError {

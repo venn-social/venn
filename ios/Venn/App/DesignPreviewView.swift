@@ -19,14 +19,20 @@ import SwiftUI
             Group {
                 if let debugAuth {
                     TabView(selection: $selection) {
-                        Tab("Feed", systemImage: "square.stack.3d.up", value: MainTab.feed) {
+                        Tab(value: MainTab.feed) {
                             FeedView()
+                        } label: {
+                            Image(systemName: "house").accessibilityLabel("Home")
                         }
-                        Tab("Explorer", systemImage: "sparkle.magnifyingglass", value: MainTab.explorer) {
+                        Tab(value: MainTab.explorer) {
                             ExplorerView()
+                        } label: {
+                            Image(systemName: "magnifyingglass").accessibilityLabel("Search")
                         }
-                        Tab("Profile", systemImage: "person.crop.circle", value: MainTab.profile) {
+                        Tab(value: MainTab.profile) {
                             ProfileView()
+                        } label: {
+                            Image(systemName: "person.fill").accessibilityLabel("Profile")
                         }
                     }
                     .tint(Theme.Color.accent)

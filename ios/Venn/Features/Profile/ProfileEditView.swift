@@ -155,11 +155,11 @@ private struct PreviewProfileService: ProfileServicing {
 
     func updateProfile(userID _: UUID, displayName _: String?, bio _: String?) async throws {}
 
-    func metrics(for _: UUID) async throws -> ProfileMetrics {
-        .empty
+    func followCounts(for _: UUID) async throws -> FollowCounts {
+        .zero
     }
 
-    func recentEntries(for _: UUID, limit _: Int) async throws -> [Media] {
+    func shelf(_: ProfileShelf, for _: UUID, limit _: Int) async throws -> [Media] {
         []
     }
 }
