@@ -50,6 +50,48 @@ final class AuthState {
         status = .signedOut
     }
 
+    #if DEBUG
+        /// DEBUG bypass for the magic-link flow — gets straight into the app.
+        /// Tries a real anonymous Supabase session first; if anonymous
+        /// sign-ins are disabled in the project, falls back to a local debug
+        /// session so the app stays reachable. Temporary: real onboarding
+        /// replaces this later.
+        func enterGuestSession() async {
+            do {
+                try await service.signInAnonymously()
+                // A real anonymous session arrives via the auth-state
+                // listener, which flips `status` to `.signedIn`.
+            } catch {
+                status = .signedIn(Self.debugGuestSession)
+            }
+        }
+
+        /// Synthetic signed-in session for the DEBUG guest bypass. Pinned to a
+        /// seeded profile's id so the Profile tab shows real data. Its token
+        /// is never transmitted — reads go through the anon key — so nothing
+        /// authenticates against this placeholder.
+        private static var debugGuestSession: Session {
+            let now = Date()
+            let user = User(
+                id: UUID(uuidString: "11111111-1111-1111-1111-111111111111") ?? UUID(),
+                appMetadata: [:],
+                userMetadata: [:],
+                aud: "authenticated",
+                createdAt: now,
+                updatedAt: now,
+                isAnonymous: true
+            )
+            return Session(
+                accessToken: "debug-guest",
+                tokenType: "bearer",
+                expiresIn: 3600,
+                expiresAt: now.addingTimeInterval(3600).timeIntervalSince1970,
+                refreshToken: "debug-guest",
+                user: user
+            )
+        }
+    #endif
+
     private func startListening() {
         listenerTask?.cancel()
         listenerTask = Task { [weak self, service] in
