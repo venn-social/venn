@@ -16,31 +16,30 @@ final class VennUITests: XCTestCase {
     // The full-flow tab-switching journey lands back when stub services
     // are wired via launch arg (see Notion follow-up).
 
+    // Each test waits for *loaded*, data-backed content (CI has Supabase
+    // creds and the remote carries the committed seed) rather than just the
+    // tab shell. Waiting for the seeded row keeps the loaded views alive long
+    // enough to render — which is also what they're meant to verify.
+
     @MainActor
     func testFeedTabRenders() {
         let app = launchApp(extraArgs: [])
-        // Feed renders from a live Supabase fetch (no creds in CI), so we
-        // assert on chrome: the signed-in tab shell came up. The iOS 26 Tab
-        // label isn't a reliable static text, so we check the tab bar itself.
-        XCTAssertTrue(app.tabBars.firstMatch.waitForExistence(timeout: 12))
+        XCTAssertTrue(app.staticTexts["Past Lives"].waitForExistence(timeout: 30))
     }
 
     @MainActor
     func testExplorerTabRenders() {
-        // The category control renders independently of the Supabase fetch,
-        // so it's the CI-safe chrome to assert on (no creds in CI).
         let app = launchApp(extraArgs: ["-previewExplorer"])
+        // The category control renders immediately; the grid fills from the fetch.
         XCTAssertTrue(app.buttons["Music"].waitForExistence(timeout: 12))
-        XCTAssertTrue(app.buttons["Books"].exists)
+        XCTAssertTrue(app.staticTexts["Past Lives"].waitForExistence(timeout: 30))
     }
 
     @MainActor
     func testProfileTabRenders() {
-        // Profile renders the real, data-backed ProfileView (no creds in CI).
-        // Assert the signed-in tab shell came up rather than data or a tab
-        // label, which the iOS 26 Tab API doesn't expose as a static text.
+        // -previewProfile pins the debug session to the seeded "Maya Chen".
         let app = launchApp(extraArgs: ["-previewProfile"])
-        XCTAssertTrue(app.tabBars.firstMatch.waitForExistence(timeout: 12))
+        XCTAssertTrue(app.staticTexts["Maya Chen"].waitForExistence(timeout: 30))
     }
 
     // MARK: - helpers
