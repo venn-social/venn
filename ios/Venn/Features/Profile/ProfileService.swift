@@ -87,19 +87,24 @@ struct ProfileService: ProfileServicing {
                 .limit(limit)
                 .execute()
                 .value
-            // De-dup by media id (logging *and* rating the same title yields
-            // two rows) while preserving newest-first order.
-            var seen = Set<UUID>()
-            return rows.compactMap { row in
-                guard let media = Media(row: row.media),
-                      seen.insert(media.id).inserted
-                else {
-                    return nil
-                }
-                return media
-            }
+            return Self.distinctMedia(from: rows.map(\.media))
         } catch {
             throw AppError.from(error)
+        }
+    }
+
+    /// Lift media rows to domain models, dropping unknown kinds and de-duping
+    /// by id while preserving order (logging *and* rating the same title
+    /// yields two rows). Pure, so it's unit-tested directly.
+    static func distinctMedia(from rows: [MediaSchema.Row]) -> [Media] {
+        var seen = Set<UUID>()
+        return rows.compactMap { row in
+            guard let media = Media(row: row),
+                  seen.insert(media.id).inserted
+            else {
+                return nil
+            }
+            return media
         }
     }
 

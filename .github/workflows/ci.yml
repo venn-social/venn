@@ -94,6 +94,19 @@ jobs:
           key: ${{ runner.os }}-spm-${{ hashFiles('ios/project.yml') }}
           restore-keys: |
             ${{ runner.os }}-spm-
+      # Write the repo-root .env from secrets so the build's "Generate Config
+      # from .env" phase injects real Supabase credentials. Without these the
+      # UI tests can't render loaded (data-backed) views, which tanks line
+      # coverage. Only the two required keys; telemetry stays off in CI.
+      - name: Write .env from secrets
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          {
+            echo "SUPABASE_URL=${SUPABASE_URL}"
+            echo "SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}"
+          } > .env
       - name: Generate Xcode project
         run: cd ios && xcodegen generate
       - name: Prepare test simulator
