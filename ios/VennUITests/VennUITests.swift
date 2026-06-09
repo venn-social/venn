@@ -28,9 +28,12 @@ final class VennUITests: XCTestCase {
     @MainActor
     func testExplorerTabRenders() {
         let app = launchApp(extraArgs: ["-previewExplorer"])
+        // Default category is "All", so the browse prompt appears instead of recommendations.
         XCTAssertTrue(
-            app.staticTexts["Recommended for you"].waitForExistence(timeout: 12)
+            app.staticTexts["Search everything"].waitForExistence(timeout: 12)
         )
+        XCTAssertTrue(app.buttons["All"].exists)
+        XCTAssertTrue(app.buttons["TV"].exists)
         XCTAssertTrue(app.buttons["Music"].exists)
         XCTAssertTrue(app.buttons["Books"].exists)
     }

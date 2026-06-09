@@ -76,9 +76,10 @@ final class ComposerViewModel {
 
     // MARK: - Search
 
-    /// Debounced (300 ms) text-search. Empty or whitespace-only query resets
-    /// to `.idle`. Cancels any in-flight search before issuing a new one.
-    func search(_ query: String, kind: MediaKind) {
+    /// Debounced (300 ms) text-search across one or more media kinds.
+    /// Pass multiple kinds (e.g. from `.all`) to run parallel searches and merge.
+    /// Empty or whitespace-only query resets to `.idle`.
+    func search(_ query: String, kinds: [MediaKind]) {
         searchTask?.cancel()
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
@@ -89,7 +90,7 @@ final class ComposerViewModel {
         searchTask = Task { [weak self] in
             try? await Task.sleep(for: .milliseconds(300))
             guard !Task.isCancelled, let self else { return }
-            await performSearch(query: trimmed, kind: kind)
+            await performSearch(query: trimmed, kinds: kinds)
         }
     }
 
@@ -177,10 +178,28 @@ final class ComposerViewModel {
 
     // MARK: - Private helpers
 
-    private func performSearch(query: String, kind: MediaKind) async {
+    private func performSearch(query: String, kinds: [MediaKind]) async {
         do {
-            let results = try await service.search(query: query, kind: kind, page: 1)
-            searchState = .results(results)
+            if kinds.count == 1, let kind = kinds.first {
+                let results = try await service.search(query: query, kind: kind, page: 1)
+                searchState = .results(results)
+            } else {
+                // Run each kind's search in parallel; per-kind failures yield empty results
+                // rather than aborting the whole "All" search.
+                var merged: [MediaCandidate] = []
+                let svc = service
+                await withTaskGroup(of: [MediaCandidate].self) { group in
+                    for kind in kinds {
+                        group.addTask {
+                            await (try? svc.search(query: query, kind: kind, page: 1)) ?? []
+                        }
+                    }
+                    for await results in group {
+                        merged.append(contentsOf: results)
+                    }
+                }
+                searchState = .results(merged)
+            }
         } catch let error as AppError {
             searchState = .error(errorReason(for: error))
         } catch {

@@ -2,6 +2,7 @@ import SwiftUI
 
 /// Explorer tab. Two modes:
 ///   - **Browse:** loads recent media from Supabase and renders recommendation cards.
+///     The "All" category shows a search prompt instead of recommendations.
 ///   - **Search:** live search against TMDB / OpenLibrary / MusicBrainz. Tapping
 ///     a result opens the composer sheet so the user can log the item.
 ///
@@ -13,7 +14,7 @@ struct ExplorerView: View {
     private var config
 
     @State private var query = ""
-    @State private var selectedCategory: ExplorerCategory = .movies
+    @State private var selectedCategory: ExplorerCategory = .all
     @State private var viewModel: ExplorerViewModel?
     @State private var composerViewModel: ComposerViewModel?
 
@@ -25,7 +26,11 @@ struct ExplorerView: View {
                         header
                         categoryPicker
                         if query.isEmpty {
-                            recommendationStack
+                            if selectedCategory.browseKind != nil {
+                                recommendationStack
+                            } else {
+                                allBrowsePrompt
+                            }
                             quickActions
                         } else {
                             searchResultsStack
@@ -39,7 +44,7 @@ struct ExplorerView: View {
             }
             .navigationTitle("Explorer")
             .navigationBarTitleDisplayMode(.inline)
-            .searchable(text: $query, prompt: Text("Search movies, music, books…"))
+            .searchable(text: $query, prompt: Text("Search movies, TV, music, books…"))
             .containerBackground(for: .navigation) {
                 GlassSkyBackground()
             }
@@ -51,13 +56,15 @@ struct ExplorerView: View {
         }
         .task { await ensureLoaded() }
         .onChange(of: selectedCategory) { _, newCategory in
-            Task { await viewModel?.load(kind: newCategory.mediaKind) }
+            if let kind = newCategory.browseKind {
+                Task { await viewModel?.load(kind: kind) }
+            }
             if !query.isEmpty {
-                composerViewModel?.search(query, kind: newCategory.mediaKind)
+                composerViewModel?.search(query, kinds: newCategory.searchKinds)
             }
         }
         .onChange(of: query) { _, newQuery in
-            composerViewModel?.search(newQuery, kind: selectedCategory.mediaKind)
+            composerViewModel?.search(newQuery, kinds: selectedCategory.searchKinds)
         }
     }
 
@@ -74,13 +81,18 @@ struct ExplorerView: View {
         }
     }
 
+    /// Wrapped in a horizontal ScrollView so all 5 chips fit on any screen width.
     private var categoryPicker: some View {
-        GlassSegmentedControl(
-            items: ExplorerCategory.allCases,
-            selection: $selectedCategory,
-            title: \.title,
-            systemImage: \.icon
-        )
+        ScrollView(.horizontal, showsIndicators: false) {
+            GlassSegmentedControl(
+                items: ExplorerCategory.allCases,
+                selection: $selectedCategory,
+                title: \.title,
+                systemImage: \.icon
+            )
+            .frame(minWidth: 520)
+        }
+        .scrollClipDisabled()
     }
 
     private var recommendationStack: some View {
@@ -106,11 +118,22 @@ struct ExplorerView: View {
                     }
                 case let .error(reason):
                     browseErrorView(reason: reason) {
-                        Task { await viewModel.load(kind: selectedCategory.mediaKind) }
+                        if let kind = selectedCategory.browseKind {
+                            Task { await viewModel.load(kind: kind) }
+                        }
                     }
                 }
             }
         }
+    }
+
+    /// Shown in browse mode when the "All" category is selected.
+    private var allBrowsePrompt: some View {
+        EmptyStateView(
+            systemImage: "magnifyingglass",
+            title: "Search everything",
+            message: "Type in the search bar to find movies, TV shows, music, and books all at once."
+        )
     }
 
     private var browseEmptyView: some View {
@@ -206,7 +229,9 @@ struct ExplorerView: View {
         if viewModel == nil {
             let vm = ExplorerViewModel(service: ExplorerService(client: clientProvider.client))
             viewModel = vm
-            await vm.load(kind: selectedCategory.mediaKind)
+            if let kind = selectedCategory.browseKind {
+                await vm.load(kind: kind)
+            }
         }
         if composerViewModel == nil {
             let tmdb = config.tmdbAPIKey.map { TMDBService(apiKey: $0) }

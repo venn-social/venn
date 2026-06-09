@@ -11,28 +11,28 @@ struct ComposerViewModelTests {
     @Test
     func searchEmptyQueryResetsToIdle() {
         let viewModel = ComposerViewModel(service: FakeComposerService())
-        viewModel.search("", kind: .movie)
+        viewModel.search("", kinds: [.movie])
         #expect(viewModel.searchState == .idle)
     }
 
     @Test
     func searchWhitespaceOnlyQueryResetsToIdle() {
         let viewModel = ComposerViewModel(service: FakeComposerService())
-        viewModel.search("   ", kind: .movie)
+        viewModel.search("   ", kinds: [.movie])
         #expect(viewModel.searchState == .idle)
     }
 
     @Test
     func searchNonEmptyQueryFlipsToSearching() {
         let viewModel = ComposerViewModel(service: FakeComposerService())
-        viewModel.search("Fight Club", kind: .movie)
+        viewModel.search("Fight Club", kinds: [.movie])
         #expect(viewModel.searchState == .searching)
     }
 
     @Test
     func clearSearchResetsToIdle() {
         let viewModel = ComposerViewModel(service: FakeComposerService())
-        viewModel.search("anything", kind: .book)
+        viewModel.search("anything", kinds: [.book])
         viewModel.clearSearch()
         #expect(viewModel.searchState == .idle)
     }
