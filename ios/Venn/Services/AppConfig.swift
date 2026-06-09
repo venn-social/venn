@@ -20,6 +20,9 @@ final class AppConfig: @unchecked Sendable {
     let sentryDSN: String?
     let postHogAPIKey: String?
     let postHogHost: URL
+    /// TMDB v3 API key. Required for movie and show search; nil if not
+    /// configured (e.g. in previews). Obtain free at developer.themoviedb.org.
+    let tmdbAPIKey: String?
     /// URL the magic-link email sends the user back to. Must match a scheme
     /// registered in `Info.plist` under `CFBundleURLTypes`. The host segment
     /// distinguishes auth from any future deep-link surfaces.
@@ -38,6 +41,7 @@ final class AppConfig: @unchecked Sendable {
         sentryDSN: String?,
         postHogAPIKey: String?,
         postHogHost: URL,
+        tmdbAPIKey: String? = nil,
         authCallbackURL: URL = URL(staticString: "social.venn.app://auth-callback")
     ) {
         self.supabaseURL = supabaseURL
@@ -46,6 +50,7 @@ final class AppConfig: @unchecked Sendable {
         self.sentryDSN = sentryDSN
         self.postHogAPIKey = postHogAPIKey
         self.postHogHost = postHogHost
+        self.tmdbAPIKey = tmdbAPIKey
         self.authCallbackURL = authCallbackURL
     }
 
@@ -71,6 +76,7 @@ final class AppConfig: @unchecked Sendable {
         let postHogKey = (info["POSTHOG_API_KEY"] as? String).flatMap { $0.isEmpty ? nil : $0 }
         let postHogHostString = (info["POSTHOG_HOST"] as? String) ?? "https://us.i.posthog.com"
         let postHogHost = URL(string: postHogHostString) ?? URL(staticString: "https://us.i.posthog.com")
+        let tmdbKey = (info["TMDB_API_KEY"] as? String).flatMap { $0.isEmpty ? nil : $0 }
 
         return AppConfig(
             supabaseURL: url,
@@ -78,7 +84,8 @@ final class AppConfig: @unchecked Sendable {
             appEnv: env,
             sentryDSN: sentryDSN,
             postHogAPIKey: postHogKey,
-            postHogHost: postHogHost
+            postHogHost: postHogHost,
+            tmdbAPIKey: tmdbKey
         )
     }
 

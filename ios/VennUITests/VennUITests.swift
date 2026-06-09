@@ -30,9 +30,15 @@ final class VennUITests: XCTestCase {
     @MainActor
     func testExplorerTabRenders() {
         let app = launchApp(extraArgs: ["-previewExplorer"])
-        // The category control renders immediately; the grid fills from the fetch.
-        XCTAssertTrue(app.buttons["Music"].waitForExistence(timeout: 12))
-        XCTAssertTrue(app.staticTexts["Past Lives"].waitForExistence(timeout: 30))
+        // Default category is "All": the browse prompt + chips render without a
+        // network fetch, so they're the CI-safe chrome to assert on.
+        XCTAssertTrue(
+            app.staticTexts["Search everything"].waitForExistence(timeout: 12)
+        )
+        XCTAssertTrue(app.buttons["All"].exists)
+        XCTAssertTrue(app.buttons["TV"].exists)
+        XCTAssertTrue(app.buttons["Music"].exists)
+        XCTAssertTrue(app.buttons["Books"].exists)
     }
 
     @MainActor

@@ -125,8 +125,8 @@ final class FakeProfileService: ProfileServicing, @unchecked Sendable {
     var result: Result<UserProfile, Error> = .failure(NotConfigured())
     var updateResult: Result<Void, Error> = .success(())
     var followCountsResult: Result<FollowCounts, Error> = .success(.zero)
-    var collectionResult: Result<[Media], Error> = .success([])
-    var watchlistResult: Result<[Media], Error> = .success([])
+    var collectionResult: Result<[LibraryItem], Error> = .success([])
+    var watchlistResult: Result<[LibraryItem], Error> = .success([])
     private(set) var lastRequestedID: UUID?
     private(set) var lastFollowCountsID: UUID?
     private(set) var updateCalls: [UpdateCall] = []
@@ -150,12 +150,15 @@ final class FakeProfileService: ProfileServicing, @unchecked Sendable {
         return try followCountsResult.get()
     }
 
-    func shelf(_ shelf: ProfileShelf, for _: UUID, limit _: Int) async throws -> [Media] {
-        switch shelf {
-        case .collection: try collectionResult.get()
-        case .watchlist: try watchlistResult.get()
-        }
+    func watchlist(for _: UUID, kind _: MediaKind?) async throws -> [LibraryItem] {
+        try watchlistResult.get()
     }
+
+    func collection(for _: UUID, kind _: MediaKind?) async throws -> [LibraryItem] {
+        try collectionResult.get()
+    }
+
+    func removeFromLibrary(postID _: UUID) async throws {}
 
     private struct NotConfigured: Error {}
 }

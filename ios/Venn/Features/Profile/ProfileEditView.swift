@@ -159,7 +159,13 @@ private struct PreviewProfileService: ProfileServicing {
         .zero
     }
 
-    func shelf(_: ProfileShelf, for _: UUID, limit _: Int) async throws -> [Media] {
+    func watchlist(for _: UUID, kind _: MediaKind?) async throws -> [LibraryItem] {
         []
     }
+
+    func collection(for _: UUID, kind _: MediaKind?) async throws -> [LibraryItem] {
+        []
+    }
+
+    func removeFromLibrary(postID _: UUID) async throws {}
 }

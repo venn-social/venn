@@ -2,8 +2,9 @@ import SwiftUI
 
 /// Profile tab. Loads the signed-in user's profile from Supabase and renders
 /// the identity header, follow counts, primary actions, and a Collection /
-/// Watchlist cover gallery. Share + settings live in a top bar; both, like
-/// the Add and Edit buttons, are wired in a later pass.
+/// Watchlist cover gallery. Tapping a shelf opens the full, editable
+/// `LibraryListView`. Share + settings live in a top bar; both, like the Add
+/// and Edit buttons, are wired in a later pass.
 struct ProfileView: View {
     @Environment(AuthState.self)
     private var authState
@@ -13,6 +14,7 @@ struct ProfileView: View {
     @State private var viewModel: ProfileViewModel?
     @State private var editViewModel: ProfileEditViewModel?
     @State private var shelf: ProfileShelf = .collection
+    @State private var libraryDestination: LibraryDestination?
 
     var body: some View {
         NavigationStack {
@@ -37,6 +39,9 @@ struct ProfileView: View {
                 }
                 .containerBackground(for: .navigation) {
                     GlassSkyBackground()
+                }
+                .navigationDestination(item: $libraryDestination) { dest in
+                    LibraryListView(viewModel: makeLibraryViewModel(for: dest))
                 }
         }
         .task { await ensureLoaded() }
@@ -123,13 +128,22 @@ struct ProfileView: View {
                     columns: Array(repeating: GridItem(.flexible(), spacing: Theme.Spacing.sm), count: 3),
                     spacing: Theme.Spacing.sm
                 ) {
-                    ForEach(items) { media in
-                        MediaCoverTile(
-                            title: media.title,
-                            kind: media.kind,
-                            height: 150,
-                            cornerRadius: Theme.Radius.md
-                        )
+                    ForEach(items) { item in
+                        Button {
+                            libraryDestination = LibraryDestination(
+                                userID: snapshot.profile.id,
+                                kind: nil,
+                                shelf: shelf
+                            )
+                        } label: {
+                            MediaCoverTile(
+                                title: item.media.title,
+                                kind: item.media.kind,
+                                height: 150,
+                                cornerRadius: Theme.Radius.md
+                            )
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
             }
@@ -178,6 +192,15 @@ struct ProfileView: View {
         )
     }
 
+    private func makeLibraryViewModel(for dest: LibraryDestination) -> LibraryViewModel {
+        LibraryViewModel(
+            userID: dest.userID,
+            kind: dest.kind,
+            shelf: dest.shelf,
+            service: ProfileService(client: clientProvider.client)
+        )
+    }
+
     private func ensureLoaded() async {
         if viewModel == nil, case let .signedIn(session) = authState.status {
             let viewModel = ProfileViewModel(
@@ -209,4 +232,12 @@ private struct ShelfTabs: View {
             Spacer()
         }
     }
+}
+
+/// Value pushed onto the `NavigationStack` when a shelf is tapped — everything
+/// `LibraryViewModel` needs to load the full, editable list.
+struct LibraryDestination: Hashable {
+    let userID: UUID
+    let kind: MediaKind?
+    let shelf: ProfileShelf
 }

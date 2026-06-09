@@ -22,9 +22,18 @@ protocol ProfileServicing: Sendable {
     /// Follower / following counts from the `follows` table.
     func followCounts(for userID: UUID) async throws -> FollowCounts
 
-    /// The distinct media on a profile shelf (Collection or Watchlist),
-    /// newest first, capped at `limit`. Covers-only gallery.
-    func shelf(_ shelf: ProfileShelf, for userID: UUID, limit: Int) async throws -> [Media]
+    /// Items the user saved for later (`action == .saved`). Pass a `kind`
+    /// to scope the results to one media type; nil returns all kinds.
+    func watchlist(for userID: UUID, kind: MediaKind?) async throws -> [LibraryItem]
+
+    /// Items the user has consumed (`action IN ('logged','rated')`). Pass a
+    /// `kind` to scope; nil returns all kinds.
+    func collection(for userID: UUID, kind: MediaKind?) async throws -> [LibraryItem]
+
+    /// Delete a single post row (the user's own). RLS prevents deleting
+    /// other users' posts server-side; the app only surfaces this action on
+    /// the signed-in user's own library.
+    func removeFromLibrary(postID: UUID) async throws
 }
 
 /// Production implementation backed by the Supabase Postgrest client.
@@ -76,35 +85,51 @@ struct ProfileService: ProfileServicing {
         }
     }
 
-    func shelf(_ shelf: ProfileShelf, for userID: UUID, limit: Int) async throws -> [Media] {
+    func watchlist(for userID: UUID, kind: MediaKind?) async throws -> [LibraryItem] {
+        try await libraryItems(for: userID, actions: [PostAction.saved.rawValue], kind: kind)
+    }
+
+    func collection(for userID: UUID, kind: MediaKind?) async throws -> [LibraryItem] {
+        try await libraryItems(
+            for: userID,
+            actions: [PostAction.logged.rawValue, PostAction.rated.rawValue],
+            kind: kind
+        )
+    }
+
+    func removeFromLibrary(postID: UUID) async throws {
         do {
-            let rows: [ShelfMediaRow] = try await client
+            try await client
                 .from("posts")
-                .select("created_at, media!inner(*)")
-                .eq("author_id", value: userID)
-                .in("action", values: shelf.actions)
-                .order("created_at", ascending: false)
-                .limit(limit)
+                .delete()
+                .eq("id", value: postID)
                 .execute()
-                .value
-            return Self.distinctMedia(from: rows.map(\.media))
         } catch {
             throw AppError.from(error)
         }
     }
 
-    /// Lift media rows to domain models, dropping unknown kinds and de-duping
-    /// by id while preserving order (logging *and* rating the same title
-    /// yields two rows). Pure, so it's unit-tested directly.
-    static func distinctMedia(from rows: [MediaSchema.Row]) -> [Media] {
-        var seen = Set<UUID>()
-        return rows.compactMap { row in
-            guard let media = Media(row: row),
-                  seen.insert(media.id).inserted
-            else {
-                return nil
-            }
-            return media
+    /// Shared library query: the author's posts with the given actions,
+    /// joined with media, newest first, optionally scoped to one kind.
+    private func libraryItems(
+        for userID: UUID,
+        actions: [String],
+        kind: MediaKind?
+    ) async throws -> [LibraryItem] {
+        do {
+            let rows: [LibraryItemRow] = try await client
+                .from("posts")
+                .select(LibraryItemRow.selectClause)
+                .eq("author_id", value: userID)
+                .in("action", values: actions)
+                .order("created_at", ascending: false)
+                .execute()
+                .value
+            return rows
+                .compactMap(LibraryItem.init(row:))
+                .filter { kind == nil || $0.media.kind == kind }
+        } catch {
+            throw AppError.from(error)
         }
     }
 
@@ -119,10 +144,46 @@ struct ProfileService: ProfileServicing {
     }
 }
 
-/// Wire-format row for a shelf query — only the embedded media is selected,
-/// since the gallery renders covers only.
-private struct ShelfMediaRow: Decodable {
+/// Wire-format row for the `watchlist` / `collection` queries. The PostgREST
+/// `!inner` join embeds the matching `media` row as a nested object.
+private struct LibraryItemRow: Decodable {
+    let id: UUID
+    let authorId: UUID
+    let mediaId: UUID
+    let action: String
+    let rating: Double?
+    let caption: String?
+    let createdAt: Date
     let media: MediaSchema.Row
+
+    enum CodingKeys: String, CodingKey {
+        case id, action, rating, caption, media
+        case authorId = "author_id"
+        case mediaId = "media_id"
+        case createdAt = "created_at"
+    }
+
+    static let selectClause =
+        "id, author_id, media_id, action, rating, caption, created_at, " +
+        "media!inner(id, kind, title, year, primary_creator, cover_url, external_id, external_source, created_at)"
+}
+
+private extension LibraryItem {
+    init?(row: LibraryItemRow) {
+        guard let action = PostAction(rawValue: row.action),
+              let media = Media(row: row.media)
+        else { return nil }
+        post = Post(
+            id: row.id,
+            authorID: row.authorId,
+            mediaID: row.mediaId,
+            action: action,
+            rating: row.rating,
+            caption: row.caption,
+            createdAt: row.createdAt
+        )
+        self.media = media
+    }
 }
 
 /// Wire-format payload for `updateProfile`. The custom `encode(to:)`

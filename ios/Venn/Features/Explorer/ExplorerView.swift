@@ -1,27 +1,42 @@
 import SwiftUI
 
-/// Explorer tab. Loads recent media of the selected kind from
-/// `ExplorerService` and renders them as an image-forward grid of covers.
-/// Reloads when the user switches the category picker. Header-less and
-/// minimal, matching the refreshed Feed. Full-text search needs Postgres
-/// `tsvector` infra that hasn't landed yet, so the search field is omitted
-/// until it's real.
+/// Explorer tab. Header-less and minimal, matching the refreshed Feed. Two
+/// modes off the search field:
+///   - **Browse** (empty query): recent media of the selected kind from
+///     `ExplorerService`, as an image-forward cover grid. The "All" category
+///     shows a search prompt instead.
+///   - **Search** (non-empty query): live search against TMDB / OpenLibrary /
+///     MusicBrainz via `ComposerViewModel`; tapping a result opens the
+///     composer sheet to log or save the item.
+///
+/// The category picker controls both the browse kind and the search scope.
 struct ExplorerView: View {
     @Environment(SupabaseClientProvider.self)
     private var clientProvider
+    @Environment(AppConfig.self)
+    private var config
 
-    @State private var selectedCategory: ExplorerCategory = .movies
     @State private var query = ""
+    @State private var selectedCategory: ExplorerCategory = .all
     @State private var viewModel: ExplorerViewModel?
+    @State private var composerViewModel: ComposerViewModel?
 
     var body: some View {
         NavigationStack {
             Screen {
                 ScrollView {
                     VStack(alignment: .leading, spacing: Theme.Spacing.lg) {
-                        SearchField(text: $query, prompt: "Search movies, music, books")
+                        SearchField(text: $query, prompt: "Search movies, TV, music, books")
                         categoryPicker
-                        catalog
+                        if query.isEmpty {
+                            if selectedCategory.browseKind != nil {
+                                browseStack
+                            } else {
+                                allBrowsePrompt
+                            }
+                        } else {
+                            searchResultsStack
+                        }
                     }
                     .padding(.top, Theme.Spacing.md)
                     .padding(.bottom, Theme.Spacing.xxxl)
@@ -33,36 +48,60 @@ struct ExplorerView: View {
             .containerBackground(for: .navigation) {
                 GlassSkyBackground()
             }
+            .sheet(isPresented: isComposerPresented) {
+                if let vm = composerViewModel {
+                    ComposerSheetView(viewModel: vm)
+                }
+            }
         }
         .task { await ensureLoaded() }
         .onChange(of: selectedCategory) { _, newCategory in
-            Task { await viewModel?.load(kind: newCategory.mediaKind) }
+            if let kind = newCategory.browseKind {
+                Task { await viewModel?.load(kind: kind) }
+            }
+            if !query.isEmpty {
+                composerViewModel?.search(query, kinds: newCategory.searchKinds)
+            }
+        }
+        .onChange(of: query) { _, newQuery in
+            composerViewModel?.search(newQuery, kinds: selectedCategory.searchKinds)
         }
     }
 
+    // MARK: - Categories
+
+    /// Wrapped in a horizontal ScrollView so all chips fit any screen width.
     private var categoryPicker: some View {
-        GlassSegmentedControl(
-            items: ExplorerCategory.allCases,
-            selection: $selectedCategory,
-            title: \.title,
-            systemImage: \.icon
-        )
+        ScrollView(.horizontal, showsIndicators: false) {
+            GlassSegmentedControl(
+                items: ExplorerCategory.allCases,
+                selection: $selectedCategory,
+                title: \.title,
+                systemImage: \.icon
+            )
+            .frame(minWidth: 520)
+        }
+        .scrollClipDisabled()
     }
 
-    @ViewBuilder private var catalog: some View {
+    // MARK: - Browse mode
+
+    @ViewBuilder private var browseStack: some View {
         if let viewModel {
             switch viewModel.state {
             case .loading:
                 DeferredLoadingView(caption: "Looking for something good…")
             case let .loaded(media):
                 if media.isEmpty {
-                    emptyView
+                    browseEmptyView
                 } else {
                     grid(media)
                 }
             case let .error(reason):
-                errorView(reason: reason) {
-                    Task { await viewModel.load(kind: selectedCategory.mediaKind) }
+                browseErrorView(reason: reason) {
+                    if let kind = selectedCategory.browseKind {
+                        Task { await viewModel.load(kind: kind) }
+                    }
                 }
             }
         }
@@ -83,7 +122,16 @@ struct ExplorerView: View {
         }
     }
 
-    private var emptyView: some View {
+    /// Shown in browse mode when the "All" category is selected.
+    private var allBrowsePrompt: some View {
+        EmptyStateView(
+            systemImage: "magnifyingglass",
+            title: "Search everything",
+            message: "Type in the search bar to find movies, TV shows, music, and books all at once."
+        )
+    }
+
+    private var browseEmptyView: some View {
         EmptyStateView(
             systemImage: "magnifyingglass",
             title: "Nothing here yet",
@@ -91,7 +139,7 @@ struct ExplorerView: View {
         )
     }
 
-    private func errorView(
+    private func browseErrorView(
         reason: ExplorerViewModel.ErrorReason,
         retry: @escaping () -> Void
     ) -> some View {
@@ -106,19 +154,74 @@ struct ExplorerView: View {
         )
     }
 
+    // MARK: - Search mode
+
+    @ViewBuilder private var searchResultsStack: some View {
+        if let vm = composerViewModel {
+            switch vm.searchState {
+            case .idle:
+                EmptyView()
+            case .searching:
+                DeferredLoadingView(caption: "Searching…")
+            case let .results(candidates):
+                if candidates.isEmpty {
+                    EmptyStateView(
+                        systemImage: "magnifyingglass",
+                        title: "No results",
+                        message: "Try a different search or switch categories."
+                    )
+                } else {
+                    VStack(spacing: Theme.Spacing.sm) {
+                        ForEach(candidates) { candidate in
+                            ExplorerSearchResultRow(candidate: candidate) {
+                                vm.pick(candidate)
+                            }
+                            .vennScrollDepth()
+                        }
+                    }
+                }
+            case let .error(reason):
+                EmptyStateView(
+                    systemImage: reason == .offline ? "wifi.slash" : "exclamationmark.triangle",
+                    title: reason == .offline ? "You're offline" : "Search failed",
+                    message: reason == .offline
+                        ? "Reconnect to search."
+                        : "Something went wrong. Try again."
+                )
+            }
+        }
+    }
+
+    // MARK: - Composer sheet
+
+    private var isComposerPresented: Binding<Bool> {
+        Binding(
+            get: { composerViewModel?.selectedCandidate != nil },
+            set: { if !$0 { composerViewModel?.clearPick() } }
+        )
+    }
+
+    // MARK: - Setup
+
     private func ensureLoaded() async {
         if viewModel == nil {
-            let viewModel = ExplorerViewModel(
-                service: ExplorerService(client: clientProvider.client)
+            let vm = ExplorerViewModel(service: ExplorerService(client: clientProvider.client))
+            viewModel = vm
+            if let kind = selectedCategory.browseKind {
+                await vm.load(kind: kind)
+            }
+        }
+        if composerViewModel == nil {
+            let tmdb = config.tmdbAPIKey.map { TMDBService(apiKey: $0) }
+            composerViewModel = ComposerViewModel(
+                service: ComposerService(tmdb: tmdb, client: clientProvider.client)
             )
-            self.viewModel = viewModel
-            await viewModel.load(kind: selectedCategory.mediaKind)
         }
     }
 }
 
-/// One cover in the Explorer grid: an image-forward tile with the title and
-/// creator beneath.
+/// One cover in the Explorer browse grid: an image-forward tile with the
+/// title and creator beneath.
 private struct ExplorerMediaCell: View {
     let media: Media
 
@@ -141,5 +244,7 @@ private struct ExplorerMediaCell: View {
 
 #Preview {
     ExplorerView()
+        .environment(AppConfig.preview)
         .environment(SupabaseClientProvider.preview)
+        .environment(AuthState(service: AuthService(client: SupabaseClientProvider.preview.client)))
 }

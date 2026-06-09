@@ -1,0 +1,94 @@
+import Foundation
+import Testing
+@testable import Venn
+
+/// Tests for MusicBrainzService wire-format decoding and MediaCandidate mapping.
+struct MusicBrainzServiceTests {
+    // MARK: - MBReleaseGroup decoding + mapping
+
+    @Test
+    func decodesReleaseGroupAndMapsToCandidate() throws {
+        let json = Data("""
+        {
+          "id": "f5093c06-23e3-404f-aeaa-40f72885ee3a",
+          "title": "OK Computer",
+          "first-release-date": "1997-05-21",
+          "artist-credit": [
+            { "name": "Radiohead" }
+          ]
+        }
+        """.utf8)
+
+        let group = try JSONDecoder().decode(MBReleaseGroup.self, from: json)
+        let candidate = MusicBrainzService.candidate(from: group)
+
+        #expect(candidate.title == "OK Computer")
+        #expect(candidate.primaryCreator == "Radiohead")
+        #expect(candidate.year == 1997)
+        #expect(candidate.externalID == "f5093c06-23e3-404f-aeaa-40f72885ee3a")
+        #expect(candidate.externalSource == .musicbrainz)
+        #expect(candidate.kind == .album)
+        #expect(candidate.coverURL == nil)
+    }
+
+    @Test
+    func releaseGroupWithNoArtistCreditProducesNilCreator() throws {
+        let json = Data("""
+        {
+          "id": "abc123",
+          "title": "No Artist",
+          "first-release-date": "2000-01-01",
+          "artist-credit": null
+        }
+        """.utf8)
+        let group = try JSONDecoder().decode(MBReleaseGroup.self, from: json)
+        #expect(MusicBrainzService.candidate(from: group).primaryCreator == nil)
+    }
+
+    @Test
+    func releaseGroupWithEmptyArtistCreditProducesNilCreator() throws {
+        let json = Data("""
+        { "id": "abc124", "title": "VA", "first-release-date": "2001-01-01", "artist-credit": [] }
+        """.utf8)
+        let group = try JSONDecoder().decode(MBReleaseGroup.self, from: json)
+        #expect(MusicBrainzService.candidate(from: group).primaryCreator == nil)
+    }
+
+    // MARK: - Year parsing helper
+
+    @Test
+    func yearParsesFromFullDate() {
+        #expect(MusicBrainzService.year(from: "1997-05-21") == 1997)
+    }
+
+    @Test
+    func yearParsesFromYearMonth() {
+        #expect(MusicBrainzService.year(from: "2001-06") == 2001)
+    }
+
+    @Test
+    func yearParsesFromYearOnly() {
+        #expect(MusicBrainzService.year(from: "1969") == 1969)
+    }
+
+    @Test
+    func yearReturnsNilForNil() {
+        #expect(MusicBrainzService.year(from: nil) == nil)
+    }
+
+    @Test
+    func yearReturnsNilForShortString() {
+        #expect(MusicBrainzService.year(from: "199") == nil)
+    }
+
+    // MARK: - MediaCandidate id
+
+    @Test
+    func candidateIDIsStable() throws {
+        let json = Data("""
+        { "id": "test-uuid-001", "title": "T", "first-release-date": null, "artist-credit": null }
+        """.utf8)
+        let group = try JSONDecoder().decode(MBReleaseGroup.self, from: json)
+        #expect(MusicBrainzService.candidate(from: group).id == "musicbrainz:test-uuid-001")
+    }
+}
