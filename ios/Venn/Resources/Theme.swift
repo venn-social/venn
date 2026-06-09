@@ -23,6 +23,20 @@ enum Theme {
             })
         }
 
+        /// Builds an adaptive color from packed 0xRRGGBB values per mode.
+        private static func hex(light: UInt, dark: UInt) -> SwiftUI.Color {
+            adaptive(light: rgb(light), dark: rgb(dark))
+        }
+
+        private static func rgb(_ value: UInt) -> UIColor {
+            UIColor(
+                red: CGFloat((value >> 16) & 0xFF) / 255,
+                green: CGFloat((value >> 8) & 0xFF) / 255,
+                blue: CGFloat(value & 0xFF) / 255,
+                alpha: 1
+            )
+        }
+
         static let ink = SwiftUI.Color.primary
         static let graphite = adaptive(
             light: UIColor(red: 0.11, green: 0.11, blue: 0.11, alpha: 1),
@@ -32,18 +46,6 @@ enum Theme {
         static let mist = SwiftUI.Color(.secondarySystemBackground)
         static let ash = SwiftUI.Color(.tertiarySystemBackground)
         static let violet = graphite
-        static let coral = adaptive(
-            light: UIColor(red: 0.29, green: 0.29, blue: 0.31, alpha: 1),
-            dark: UIColor(red: 0.74, green: 0.74, blue: 0.72, alpha: 1)
-        )
-        static let citron = adaptive(
-            light: UIColor(red: 0.91, green: 0.91, blue: 0.88, alpha: 1),
-            dark: UIColor(red: 0.16, green: 0.16, blue: 0.15, alpha: 1)
-        )
-        static let aqua = adaptive(
-            light: UIColor(red: 0.40, green: 0.41, blue: 0.43, alpha: 1),
-            dark: UIColor(red: 0.64, green: 0.65, blue: 0.67, alpha: 1)
-        )
         static let onAccent = adaptive(light: .white, dark: .black)
 
         /// Reduce-Transparency fallback solid for the glass-sky background.
@@ -89,18 +91,24 @@ enum Theme {
 
         /// 1pt separator hairline.
         static let separator = SwiftUI.Color(.separator).opacity(0.7)
+
+        /// Neon-blue accent for the refreshed design language — used for
+        /// precise highlight moments (e.g. a rating star). Distinct from
+        /// `accent` (still the monochrome brand default) until the full
+        /// accent change ships as its own deliberate pass.
+        static let accentBlue = hex(light: 0x0070F3, dark: 0x4DA3FF)
+
+        /// Glyph color for a media cover placeholder's initial.
+        static let coverGlyph = hex(light: 0x474C57, dark: 0xB6BAC4)
+
+        /// Tonal background for a media cover placeholder, keyed to kind.
+        static let coverMovie = hex(light: 0xE3E9F2, dark: 0x1E232C)
+        static let coverShow = hex(light: 0xF2EAE0, dark: 0x2A2520)
+        static let coverBook = hex(light: 0xE2EDE5, dark: 0x1C2420)
+        static let coverAlbum = hex(light: 0xEDE6F2, dark: 0x241F2B)
     }
 
     enum Gradient {
-        static let wash = LinearGradient(
-            colors: [
-                Color.paper,
-                Color.paper,
-            ],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
-
         static let overlap = LinearGradient(
             colors: [Color.graphite, Color.graphite],
             startPoint: .topLeading,

@@ -84,7 +84,6 @@
         ZStack { GlassSkyBackground()
             FeedPreviewPage()
         }
-        .environment(AppearanceSettings())
         .preferredColorScheme(.light)
     }
 
@@ -92,7 +91,6 @@
         ZStack { GlassSkyBackground()
             FeedPreviewPage()
         }
-        .environment(AppearanceSettings())
         .preferredColorScheme(.dark)
     }
 #endif

@@ -1,7 +1,9 @@
 import SwiftUI
 
-/// Profile tab content. Loads the signed-in user's profile from Supabase and
-/// renders identity, high-level stats, and category entry points.
+/// Profile tab. Loads the signed-in user's profile from Supabase and renders
+/// the identity header, follow counts, primary actions, and a Collection /
+/// Watchlist cover gallery. Share + settings live in a top bar; both, like
+/// the Add and Edit buttons, are wired in a later pass.
 struct ProfileView: View {
     @Environment(AuthState.self)
     private var authState
@@ -10,20 +12,12 @@ struct ProfileView: View {
 
     @State private var viewModel: ProfileViewModel?
     @State private var editViewModel: ProfileEditViewModel?
+    @State private var shelf: ProfileShelf = .collection
 
     var body: some View {
         NavigationStack {
             content
-                .navigationTitle("Profile")
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    if case .loaded = viewModel?.state {
-                        ToolbarItem(placement: .topBarTrailing) {
-                            Button("Edit") { presentEditSheet() }
-                                .accessibilityIdentifier("profile_edit_button")
-                        }
-                    }
-                }
+                .toolbar(.hidden, for: .navigationBar)
                 .sheet(
                     isPresented: Binding(
                         get: { editViewModel != nil },
@@ -48,21 +42,6 @@ struct ProfileView: View {
         .task { await ensureLoaded() }
     }
 
-    private func presentEditSheet() {
-        guard let viewModel,
-              case let .loaded(snapshot) = viewModel.state
-        else {
-            return
-        }
-        let profile = snapshot.profile
-        editViewModel = ProfileEditViewModel(
-            userID: profile.id,
-            displayName: profile.displayName,
-            bio: profile.bio,
-            service: ProfileService(client: clientProvider.client)
-        )
-    }
-
     @ViewBuilder private var content: some View {
         if let viewModel {
             switch viewModel.state {
@@ -74,48 +53,86 @@ struct ProfileView: View {
                 errorView(reason: reason) { Task { await viewModel.load() } }
             }
         } else {
-            // Pre-bootstrap (we don't have a session yet, somehow). Show
-            // loading rather than crashing — RootView would normally have
-            // routed away from here.
-            LoadingView()
+            DeferredLoadingView()
         }
     }
 
     private func loadedView(_ snapshot: ProfileSnapshot) -> some View {
         let profile = snapshot.profile
-        let metrics = snapshot.metrics
         return Screen {
             ScrollView {
-                VStack(alignment: .leading, spacing: Theme.Spacing.xl) {
+                VStack(alignment: .leading, spacing: Theme.Spacing.lg) {
+                    topBar
                     ProfileHeaderView(
                         name: profile.displayName ?? profile.username,
                         handle: profile.username,
-                        bio: profile.bio
+                        followers: snapshot.followCounts.followers,
+                        following: snapshot.followCounts.following
                     )
-
-                    HStack(spacing: Theme.Spacing.sm) {
-                        MetricTile(value: "\(metrics.totalLogged)", label: "logged")
-                        MetricTile(value: "\(metrics.totalSaved)", label: "saved")
-                        MetricTile(value: "\(metrics.totalRated)", label: "rated")
-                    }
-
-                    ProfileAppearanceSection()
-
-                    ProfileLibrarySection(categories: Self.libraryCategories(from: metrics))
-
-                    SecondaryButton(title: "Sign out") {
-                        Task { await authState.signOut() }
-                    }
-
-                    versionFooter
-
-                    Spacer(minLength: 0)
+                    actionButtons
+                    ShelfTabs(selection: $shelf)
+                    shelfGallery(snapshot)
                 }
-                .padding(.vertical, Theme.Spacing.lg)
-                .padding(.bottom, Theme.Spacing.xxxl * 2)
+                .padding(.top, Theme.Spacing.sm)
+                .padding(.bottom, Theme.Spacing.xxxl)
             }
             .scrollContentBackground(.hidden)
             .tracksGlassSkyParallax()
+        }
+    }
+
+    private var topBar: some View {
+        HStack {
+            iconButton("square.and.arrow.up", label: "Share") {}
+            Spacer()
+            iconButton("gearshape", label: "Settings") {}
+        }
+    }
+
+    private func iconButton(
+        _ systemImage: String,
+        label: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Image(systemName: systemImage)
+                .font(Theme.Font.title3)
+                .foregroundStyle(Theme.Color.textPrimary)
+        }
+        .accessibilityLabel(label)
+    }
+
+    private var actionButtons: some View {
+        HStack(spacing: Theme.Spacing.md) {
+            PrimaryButton(title: "Add") {}
+            SecondaryButton(title: "Edit profile") { presentEditSheet() }
+        }
+    }
+
+    private func shelfGallery(_ snapshot: ProfileSnapshot) -> some View {
+        let items = shelf == .collection ? snapshot.collection : snapshot.watchlist
+        return Group {
+            if items.isEmpty {
+                Text(shelf == .collection ? "Nothing in your collection yet." : "Your watchlist is empty.")
+                    .font(Theme.Font.callout)
+                    .foregroundStyle(Theme.Color.textSecondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.top, Theme.Spacing.md)
+            } else {
+                LazyVGrid(
+                    columns: Array(repeating: GridItem(.flexible(), spacing: Theme.Spacing.sm), count: 3),
+                    spacing: Theme.Spacing.sm
+                ) {
+                    ForEach(items) { media in
+                        MediaCoverTile(
+                            title: media.title,
+                            kind: media.kind,
+                            height: 150,
+                            cornerRadius: Theme.Radius.md
+                        )
+                    }
+                }
+            }
         }
     }
 
@@ -146,46 +163,20 @@ struct ProfileView: View {
         }
     }
 
-    private var versionFooter: some View {
-        Text(verbatim: Self.versionString)
-            .font(Theme.Font.footnote)
-            .foregroundStyle(Theme.Color.textSecondary)
-            .frame(maxWidth: .infinity, alignment: .center)
-            .padding(.top, Theme.Spacing.md)
-            .accessibilityIdentifier("profile_version_footer")
-    }
-
-    /// "venn 1.2.3 (4)" — short marketing version + build number from the
-    /// app bundle. Falls back to a placeholder if the Info.plist values
-    /// aren't readable (only happens in some preview contexts).
-    /// Translate aggregate metrics into the per-row data the existing
-    /// `ProfileLibrarySection` expects. Subtitle is "X watched · Y
-    /// watchlist" when there's any activity, otherwise the empty-state
-    /// copy carried by `ProfileLibraryCategory.empty`.
-    private static func libraryCategories(from metrics: ProfileMetrics) -> [ProfileLibraryCategory] {
-        ProfileLibraryCategory.empty.map { template in
-            guard let kind = template.mediaKind,
-                  let counts = metrics.perCategory[kind],
-                  counts.watched + counts.watchlist > 0
-            else { return template }
-            return ProfileLibraryCategory(
-                id: template.id,
-                icon: template.icon,
-                title: template.title,
-                subtitle: "\(counts.watched) watched · \(counts.watchlist) watchlist",
-                mediaKind: template.mediaKind,
-                primaryActionTitle: template.primaryActionTitle,
-                secondaryActionTitle: template.secondaryActionTitle
-            )
+    private func presentEditSheet() {
+        guard let viewModel,
+              case let .loaded(snapshot) = viewModel.state
+        else {
+            return
         }
+        let profile = snapshot.profile
+        editViewModel = ProfileEditViewModel(
+            userID: profile.id,
+            displayName: profile.displayName,
+            bio: profile.bio,
+            service: ProfileService(client: clientProvider.client)
+        )
     }
-
-    private static let versionString: String = {
-        let info = Bundle.main.infoDictionary
-        let version = info?["CFBundleShortVersionString"] as? String ?? "—"
-        let build = info?["CFBundleVersion"] as? String ?? "—"
-        return "venn \(version) (\(build))"
-    }()
 
     private func ensureLoaded() async {
         if viewModel == nil, case let .signedIn(session) = authState.status {
@@ -199,11 +190,23 @@ struct ProfileView: View {
     }
 }
 
-#Preview("loaded") {
-    let provider = SupabaseClientProvider.preview
-    let state = AuthState(service: AuthService(client: provider.client))
-    return ProfileView()
-        .environment(state)
-        .environment(provider)
-        .environment(AppearanceSettings())
+/// Collection / Watchlist text tabs above the cover gallery.
+private struct ShelfTabs: View {
+    @Binding var selection: ProfileShelf
+
+    var body: some View {
+        HStack(spacing: Theme.Spacing.xl) {
+            ForEach(ProfileShelf.allCases) { shelf in
+                let isSelected = shelf == selection
+                Button {
+                    selection = shelf
+                } label: {
+                    Text(shelf.title)
+                        .font(Theme.Font.headline)
+                        .foregroundStyle(isSelected ? Theme.Color.textPrimary : Theme.Color.textSecondary)
+                }
+            }
+            Spacer()
+        }
+    }
 }

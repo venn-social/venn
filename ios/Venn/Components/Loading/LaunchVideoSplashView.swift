@@ -11,15 +11,13 @@ struct LaunchVideoSplashView: View {
 
     var onCompletion: (@MainActor () -> Void)?
 
-    @Environment(AppearanceSettings.self)
-    private var appearanceSettings
     @Environment(\.accessibilityReduceMotion)
     private var reduceMotion
     @Environment(\.colorScheme)
     private var colorScheme
 
     var body: some View {
-        let variant = appearanceSettings.mode.resolvedVariant(systemColorScheme: colorScheme)
+        let variant: AppThemeVariant = colorScheme == .dark ? .dark : .light
 
         ZStack {
             variant.backgroundColor
@@ -76,5 +74,4 @@ struct StaticLaunchMark: View {
 
 #Preview {
     LaunchVideoSplashView()
-        .environment(AppearanceSettings())
 }
