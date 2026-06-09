@@ -42,8 +42,6 @@ struct ComposerViewModelTests {
     @Test
     func pickSetsCandidateAndResetsActionFields() {
         let viewModel = ComposerViewModel(service: FakeComposerService())
-        viewModel.selectedAction = .rated
-        viewModel.rating = 4.5
         viewModel.ratingChoice = .love
         viewModel.caption = "great film"
         viewModel.postToFeed = false
@@ -52,8 +50,6 @@ struct ComposerViewModelTests {
         viewModel.pick(candidate)
 
         #expect(viewModel.selectedCandidate == candidate)
-        #expect(viewModel.selectedAction == .logged)
-        #expect(viewModel.rating == nil)
         #expect(viewModel.ratingChoice == nil)
         #expect(viewModel.caption.isEmpty)
         #expect(viewModel.postToFeed == true)
@@ -77,10 +73,9 @@ struct ComposerViewModelTests {
     }
 
     @Test
-    func canSubmitTrueAfterPickWithLoggedAction() {
+    func canSubmitTrueAfterPick() {
         let viewModel = ComposerViewModel(service: FakeComposerService())
         viewModel.pick(makeCandidate())
-        viewModel.selectedAction = .logged
         #expect(viewModel.canSubmit == true)
     }
 
@@ -98,16 +93,6 @@ struct ComposerViewModelTests {
         let viewModel = ComposerViewModel(service: FakeComposerService())
         viewModel.pick(makeCandidate())
         viewModel.ratingChoice = .love
-        #expect(viewModel.canSubmit == true)
-    }
-
-    @Test
-    func canSubmitFalseWhileSubmitting() {
-        let viewModel = ComposerViewModel(service: FakeComposerService())
-        viewModel.pick(makeCandidate())
-        // Directly set submitting state as if mid-flight
-        viewModel.selectedAction = .logged
-        // Can't force .submitting externally, but we can test indirectly via submit
         #expect(viewModel.canSubmit == true)
     }
 

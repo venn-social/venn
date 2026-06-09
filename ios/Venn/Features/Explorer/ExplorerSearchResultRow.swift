@@ -59,17 +59,6 @@ struct ExplorerSearchResultRow: View {
     }
 }
 
-private extension MediaKind {
-    var systemImage: String {
-        switch self {
-        case .movie: "film"
-        case .show: "tv"
-        case .book: "book.closed"
-        case .album: "music.note"
-        }
-    }
-}
-
 #Preview {
     VStack(spacing: 8) {
         ExplorerSearchResultRow(

@@ -33,7 +33,11 @@ struct FeedView: View {
                     loadedView(posts: posts)
                 }
             case let .error(reason):
-                errorView(reason: reason) { Task { await viewModel.load() } }
+                Screen {
+                    ErrorStateView(reason: reason, unknownTitle: "Couldn't load the feed") {
+                        Task { await viewModel.load() }
+                    }
+                }
             }
         } else {
             DeferredLoadingView()
@@ -63,23 +67,6 @@ struct FeedView: View {
                 systemImage: "square.stack.3d.up",
                 title: "Quiet for now",
                 message: "Posts from people you follow will land here once they start logging."
-            )
-        }
-    }
-
-    private func errorView(
-        reason: FeedViewModel.ErrorReason,
-        retry: @escaping () -> Void
-    ) -> some View {
-        Screen {
-            EmptyStateView(
-                systemImage: reason == .offline ? "wifi.slash" : "exclamationmark.triangle",
-                title: reason == .offline ? "You're offline" : "Couldn't load the feed",
-                message: reason == .offline
-                    ? "Reconnect to see the latest posts."
-                    : "Something went wrong on our end. Try again in a moment.",
-                actionTitle: "Try again",
-                action: retry
             )
         }
     }

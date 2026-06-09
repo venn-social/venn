@@ -32,6 +32,17 @@ enum MediaKind: String, Codable, CaseIterable, Hashable {
         case .album: "album"
         }
     }
+
+    /// SF Symbol for this kind — cover placeholders, search-result rows,
+    /// library badges. Defined once here; don't re-declare per feature.
+    var systemImage: String {
+        switch self {
+        case .movie: "film"
+        case .show: "tv"
+        case .book: "book.closed"
+        case .album: "music.note"
+        }
+    }
 }
 
 /// Origin of a `Media` row when sourced from an external catalog API.

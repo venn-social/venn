@@ -24,7 +24,7 @@ struct OpenLibraryService: OpenLibraryServicing {
 
     func searchBooks(query: String, page: Int = 1) async throws -> [MediaCandidate] {
         let url = Self.searchURL(query: query, page: page)
-        let data = try await fetch(url: url)
+        let data = try await ExternalAPI.fetch(url: url, session: session)
         let response = try JSONDecoder().decode(OLSearchResponse.self, from: data)
         return response.docs.map(Self.candidate(from:))
     }
@@ -64,20 +64,6 @@ struct OpenLibraryService: OpenLibraryServicing {
             preconditionFailure("Invalid OpenLibrary search URL")
         }
         return url
-    }
-
-    private func fetch(url: URL) async throws -> Data {
-        do {
-            let (data, response) = try await session.data(from: url)
-            if let http = response as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
-                throw http.statusCode == 429 ? AppError.rateLimited : AppError.server
-            }
-            return data
-        } catch let error as AppError {
-            throw error
-        } catch {
-            throw AppError.from(error)
-        }
     }
 }
 

@@ -36,7 +36,7 @@ ios/
 │   ├── App/
 │   │   ├── VennApp.swift                  @main entry point. Calls Observability.bootstrap.
 │   │   ├── RootView.swift                 Top-level routing decision (auth / main app).
-│   │   ├── ContentView.swift              Default placeholder; replace as routing lands.
+│   │   ├── MainView.swift                 Signed-in three-tab shell.
 │   │   └── Info.plist                     CFBundle*, build-time .env injection.
 │   ├── Features/
 │   │   ├── Auth/                          Each feature is self-contained:
@@ -45,18 +45,23 @@ ios/
 │   │   │   └── AuthView.swift               (c) View: pure SwiftUI.
 │   │   ├── Feed/
 │   │   │   ├── FeedView.swift               Screen composition only.
-│   │   │   └── FeedActivityRow.swift        Feature-only view pieces.
+│   │   │   └── FeedRow.swift                Feature-only view pieces.
+│   │   ├── Composer/                      Search → pick → rate → submit flow.
+│   │   ├── Explorer/                      Browse + search the media catalog.
 │   │   └── Profile/
 │   │       ├── ProfileView.swift            Screen composition + routing.
 │   │       ├── ProfileHeaderView.swift      Section component.
 │   │       └── Library/                     Subflow when the feature grows.
 │   ├── Components/                        Reusable UI primitives. No business logic.
-│   │                                      Examples: Screen, Button, Avatar, Card.
+│   │                                      Examples: Screen, buttons, ErrorStateView.
 │   ├── Services/                          Cross-feature service surface.
 │   │   ├── AppConfig.swift                Typed env access (Supabase URL, DSN, ...).
 │   │   ├── SupabaseClientProvider.swift   The single shared client.
+│   │   ├── ExternalAPI.swift              Shared HTTP fetch for catalog services.
 │   │   └── Observability.swift            Sentry + PostHog bootstrap.
 │   ├── Models/                            Domain types used in 2+ features.
+│   │                                      Includes LoadState (the shared
+│   │                                      loading/loaded/error state machine).
 │   ├── Resources/
 │   │   ├── Assets.xcassets                Images, colors, app icon.
 │   │   └── Config.xcconfig                Build settings (.env values flow here).
@@ -141,6 +146,15 @@ Service
 
 The view is dumb: it shows `viewModel.posts`. The view-model holds state. The service does I/O.
 
+### The standard load pattern
+
+Every "fetch a thing and render it" screen uses the same shared machinery — **don't re-declare it per feature**:
+
+- The view-model exposes `typealias State = LoadState<Payload>` (`Models/LoadState.swift`) and maps caught `AppError`s with `LoadErrorReason(error)`.
+- The view pattern-matches: `.loading` → `DeferredLoadingView`, `.loaded` → content (or `EmptyStateView`), `.error(reason)` → `ErrorStateView(reason:unknownTitle:retry:)`.
+
+Flow-specific failure reasons that need their own copy and affordances (invalid email on sign-in, invalid bio on profile edit) stay in that feature's own `ErrorReason` enum — `AuthViewModel` is the reference example.
+
 ### Writing data
 
 ```
@@ -183,9 +197,8 @@ Optimistic updates are the default for anything that should feel instant (likes,
 Anything **pure, deterministic, and dependency-free**. No SwiftUI. No Foundation imports beyond what's strictly needed. Easy to unit-test. Examples:
 
 - `Sanitize.swift` — validation/normalisation of user input.
-- `RateLimit.swift` — UX-level client-side throttle (the _real_ rate limit lives in Postgres).
-- `Formatters.swift` — date / number formatting for display.
-- `Result+Extensions.swift` — small ergonomic helpers.
+- `RelativeTime.swift` — "2h ago" timestamps for the feed.
+- `URL+Static.swift` — compile-time-checked static URLs.
 
 If a util grows past ~100 lines, it probably wants to be split into its own file or pulled into a service.
 

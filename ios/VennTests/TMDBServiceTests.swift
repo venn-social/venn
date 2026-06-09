@@ -74,28 +74,6 @@ struct TMDBServiceTests {
         #expect(candidate.kind == .show)
     }
 
-    // MARK: - Year parsing helper
-
-    @Test
-    func yearParsesFromFullDate() {
-        #expect(TMDBService.year(from: "2023-06-15") == 2023)
-    }
-
-    @Test
-    func yearParsesFromYearOnly() {
-        #expect(TMDBService.year(from: "1999") == 1999)
-    }
-
-    @Test
-    func yearReturnsNilForShortString() {
-        #expect(TMDBService.year(from: "202") == nil)
-    }
-
-    @Test
-    func yearReturnsNilForNil() {
-        #expect(TMDBService.year(from: nil) == nil)
-    }
-
     // MARK: - MediaCandidate id
 
     @Test

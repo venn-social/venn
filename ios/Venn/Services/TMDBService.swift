@@ -27,14 +27,14 @@ struct TMDBService: TMDBServicing {
 
     func searchMovies(query: String, page: Int = 1) async throws -> [MediaCandidate] {
         let url = Self.searchURL(path: "/3/search/movie", query: query, page: page, apiKey: apiKey)
-        let data = try await fetch(url: url)
+        let data = try await ExternalAPI.fetch(url: url, session: session)
         let response = try JSONDecoder().decode(TMDBMovieSearchResponse.self, from: data)
         return response.results.map(Self.candidate(from:))
     }
 
     func searchShows(query: String, page: Int = 1) async throws -> [MediaCandidate] {
         let url = Self.searchURL(path: "/3/search/tv", query: query, page: page, apiKey: apiKey)
-        let data = try await fetch(url: url)
+        let data = try await ExternalAPI.fetch(url: url, session: session)
         let response = try JSONDecoder().decode(TMDBShowSearchResponse.self, from: data)
         return response.results.map(Self.candidate(from:))
     }
@@ -45,7 +45,7 @@ struct TMDBService: TMDBServicing {
         MediaCandidate(
             title: movie.title,
             primaryCreator: nil,
-            year: year(from: movie.releaseDate),
+            year: ExternalAPI.year(from: movie.releaseDate),
             coverURL: movie.posterPath.map { posterBase.appending(path: $0) },
             overview: movie.overview.flatMap { $0.isEmpty ? nil : $0 },
             externalID: String(movie.id),
@@ -58,19 +58,13 @@ struct TMDBService: TMDBServicing {
         MediaCandidate(
             title: show.name,
             primaryCreator: nil,
-            year: year(from: show.firstAirDate),
+            year: ExternalAPI.year(from: show.firstAirDate),
             coverURL: show.posterPath.map { posterBase.appending(path: $0) },
             overview: show.overview.flatMap { $0.isEmpty ? nil : $0 },
             externalID: String(show.id),
             externalSource: .tmdb,
             kind: .show
         )
-    }
-
-    /// Extract the four-digit year from a "YYYY-MM-DD" or "YYYY" date string.
-    static func year(from dateString: String?) -> Int? {
-        guard let s = dateString, s.count >= 4 else { return nil }
-        return Int(s.prefix(4))
     }
 
     private static func searchURL(path: String, query: String, page: Int, apiKey: String) -> URL {
@@ -85,31 +79,6 @@ struct TMDBService: TMDBServicing {
             preconditionFailure("Invalid TMDB search URL for path \(path)")
         }
         return url
-    }
-
-    private func fetch(url: URL) async throws -> Data {
-        do {
-            let (data, response) = try await session.data(from: url)
-            if let http = response as? HTTPURLResponse {
-                switch http.statusCode {
-                case 200..<300:
-                    break
-                case 401, 403:
-                    throw AppError.unauthorized
-                case 429:
-                    throw AppError.rateLimited
-                case 400..<500:
-                    throw AppError.validation("HTTP \(http.statusCode)")
-                default:
-                    throw AppError.server
-                }
-            }
-            return data
-        } catch let error as AppError {
-            throw error
-        } catch {
-            throw AppError.from(error)
-        }
     }
 }
 

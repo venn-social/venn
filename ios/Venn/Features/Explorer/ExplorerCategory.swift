@@ -55,10 +55,4 @@ enum ExplorerCategory: String, CaseIterable, Hashable, Identifiable {
         case .books: .book
         }
     }
-
-    /// Kept for call sites that need a single kind (e.g. ExplorerRecommendationCard).
-    /// Falls back to `.movie` for `.all` — callers should prefer `browseKind`.
-    var mediaKind: MediaKind {
-        browseKind ?? .movie
-    }
 }

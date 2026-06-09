@@ -104,7 +104,7 @@ private struct MediaDetailView: View {
                     .resizable()
                     .aspectRatio(contentMode: .fill)
             default:
-                Image(systemName: candidate.kind.placeholderImage)
+                Image(systemName: candidate.kind.systemImage)
                     .font(.largeTitle)
                     .foregroundStyle(Theme.Color.accent)
             }
@@ -327,19 +327,6 @@ private struct RatingView: View {
     private func handleSubmit() async {
         guard case let .signedIn(session) = authState.status else { return }
         await viewModel.submit(authorID: session.user.id)
-    }
-}
-
-// MARK: - MediaKind helpers
-
-private extension MediaKind {
-    var placeholderImage: String {
-        switch self {
-        case .movie: "film"
-        case .show: "tv"
-        case .book: "book.closed"
-        case .album: "music.note"
-        }
     }
 }
 

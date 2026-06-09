@@ -119,6 +119,17 @@ At least one approval from a CODEOWNER. Reviewers check the rubric in [`CODING_S
 
 Set the task's `PR Link` field to the merged PR URL and `Status` to `Done`. Claude does this automatically.
 
+### 12. Clean up the local branch
+
+Because we squash-merge, your local branch never registers as "merged" and `git branch -d` refuses to delete it — so stale branches pile up quietly. Every few PRs, run:
+
+```bash
+make prune-branches        # dry run — lists local branches whose remote is gone
+make prune-branches-force  # actually deletes them
+```
+
+Branches you never pushed are left alone, so unpushed work is never at risk.
+
 ---
 
 ## Reviewing a PR without running Xcode

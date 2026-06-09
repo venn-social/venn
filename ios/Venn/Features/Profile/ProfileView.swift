@@ -55,7 +55,9 @@ struct ProfileView: View {
             case let .loaded(snapshot):
                 loadedView(snapshot)
             case let .error(reason):
-                errorView(reason: reason) { Task { await viewModel.load() } }
+                ErrorStateView(reason: reason, unknownTitle: "Couldn't load your profile") {
+                    Task { await viewModel.load() }
+                }
             }
         } else {
             DeferredLoadingView()
@@ -147,33 +149,6 @@ struct ProfileView: View {
                     }
                 }
             }
-        }
-    }
-
-    private func errorView(
-        reason: ProfileViewModel.ErrorReason,
-        retry: @escaping () -> Void
-    ) -> some View {
-        EmptyStateView(
-            systemImage: "exclamationmark.triangle",
-            title: errorTitle(for: reason),
-            message: errorMessage(for: reason),
-            actionTitle: "Try again",
-            action: retry
-        )
-    }
-
-    private func errorTitle(for reason: ProfileViewModel.ErrorReason) -> LocalizedStringKey {
-        switch reason {
-        case .offline: "You're offline"
-        case .unknown: "Couldn't load your profile"
-        }
-    }
-
-    private func errorMessage(for reason: ProfileViewModel.ErrorReason) -> LocalizedStringKey {
-        switch reason {
-        case .offline: "Check your connection and try again."
-        case .unknown: "Something went wrong. Please try again."
         }
     }
 

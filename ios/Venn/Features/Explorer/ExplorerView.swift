@@ -98,7 +98,7 @@ struct ExplorerView: View {
                     grid(media)
                 }
             case let .error(reason):
-                browseErrorView(reason: reason) {
+                ErrorStateView(reason: reason, unknownTitle: "Couldn't load recommendations") {
                     if let kind = selectedCategory.browseKind {
                         Task { await viewModel.load(kind: kind) }
                     }
@@ -139,21 +139,6 @@ struct ExplorerView: View {
         )
     }
 
-    private func browseErrorView(
-        reason: ExplorerViewModel.ErrorReason,
-        retry: @escaping () -> Void
-    ) -> some View {
-        EmptyStateView(
-            systemImage: reason == .offline ? "wifi.slash" : "exclamationmark.triangle",
-            title: reason == .offline ? "You're offline" : "Couldn't load recommendations",
-            message: reason == .offline
-                ? "Reconnect to see what's new."
-                : "Something went wrong. Try again in a moment.",
-            actionTitle: "Try again",
-            action: retry
-        )
-    }
-
     // MARK: - Search mode
 
     @ViewBuilder private var searchResultsStack: some View {
@@ -181,13 +166,7 @@ struct ExplorerView: View {
                     }
                 }
             case let .error(reason):
-                EmptyStateView(
-                    systemImage: reason == .offline ? "wifi.slash" : "exclamationmark.triangle",
-                    title: reason == .offline ? "You're offline" : "Search failed",
-                    message: reason == .offline
-                        ? "Reconnect to search."
-                        : "Something went wrong. Try again."
-                )
+                ErrorStateView(reason: reason, unknownTitle: "Search failed")
             }
         }
     }

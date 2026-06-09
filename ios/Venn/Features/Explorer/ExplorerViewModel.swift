@@ -8,19 +8,7 @@ import Observation
 @MainActor
 @Observable
 final class ExplorerViewModel {
-    enum State: Equatable {
-        case loading
-        case loaded([Media])
-        case error(ErrorReason)
-    }
-
-    /// UI-layer reason a load failed. View renders different copy per
-    /// reason; everything outside `.offline` collapses to `.unknown`
-    /// because the user can't act on the distinction.
-    enum ErrorReason: Equatable {
-        case offline
-        case unknown
-    }
+    typealias State = LoadState<[Media]>
 
     private(set) var state: State = .loading
 
@@ -40,16 +28,9 @@ final class ExplorerViewModel {
             let media = try await service.recentMedia(kind: kind, limit: limit)
             state = .loaded(media)
         } catch let error as AppError {
-            state = .error(reason(for: error))
+            state = .error(LoadErrorReason(error))
         } catch {
             state = .error(.unknown)
-        }
-    }
-
-    private func reason(for error: AppError) -> ErrorReason {
-        switch error {
-        case .network: .offline
-        case .unauthorized, .validation, .rateLimited, .server, .unknown: .unknown
         }
     }
 }

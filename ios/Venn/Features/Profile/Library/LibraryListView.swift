@@ -34,7 +34,9 @@ struct LibraryListView: View {
                     .scrollContentBackground(.hidden)
                 }
             case let .error(reason):
-                errorView(reason: reason)
+                ErrorStateView(reason: reason, unknownTitle: "Couldn't load library") {
+                    Task { await viewModel.load() }
+                }
             }
         }
         .navigationTitle(viewModel.shelf.title)
@@ -53,19 +55,6 @@ struct LibraryListView: View {
                 ? "Search for something in the Explorer tab and tap \"Add to Watchlist\"."
                 : "Log what you've watched, read, or listened to using the Explorer tab."
         )
-    }
-
-    private func errorView(reason: LibraryViewModel.ErrorReason) -> some View {
-        EmptyStateView(
-            systemImage: reason == .offline ? "wifi.slash" : "exclamationmark.triangle",
-            title: reason == .offline ? "You're offline" : "Couldn't load library",
-            message: reason == .offline
-                ? "Reconnect and try again."
-                : "Something went wrong. Pull to refresh.",
-            actionTitle: "Try again"
-        ) {
-            Task { await viewModel.load() }
-        }
     }
 }
 
@@ -144,16 +133,5 @@ private struct LibraryItemRow: View {
             .padding(.horizontal, Theme.Spacing.sm)
             .padding(.vertical, Theme.Spacing.xs)
             .vennGlass(.regular, in: .capsule)
-    }
-}
-
-private extension MediaKind {
-    var systemImage: String {
-        switch self {
-        case .movie: "film"
-        case .show: "tv"
-        case .book: "book.closed"
-        case .album: "music.note"
-        }
     }
 }

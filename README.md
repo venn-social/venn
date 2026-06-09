@@ -6,11 +6,17 @@ See the [product vision](https://www.notion.so/product-vision-34bc60c854a2810993
 
 > **2026-05-01:** the repo migrated from React Native + Expo to native Swift. The pre-migration codebase is preserved on the [`archive/rn-expo`](https://github.com/venn-social/venn/tree/archive/rn-expo) branch. See [ADR 0002](./docs/decisions/0002-swift-over-react-native.md) for the reasoning.
 
-## Current frontend status
+## Current app status
 
-The first native frontend pass is intentionally a **prototype shell**, not a complete product implementation. In Debug builds, the app can boot straight into a sample three-tab experience — **Feed**, **Explorer**, and **Profile** — so the team can review layout, navigation, and visual direction quickly in the iOS Simulator without signing in.
+The three-tab app — **Feed**, **Explorer**, **Profile** — is wired to real Supabase data:
 
-This prototype uses placeholder/sample data and reusable SwiftUI components to explore the product shape. The real backend work still needs to be wired in: production auth routing, Supabase-backed feed activity, search/recommendation data, watchlist/data-room persistence, profile stats, and overlap calculations. Treat the current UI as the frontend foundation we will connect to services and migrations in follow-up PRs.
+- **Auth** — magic-link email sign-in with deep-link callback (plus a DEBUG-only "continue as guest" bypass for development).
+- **Feed** — recent posts with media + author, rendered as an image-forward stream. Global for now; narrows to the follow graph once following ships.
+- **Explorer** — browse the media catalog by category, or live-search movies/TV (TMDB), books (OpenLibrary), and music (MusicBrainz). Tapping a result opens the composer.
+- **Composer** — the log flow: pick an item → rate (Love/Like/Dislike) → optional caption → log it or add to watchlist.
+- **Profile** — real profile, follow counts, edit sheet, and Collection / Watchlist shelves with tap-through library lists.
+
+Still ahead (tracked in Notion): follow/unfollow UI, user search, the Venn overlap computation, onboarding (username setup), and avatar upload.
 
 ## For first-time contributors
 
@@ -43,15 +49,16 @@ If you'll be using Claude on the project, also do the [Claude Code + plugins + N
 
 ```
 venn/
-├── ios/                          Native iOS app
+├── ios/                          Native iOS app (frontend)
 │   ├── project.yml               XcodeGen source of truth
 │   ├── Venn/                     App target sources (App, Features, Components, ...)
-│   ├── VennTests/                Unit tests
+│   ├── VennTests/                Unit + snapshot tests
 │   └── VennUITests/              UI tests
-├── supabase/                     SQL migrations (backend stays unchanged)
+├── supabase/                     Backend: SQL migrations, seed data, local config
+├── scripts/                      Repo tooling (doctor, codegen, seeding, CI helpers)
 ├── docs/                         Architecture, workflow, coding standards, ADRs
 ├── .github/                      CI workflows, PR template, CODEOWNERS
-└── .husky/                       Pre-commit + commit-msg hooks
+└── .husky/                       Pre-commit / commit-msg / pre-push hooks
 ```
 
 Every major decision behind this layout is documented in [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md).
@@ -87,7 +94,7 @@ Every major decision behind this layout is documented in [`docs/ARCHITECTURE.md`
 
 On the radar, deliberately not done yet:
 
-- **`hex` MCP servers** ([levnikolaevich/claude-code-skills](https://github.com/levnikolaevich/claude-code-skills)) — `hex-graph` (SQLite code knowledge graph), `hex-line` (hash-verified editing), `hex-ssh` (remote SSH execution). Premature for a ~15-file codebase; revisit when we cross ~50 files / 5k lines, or if anyone on the team starts working from a cloud Mac.
+- **`hex` MCP servers** ([levnikolaevich/claude-code-skills](https://github.com/levnikolaevich/claude-code-skills)) — `hex-graph` (SQLite code knowledge graph), `hex-line` (hash-verified editing), `hex-ssh` (remote SSH execution). The original "revisit at ~50 files / 5k lines" threshold has been crossed (~75 Swift files / ~9.5k lines as of June 2026), but plain grep + the docs are still doing fine — adopt when navigation actually starts hurting, or if anyone starts working from a cloud Mac.
 - **Per-PR TestFlight builds** — Xcode Cloud or Fastlane Match. Needs an Apple Developer account first.
 - **CodeQL / static analysis** — defer until we have user-facing features sensitive enough to warrant another security gate beyond the existing TruffleHog secret scan.
 - **Sentry source maps + release tracking** — wire up once we cut real builds (currently relevant only for production traces, not simulator).
