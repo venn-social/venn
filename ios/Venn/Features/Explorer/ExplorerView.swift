@@ -1,12 +1,15 @@
 import SwiftUI
 
-/// Explorer tab. Two modes:
-///   - **Browse:** loads recent media from Supabase and renders recommendation cards.
-///     The "All" category shows a search prompt instead of recommendations.
-///   - **Search:** live search against TMDB / OpenLibrary / MusicBrainz. Tapping
-///     a result opens the composer sheet so the user can log the item.
+/// Explorer tab. Header-less and minimal, matching the refreshed Feed. Two
+/// modes off the search field:
+///   - **Browse** (empty query): recent media of the selected kind from
+///     `ExplorerService`, as an image-forward cover grid. The "All" category
+///     shows a search prompt instead.
+///   - **Search** (non-empty query): live search against TMDB / OpenLibrary /
+///     MusicBrainz via `ComposerViewModel`; tapping a result opens the
+///     composer sheet to log or save the item.
 ///
-/// The category picker controls both the recommendation kind and the search scope.
+/// The category picker controls both the browse kind and the search scope.
 struct ExplorerView: View {
     @Environment(SupabaseClientProvider.self)
     private var clientProvider
@@ -22,29 +25,26 @@ struct ExplorerView: View {
         NavigationStack {
             Screen {
                 ScrollView {
-                    VStack(alignment: .leading, spacing: Theme.Spacing.xl) {
-                        header
+                    VStack(alignment: .leading, spacing: Theme.Spacing.lg) {
+                        SearchField(text: $query, prompt: "Search movies, TV, music, books")
                         categoryPicker
                         if query.isEmpty {
                             if selectedCategory.browseKind != nil {
-                                recommendationStack
+                                browseStack
                             } else {
                                 allBrowsePrompt
                             }
-                            quickActions
                         } else {
                             searchResultsStack
                         }
                     }
-                    .padding(.vertical, Theme.Spacing.lg)
+                    .padding(.top, Theme.Spacing.md)
                     .padding(.bottom, Theme.Spacing.xxxl)
                 }
                 .scrollContentBackground(.hidden)
                 .tracksGlassSkyParallax()
             }
-            .navigationTitle("Explorer")
-            .navigationBarTitleDisplayMode(.inline)
-            .searchable(text: $query, prompt: Text("Search movies, TV, music, books…"))
+            .toolbar(.hidden, for: .navigationBar)
             .containerBackground(for: .navigation) {
                 GlassSkyBackground()
             }
@@ -68,20 +68,9 @@ struct ExplorerView: View {
         }
     }
 
-    // MARK: - Browse mode
+    // MARK: - Categories
 
-    private var header: some View {
-        VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
-            Text("Explorer")
-                .font(Theme.Font.largeTitle)
-                .foregroundStyle(Theme.Color.textPrimary)
-            Text("Search what you know, find what to try next, and save it to your profile.")
-                .font(Theme.Font.body)
-                .foregroundStyle(Theme.Color.textSecondary)
-        }
-    }
-
-    /// Wrapped in a horizontal ScrollView so all 5 chips fit on any screen width.
+    /// Wrapped in a horizontal ScrollView so all chips fit any screen width.
     private var categoryPicker: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             GlassSegmentedControl(
@@ -95,34 +84,40 @@ struct ExplorerView: View {
         .scrollClipDisabled()
     }
 
-    private var recommendationStack: some View {
-        VStack(alignment: .leading, spacing: Theme.Spacing.md) {
-            Text("Recommended for you")
-                .font(Theme.Font.title3)
-                .foregroundStyle(Theme.Color.textPrimary)
+    // MARK: - Browse mode
 
-            if let viewModel {
-                switch viewModel.state {
-                case .loading:
-                    DeferredLoadingView(caption: "Looking for something good…")
-                case let .loaded(media):
-                    if media.isEmpty {
-                        browseEmptyView
-                    } else {
-                        VStack(spacing: Theme.Spacing.md) {
-                            ForEach(media) { item in
-                                ExplorerRecommendationCard(media: item, category: selectedCategory)
-                                    .vennScrollDepth()
-                            }
-                        }
-                    }
-                case let .error(reason):
-                    browseErrorView(reason: reason) {
-                        if let kind = selectedCategory.browseKind {
-                            Task { await viewModel.load(kind: kind) }
-                        }
+    @ViewBuilder private var browseStack: some View {
+        if let viewModel {
+            switch viewModel.state {
+            case .loading:
+                DeferredLoadingView(caption: "Looking for something good…")
+            case let .loaded(media):
+                if media.isEmpty {
+                    browseEmptyView
+                } else {
+                    grid(media)
+                }
+            case let .error(reason):
+                browseErrorView(reason: reason) {
+                    if let kind = selectedCategory.browseKind {
+                        Task { await viewModel.load(kind: kind) }
                     }
                 }
+            }
+        }
+    }
+
+    private func grid(_ media: [Media]) -> some View {
+        LazyVGrid(
+            columns: [
+                GridItem(.flexible(), spacing: Theme.Spacing.md),
+                GridItem(.flexible(), spacing: Theme.Spacing.md),
+            ],
+            spacing: Theme.Spacing.lg
+        ) {
+            ForEach(media) { item in
+                ExplorerMediaCell(media: item)
+                    .vennScrollDepth()
             }
         }
     }
@@ -157,23 +152,6 @@ struct ExplorerView: View {
             actionTitle: "Try again",
             action: retry
         )
-    }
-
-    private var quickActions: some View {
-        VStack(alignment: .leading, spacing: Theme.Spacing.md) {
-            ExplorerActionRow(
-                icon: "checkmark.circle",
-                title: "Add to watched",
-                detail: "Keep a permanent record of what you consumed."
-            )
-            .vennScrollDepth()
-            ExplorerActionRow(
-                icon: "bookmark",
-                title: "Save to watchlist",
-                detail: "A softer maybe list for later."
-            )
-            .vennScrollDepth()
-        }
     }
 
     // MARK: - Search mode
@@ -242,10 +220,31 @@ struct ExplorerView: View {
     }
 }
 
+/// One cover in the Explorer browse grid: an image-forward tile with the
+/// title and creator beneath.
+private struct ExplorerMediaCell: View {
+    let media: Media
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
+            MediaCoverTile(title: media.title, kind: media.kind, height: 180)
+            Text(media.title)
+                .font(Theme.Font.callout.weight(.semibold))
+                .foregroundStyle(Theme.Color.textPrimary)
+                .lineLimit(2)
+            if let creator = media.primaryCreator {
+                Text(creator)
+                    .font(Theme.Font.footnote)
+                    .foregroundStyle(Theme.Color.textSecondary)
+                    .lineLimit(1)
+            }
+        }
+    }
+}
+
 #Preview {
     ExplorerView()
         .environment(AppConfig.preview)
         .environment(SupabaseClientProvider.preview)
         .environment(AuthState(service: AuthService(client: SupabaseClientProvider.preview.client)))
-        .environment(AppearanceSettings())
 }

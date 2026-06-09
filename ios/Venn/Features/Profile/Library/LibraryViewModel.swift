@@ -1,20 +1,7 @@
 import Foundation
 import Observation
 
-/// Which half of the library is being viewed.
-enum LibraryTab: String, Hashable, CaseIterable {
-    case watchlist
-    case collection
-
-    var title: String {
-        switch self {
-        case .watchlist: "Watchlist"
-        case .collection: "Collection"
-        }
-    }
-}
-
-/// Drives `LibraryListView` for a single `(userID, kind, tab)` combination.
+/// Drives `LibraryListView` for a single `(userID, kind, shelf)` combination.
 /// Load is triggered by the view's `.task` modifier; optimistic removal
 /// reverts on failure.
 @MainActor
@@ -35,20 +22,20 @@ final class LibraryViewModel {
 
     let userID: UUID
     let kind: MediaKind?
-    let tab: LibraryTab
+    let shelf: ProfileShelf
     private let service: any ProfileServicing
 
-    init(userID: UUID, kind: MediaKind?, tab: LibraryTab, service: any ProfileServicing) {
+    init(userID: UUID, kind: MediaKind?, shelf: ProfileShelf, service: any ProfileServicing) {
         self.userID = userID
         self.kind = kind
-        self.tab = tab
+        self.shelf = shelf
         self.service = service
     }
 
     func load() async {
         state = .loading
         do {
-            let items = switch tab {
+            let items = switch shelf {
             case .watchlist:
                 try await service.watchlist(for: userID, kind: kind)
             case .collection:

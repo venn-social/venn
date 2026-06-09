@@ -1,13 +1,15 @@
 import Foundation
 import Observation
 
-/// Bundle of everything `ProfileView` needs once a profile has loaded —
-/// the row itself plus the aggregate metrics for the tiles + library
-/// section. Carried by `ProfileViewModel.State.loaded` so the view
-/// renders the full surface from a single state transition.
+/// Bundle of everything `ProfileView` needs once a profile has loaded — the
+/// row, the follow counts, and the Collection / Watchlist library items.
+/// Carried by `ProfileViewModel.State.loaded` so the view renders the full
+/// surface from a single state transition.
 struct ProfileSnapshot: Equatable {
     let profile: UserProfile
-    let metrics: ProfileMetrics
+    let followCounts: FollowCounts
+    let collection: [LibraryItem]
+    let watchlist: [LibraryItem]
 }
 
 /// Loads and exposes a profile row plus its aggregate metrics.
@@ -51,10 +53,14 @@ final class ProfileViewModel {
         state = .loading
         do {
             async let profile = service.profile(for: userID)
-            async let metrics = service.metrics(for: userID)
+            async let followCounts = service.followCounts(for: userID)
+            async let collection = service.collection(for: userID, kind: nil)
+            async let watchlist = service.watchlist(for: userID, kind: nil)
             let snapshot = try await ProfileSnapshot(
                 profile: profile,
-                metrics: metrics
+                followCounts: followCounts,
+                collection: collection,
+                watchlist: watchlist
             )
             state = .loaded(snapshot)
         } catch let error as AppError {

@@ -388,7 +388,6 @@ private struct SecondaryButtonStyle: ButtonStyle {
         .environment(AppConfig.preview)
         .environment(SupabaseClientProvider.preview)
         .environment(AuthState(service: AuthService(client: SupabaseClientProvider.preview.client)))
-        .environment(AppearanceSettings())
 }
 
 /// Preview-only service that never resolves (sheet is for visual inspection).

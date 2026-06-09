@@ -40,7 +40,6 @@
         ZStack { GlassSkyBackground()
             StylePreviewShell()
         }
-        .environment(AppearanceSettings())
         .preferredColorScheme(.light)
     }
 
@@ -48,7 +47,6 @@
         ZStack { GlassSkyBackground()
             StylePreviewShell()
         }
-        .environment(AppearanceSettings())
         .preferredColorScheme(.dark)
     }
 #endif

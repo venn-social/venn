@@ -15,7 +15,7 @@ struct ProfileLibraryTests {
         let viewModel = LibraryViewModel(
             userID: UUID(),
             kind: .movie,
-            tab: .watchlist,
+            shelf: .watchlist,
             service: service
         )
 
@@ -36,7 +36,7 @@ struct ProfileLibraryTests {
         let viewModel = LibraryViewModel(
             userID: UUID(),
             kind: nil,
-            tab: .collection,
+            shelf: .collection,
             service: service
         )
 
@@ -53,7 +53,7 @@ struct ProfileLibraryTests {
     func loadEmptyResultsShowsLoadedWithEmptyArray() async {
         let service = FakeLibraryService()
         service.watchlistResult = .success([])
-        let viewModel = LibraryViewModel(userID: UUID(), kind: nil, tab: .watchlist, service: service)
+        let viewModel = LibraryViewModel(userID: UUID(), kind: nil, shelf: .watchlist, service: service)
 
         await viewModel.load()
 
@@ -66,7 +66,7 @@ struct ProfileLibraryTests {
     func loadNetworkErrorFlipsToOffline() async {
         let service = FakeLibraryService()
         service.watchlistResult = .failure(AppError.network)
-        let viewModel = LibraryViewModel(userID: UUID(), kind: nil, tab: .watchlist, service: service)
+        let viewModel = LibraryViewModel(userID: UUID(), kind: nil, shelf: .watchlist, service: service)
 
         await viewModel.load()
 
@@ -78,7 +78,7 @@ struct ProfileLibraryTests {
         struct Boom: Error {}
         let service = FakeLibraryService()
         service.watchlistResult = .failure(Boom())
-        let viewModel = LibraryViewModel(userID: UUID(), kind: nil, tab: .watchlist, service: service)
+        let viewModel = LibraryViewModel(userID: UUID(), kind: nil, shelf: .watchlist, service: service)
 
         await viewModel.load()
 
@@ -93,7 +93,7 @@ struct ProfileLibraryTests {
         let service = FakeLibraryService()
         service.watchlistResult = .success([item])
         service.removeResult = .success(())
-        let viewModel = LibraryViewModel(userID: UUID(), kind: nil, tab: .watchlist, service: service)
+        let viewModel = LibraryViewModel(userID: UUID(), kind: nil, shelf: .watchlist, service: service)
         await viewModel.load()
 
         await viewModel.remove(item: item)
@@ -108,7 +108,7 @@ struct ProfileLibraryTests {
         let service = FakeLibraryService()
         service.watchlistResult = .success([item])
         service.removeResult = .failure(AppError.network)
-        let viewModel = LibraryViewModel(userID: UUID(), kind: nil, tab: .watchlist, service: service)
+        let viewModel = LibraryViewModel(userID: UUID(), kind: nil, shelf: .watchlist, service: service)
         await viewModel.load()
 
         await viewModel.remove(item: item)
@@ -124,24 +124,12 @@ struct ProfileLibraryTests {
     @Test
     func removeDoesNothingWhenNotInLoadedState() async {
         let service = FakeLibraryService()
-        let viewModel = LibraryViewModel(userID: UUID(), kind: nil, tab: .watchlist, service: service)
+        let viewModel = LibraryViewModel(userID: UUID(), kind: nil, shelf: .watchlist, service: service)
         // State is .loading — remove should be a no-op
 
         await viewModel.remove(item: makeItem(action: .saved))
 
         #expect(service.removedPostIDs.isEmpty)
-    }
-
-    // MARK: - LibraryTab
-
-    @Test
-    func tabTitleWatchlist() {
-        #expect(LibraryTab.watchlist.title == "Watchlist")
-    }
-
-    @Test
-    func tabTitleCollection() {
-        #expect(LibraryTab.collection.title == "Collection")
     }
 
     // MARK: - Helpers
@@ -176,7 +164,7 @@ struct ProfileLibraryTests {
 final class FakeLibraryService: ProfileServicing, @unchecked Sendable {
     var result: Result<UserProfile, Error> = .failure(NotConfigured())
     var updateResult: Result<Void, Error> = .success(())
-    var metricsResult: Result<ProfileMetrics, Error> = .success(.empty)
+    var followCountsResult: Result<FollowCounts, Error> = .success(.zero)
     var watchlistResult: Result<[LibraryItem], Error> = .success([])
     var collectionResult: Result<[LibraryItem], Error> = .success([])
     var removeResult: Result<Void, Error> = .success(())
@@ -191,8 +179,8 @@ final class FakeLibraryService: ProfileServicing, @unchecked Sendable {
         try updateResult.get()
     }
 
-    func metrics(for _: UUID) async throws -> ProfileMetrics {
-        try metricsResult.get()
+    func followCounts(for _: UUID) async throws -> FollowCounts {
+        try followCountsResult.get()
     }
 
     func watchlist(for _: UUID, kind _: MediaKind?) async throws -> [LibraryItem] {

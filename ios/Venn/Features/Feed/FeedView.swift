@@ -1,8 +1,8 @@
 import SwiftUI
 
 /// Feed tab content. Loads recent posts from `FeedService` and renders
-/// them as a stack of `ActivityCard`s. Shows a loading spinner during
-/// fetch, an empty state when there's nothing yet, and a retry-able
+/// them as an image-forward stream of `FeedRow`s. Shows a loading spinner
+/// during fetch, an empty state when there's nothing yet, and a retry-able
 /// error state on failure. Same shape as `ProfileView`.
 struct FeedView: View {
     @Environment(SupabaseClientProvider.self)
@@ -13,8 +13,7 @@ struct FeedView: View {
     var body: some View {
         NavigationStack {
             content
-                .navigationTitle("Feed")
-                .navigationBarTitleDisplayMode(.inline)
+                .toolbar(.hidden, for: .navigationBar)
                 .containerBackground(for: .navigation) {
                     GlassSkyBackground()
                 }
@@ -37,32 +36,20 @@ struct FeedView: View {
                 errorView(reason: reason) { Task { await viewModel.load() } }
             }
         } else {
-            LoadingView()
+            DeferredLoadingView()
         }
     }
 
     private func loadedView(posts: [FeedPost]) -> some View {
         Screen {
             ScrollView {
-                VStack(alignment: .leading, spacing: Theme.Spacing.lg) {
-                    Text("Today")
-                        .font(Theme.Font.largeTitle)
-                        .foregroundStyle(Theme.Color.textPrimary)
-
-                    VStack(spacing: Theme.Spacing.md) {
-                        ForEach(posts) { feedPost in
-                            ActivityCard(
-                                name: feedPost.author.displayName ?? feedPost.author.username,
-                                action: feedPost.post.action.rawValue,
-                                title: feedPost.media.title,
-                                detail: feedPost.post.caption ?? "",
-                                rating: feedPost.post.rating.map { String(format: "%.1f", $0) }
-                            )
+                LazyVStack(alignment: .leading, spacing: Theme.Spacing.xxl) {
+                    ForEach(posts) { feedPost in
+                        FeedRow(feedPost: feedPost)
                             .vennScrollDepth()
-                        }
                     }
                 }
-                .padding(.vertical, Theme.Spacing.lg)
+                .padding(.top, Theme.Spacing.md)
                 .padding(.bottom, Theme.Spacing.xxxl)
             }
             .scrollContentBackground(.hidden)

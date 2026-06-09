@@ -207,4 +207,10 @@ final class FakeAuthService: AuthServicing, @unchecked Sendable {
     func handleCallback(_: URL) async throws {}
 
     func signOut() async throws {}
+
+    var signInAnonymouslyResult: Result<Void, Error> = .success(())
+
+    func signInAnonymously() async throws {
+        try signInAnonymouslyResult.get()
+    }
 }

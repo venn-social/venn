@@ -12,6 +12,12 @@ struct AuthView: View {
     @Bindable var viewModel: AuthViewModel
     @FocusState private var emailFieldFocused: Bool
 
+    #if DEBUG
+        @Environment(AuthState.self)
+        private var authState
+        @State private var isEnteringGuest = false
+    #endif
+
     var body: some View {
         Screen {
             VStack(spacing: Theme.Spacing.xl) {
@@ -28,6 +34,10 @@ struct AuthView: View {
 
                 Spacer()
 
+                #if DEBUG
+                    guestBypass
+                #endif
+
                 Text("Private beta")
                     .font(Theme.Font.caption.weight(.semibold))
                     .foregroundStyle(Theme.Color.textSecondary)
@@ -37,6 +47,23 @@ struct AuthView: View {
             }
         }
     }
+
+    #if DEBUG
+        /// Temporary developer affordance: skip the magic-link flow and drop
+        /// straight into the app. DEBUG-only — see `AuthState.enterGuestSession`.
+        private var guestBypass: some View {
+            Button {
+                isEnteringGuest = true
+                Task { await authState.enterGuestSession() }
+            } label: {
+                Text(isEnteringGuest ? "Signing in…" : "Continue as guest")
+                    .font(Theme.Font.footnote.weight(.semibold))
+                    .foregroundStyle(Theme.Color.accent)
+            }
+            .disabled(isEnteringGuest)
+            .accessibilityIdentifier("auth_guest_button")
+        }
+    #endif
 
     private var header: some View {
         VStack(spacing: Theme.Spacing.lg) {
@@ -134,6 +161,7 @@ struct AuthView: View {
         service: PreviewAuthService(),
         redirectURL: URL(staticString: "social.venn.app://auth-callback")
     ))
+    .environment(AuthState(service: PreviewAuthService()))
 }
 
 #Preview("sent") {
@@ -144,6 +172,7 @@ struct AuthView: View {
     viewModel.email = "charles@example.com"
     viewModel.state = .sent
     return AuthView(viewModel: viewModel)
+        .environment(AuthState(service: PreviewAuthService()))
 }
 
 /// Periphery flags this as unused — it's reachable only from the
@@ -160,4 +189,5 @@ private struct PreviewAuthService: AuthServicing {
     func sendMagicLink(email _: String, redirectTo _: URL) async throws {}
     func handleCallback(_: URL) async throws {}
     func signOut() async throws {}
+    func signInAnonymously() async throws {}
 }

@@ -19,11 +19,8 @@ protocol ProfileServicing: Sendable {
         bio: String?
     ) async throws
 
-    /// Aggregate counts for the profile tiles + library section. One
-    /// query, aggregated client-side. Cheap until any user crosses
-    /// ~10k posts — at that point this becomes a Postgres RPC with
-    /// GROUP BY done server-side.
-    func metrics(for userID: UUID) async throws -> ProfileMetrics
+    /// Follower / following counts from the `follows` table.
+    func followCounts(for userID: UUID) async throws -> FollowCounts
 
     /// Items the user saved for later (`action == .saved`). Pass a `kind`
     /// to scope the results to one media type; nil returns all kinds.
@@ -78,58 +75,26 @@ struct ProfileService: ProfileServicing {
         }
     }
 
-    func metrics(for userID: UUID) async throws -> ProfileMetrics {
+    func followCounts(for userID: UUID) async throws -> FollowCounts {
         do {
-            // `media!inner(kind)` forces an inner join so rows without
-            // a matching media (shouldn't happen given the FK, but
-            // defensive) drop out. We only pull `action` + `kind`
-            // because that's all the aggregation needs.
-            let rows: [ProfileMetricsRow] = try await client
-                .from("posts")
-                .select("action, media!inner(kind)")
-                .eq("author_id", value: userID)
-                .execute()
-                .value
-            return ProfileMetrics(rows: rows)
+            async let followers = edgeCount(column: "followee_id", value: userID)
+            async let following = edgeCount(column: "follower_id", value: userID)
+            return try await FollowCounts(followers: followers, following: following)
         } catch {
             throw AppError.from(error)
         }
     }
 
     func watchlist(for userID: UUID, kind: MediaKind?) async throws -> [LibraryItem] {
-        do {
-            let rows: [LibraryItemRow] = try await client
-                .from("posts")
-                .select(LibraryItemRow.selectClause)
-                .eq("author_id", value: userID)
-                .eq("action", value: PostAction.saved.rawValue)
-                .order("created_at", ascending: false)
-                .execute()
-                .value
-            return rows
-                .compactMap(LibraryItem.init(row:))
-                .filter { kind == nil || $0.media.kind == kind }
-        } catch {
-            throw AppError.from(error)
-        }
+        try await libraryItems(for: userID, actions: [PostAction.saved.rawValue], kind: kind)
     }
 
     func collection(for userID: UUID, kind: MediaKind?) async throws -> [LibraryItem] {
-        do {
-            let rows: [LibraryItemRow] = try await client
-                .from("posts")
-                .select(LibraryItemRow.selectClause)
-                .eq("author_id", value: userID)
-                .in("action", values: [PostAction.logged.rawValue, PostAction.rated.rawValue])
-                .order("created_at", ascending: false)
-                .execute()
-                .value
-            return rows
-                .compactMap(LibraryItem.init(row:))
-                .filter { kind == nil || $0.media.kind == kind }
-        } catch {
-            throw AppError.from(error)
-        }
+        try await libraryItems(
+            for: userID,
+            actions: [PostAction.logged.rawValue, PostAction.rated.rawValue],
+            kind: kind
+        )
     }
 
     func removeFromLibrary(postID: UUID) async throws {
@@ -142,6 +107,40 @@ struct ProfileService: ProfileServicing {
         } catch {
             throw AppError.from(error)
         }
+    }
+
+    /// Shared library query: the author's posts with the given actions,
+    /// joined with media, newest first, optionally scoped to one kind.
+    private func libraryItems(
+        for userID: UUID,
+        actions: [String],
+        kind: MediaKind?
+    ) async throws -> [LibraryItem] {
+        do {
+            let rows: [LibraryItemRow] = try await client
+                .from("posts")
+                .select(LibraryItemRow.selectClause)
+                .eq("author_id", value: userID)
+                .in("action", values: actions)
+                .order("created_at", ascending: false)
+                .execute()
+                .value
+            return rows
+                .compactMap(LibraryItem.init(row:))
+                .filter { kind == nil || $0.media.kind == kind }
+        } catch {
+            throw AppError.from(error)
+        }
+    }
+
+    /// Head-only count of `follows` rows matching `column == value`.
+    private func edgeCount(column: String, value: UUID) async throws -> Int {
+        try await client
+            .from("follows")
+            .select("*", head: true, count: .exact)
+            .eq(column, value: value)
+            .execute()
+            .count ?? 0
     }
 }
 

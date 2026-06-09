@@ -1,14 +1,13 @@
 import SwiftUI
 
-/// Holds an empty placeholder for a short delay before revealing
-/// `LoadingView`. Prevents the spinner from flashing in and out when a
-/// `.loading` state resolves in under ~300 ms — the brief flicker reads as
-/// jank, not feedback.
+/// Lightweight section loader: holds an empty placeholder for a short delay,
+/// then reveals a small spinner with an optional caption. Deferring prevents
+/// the spinner flashing in and out when a `.loading` state resolves in under
+/// ~300 ms — the brief flicker reads as jank, not feedback.
 ///
-/// Use this anywhere the underlying load might be very fast (cached
-/// profile fetch, warm-session auth bootstrap). For loads that always
-/// take a while (initial bundle, large processing job), prefer the raw
-/// `LoadingView` so the user gets immediate feedback.
+/// This is the loader for *sections* of a screen (a tab's data fetch). The
+/// branded launch video is reserved for the full-screen startup splash
+/// (`LaunchVideoSplashView`).
 struct DeferredLoadingView: View {
     let caption: LocalizedStringKey?
     let delay: Duration
@@ -23,7 +22,7 @@ struct DeferredLoadingView: View {
     var body: some View {
         ZStack {
             if shouldShow {
-                LoadingView(caption: caption)
+                spinner
                     .transition(.opacity)
             } else {
                 // Transparent placeholder that still occupies the full
@@ -40,6 +39,19 @@ struct DeferredLoadingView: View {
             }
         }
         .accessibilityIdentifier("deferred_loading_view")
+    }
+
+    private var spinner: some View {
+        VStack(spacing: Theme.Spacing.md) {
+            ProgressView()
+                .tint(Theme.Color.textSecondary)
+            if let caption {
+                Text(caption)
+                    .font(Theme.Font.caption)
+                    .foregroundStyle(Theme.Color.textSecondary)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 

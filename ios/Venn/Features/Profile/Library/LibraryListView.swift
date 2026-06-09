@@ -37,7 +37,7 @@ struct LibraryListView: View {
                 errorView(reason: reason)
             }
         }
-        .navigationTitle(viewModel.tab.title)
+        .navigationTitle(viewModel.shelf.title)
         .navigationBarTitleDisplayMode(.inline)
         .containerBackground(for: .navigation) {
             GlassSkyBackground()
@@ -47,9 +47,9 @@ struct LibraryListView: View {
 
     private var emptyView: some View {
         EmptyStateView(
-            systemImage: viewModel.tab == .watchlist ? "bookmark" : "checkmark.circle",
-            title: viewModel.tab == .watchlist ? "Nothing saved yet" : "Nothing logged yet",
-            message: viewModel.tab == .watchlist
+            systemImage: viewModel.shelf == .watchlist ? "bookmark" : "checkmark.circle",
+            title: viewModel.shelf == .watchlist ? "Nothing saved yet" : "Nothing logged yet",
+            message: viewModel.shelf == .watchlist
                 ? "Search for something in the Explorer tab and tap \"Add to Watchlist\"."
                 : "Log what you've watched, read, or listened to using the Explorer tab."
         )

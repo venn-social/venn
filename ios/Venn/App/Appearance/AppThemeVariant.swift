@@ -1,8 +1,8 @@
 import SwiftUI
 import UIKit
 
-/// Resolved visual variant after combining the user's preference with the
-/// system color scheme.
+/// Visual variant selected from the system color scheme, used by the launch
+/// splash to pick the matching brand video and background.
 enum AppThemeVariant {
     case light
     case dark
@@ -13,15 +13,6 @@ enum AppThemeVariant {
             .init(name: "venn-launch-light")
         case .dark:
             .init(name: "venn-launch-dark")
-        }
-    }
-
-    var loadingVideo: VennVideoResource {
-        switch self {
-        case .light:
-            .init(name: "venn-loading-light")
-        case .dark:
-            .init(name: "venn-loading-dark")
         }
     }
 

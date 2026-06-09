@@ -30,6 +30,13 @@ protocol AuthServicing: Sendable {
 
     /// Clears the local session and revokes the refresh token server-side.
     func signOut() async throws
+
+    /// Signs in as an anonymous guest — a real Supabase session with no
+    /// email, so the app routes straight into the signed-in experience.
+    /// Backs the DEBUG "Continue as guest" affordance that skips the
+    /// magic-link flow while it's being finalized. Requires anonymous
+    /// sign-ins to be enabled in the Supabase project's auth settings.
+    func signInAnonymously() async throws
 }
 
 /// Production implementation backed by `supabase-swift`'s `GoTrueClient`.
@@ -77,6 +84,14 @@ struct AuthService: AuthServicing {
     func signOut() async throws {
         do {
             try await client.auth.signOut()
+        } catch {
+            throw AppError.from(error)
+        }
+    }
+
+    func signInAnonymously() async throws {
+        do {
+            try await client.auth.signInAnonymously()
         } catch {
             throw AppError.from(error)
         }

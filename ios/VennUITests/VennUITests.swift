@@ -16,19 +16,22 @@ final class VennUITests: XCTestCase {
     // The full-flow tab-switching journey lands back when stub services
     // are wired via launch arg (see Notion follow-up).
 
+    // Each test waits for *loaded*, data-backed content (CI has Supabase
+    // creds and the remote carries the committed seed) rather than just the
+    // tab shell. Waiting for the seeded row keeps the loaded views alive long
+    // enough to render — which is also what they're meant to verify.
+
     @MainActor
     func testFeedTabRenders() {
         let app = launchApp(extraArgs: [])
-        // Feed renders from a live Supabase fetch. CI doesn't have the
-        // Supabase creds, so we only assert on chrome (the nav title).
-        // Data-dependent assertion comes back with stub services.
-        XCTAssertTrue(app.staticTexts["Feed"].waitForExistence(timeout: 12))
+        XCTAssertTrue(app.staticTexts["Past Lives"].waitForExistence(timeout: 30))
     }
 
     @MainActor
     func testExplorerTabRenders() {
         let app = launchApp(extraArgs: ["-previewExplorer"])
-        // Default category is "All", so the browse prompt appears instead of recommendations.
+        // Default category is "All": the browse prompt + chips render without a
+        // network fetch, so they're the CI-safe chrome to assert on.
         XCTAssertTrue(
             app.staticTexts["Search everything"].waitForExistence(timeout: 12)
         )
@@ -40,14 +43,9 @@ final class VennUITests: XCTestCase {
 
     @MainActor
     func testProfileTabRenders() {
-        // Profile in DesignPreviewView is still the prototype view, so
-        // we can keep the rich content assertions here.
+        // -previewProfile pins the debug session to the seeded "Maya Chen".
         let app = launchApp(extraArgs: ["-previewProfile"])
-        XCTAssertTrue(app.staticTexts["Profile"].waitForExistence(timeout: 12))
-        XCTAssertTrue(app.staticTexts["Maya Chen"].exists)
-        XCTAssertTrue(app.staticTexts["Library"].exists)
-        // Pills are now Buttons — query via buttons(…) not staticTexts(…).
-        XCTAssertTrue(app.buttons["Data Room"].exists)
+        XCTAssertTrue(app.staticTexts["Maya Chen"].waitForExistence(timeout: 30))
     }
 
     // MARK: - helpers
