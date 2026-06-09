@@ -55,7 +55,7 @@ struct ComposerViewModelTests {
         #expect(viewModel.selectedAction == .logged)
         #expect(viewModel.rating == nil)
         #expect(viewModel.ratingChoice == nil)
-        #expect(viewModel.caption == "")
+        #expect(viewModel.caption.isEmpty)
         #expect(viewModel.postToFeed == true)
         #expect(viewModel.submitState == .ready)
     }

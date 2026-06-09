@@ -10,6 +10,7 @@ struct ProfileView: View {
 
     @State private var viewModel: ProfileViewModel?
     @State private var editViewModel: ProfileEditViewModel?
+    @State private var libraryDestination: LibraryDestination?
 
     var body: some View {
         NavigationStack {
@@ -43,6 +44,9 @@ struct ProfileView: View {
                 }
                 .containerBackground(for: .navigation) {
                     GlassSkyBackground()
+                }
+                .navigationDestination(item: $libraryDestination) { dest in
+                    LibraryListView(viewModel: makeLibraryViewModel(for: dest))
                 }
         }
         .task { await ensureLoaded() }
@@ -101,7 +105,23 @@ struct ProfileView: View {
 
                     ProfileAppearanceSection()
 
-                    ProfileLibrarySection(categories: Self.libraryCategories(from: metrics))
+                    ProfileLibrarySection(
+                        categories: Self.libraryCategories(from: metrics),
+                        onWatchlist: { category in
+                            libraryDestination = LibraryDestination(
+                                userID: profile.id,
+                                kind: category.mediaKind,
+                                tab: .watchlist
+                            )
+                        },
+                        onCollection: { category in
+                            libraryDestination = LibraryDestination(
+                                userID: profile.id,
+                                kind: category.mediaKind,
+                                tab: .collection
+                            )
+                        }
+                    )
 
                     SecondaryButton(title: "Sign out") {
                         Task { await authState.signOut() }
@@ -187,6 +207,15 @@ struct ProfileView: View {
         return "venn \(version) (\(build))"
     }()
 
+    private func makeLibraryViewModel(for dest: LibraryDestination) -> LibraryViewModel {
+        LibraryViewModel(
+            userID: dest.userID,
+            kind: dest.kind,
+            tab: dest.tab,
+            service: ProfileService(client: clientProvider.client)
+        )
+    }
+
     private func ensureLoaded() async {
         if viewModel == nil, case let .signedIn(session) = authState.status {
             let viewModel = ProfileViewModel(
@@ -197,6 +226,17 @@ struct ProfileView: View {
             await viewModel.load()
         }
     }
+}
+
+// MARK: - Navigation destination
+
+/// Value pushed onto the `NavigationStack` when a library pill is tapped.
+/// Carries everything `LibraryViewModel` needs so the destination can be
+/// constructed lazily inside the `navigationDestination` modifier.
+struct LibraryDestination: Hashable {
+    let userID: UUID
+    let kind: MediaKind?
+    let tab: LibraryTab
 }
 
 #Preview("loaded") {

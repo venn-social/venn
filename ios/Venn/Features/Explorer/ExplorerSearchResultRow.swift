@@ -78,13 +78,12 @@ private extension MediaKind {
                 primaryCreator: "Celine Song",
                 year: 2023,
                 coverURL: nil,
-                overview: "Two childhood sweethearts are separated when Nora's family emigrates from South Korea.",
+                overview: "Two childhood sweethearts separated when Nora's family emigrates from South Korea.",
                 externalID: "976573",
                 externalSource: .tmdb,
                 kind: .movie
-            ),
-            onTap: {}
-        )
+            )
+        ) {}
         ExplorerSearchResultRow(
             candidate: MediaCandidate(
                 title: "OK Computer",
@@ -95,9 +94,8 @@ private extension MediaKind {
                 externalID: "f5093c06",
                 externalSource: .musicbrainz,
                 kind: .album
-            ),
-            onTap: {}
-        )
+            )
+        ) {}
     }
     .padding()
 }

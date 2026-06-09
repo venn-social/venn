@@ -2,6 +2,10 @@ import SwiftUI
 
 struct ProfileLibrarySection: View {
     let categories: [ProfileLibraryCategory]
+    /// Called when the user taps "Watchlist" on any category card.
+    var onWatchlist: ((ProfileLibraryCategory) -> Void)?
+    /// Called when the user taps "Data Room" (collection) on any category card.
+    var onCollection: ((ProfileLibraryCategory) -> Void)?
 
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.md) {
@@ -15,7 +19,9 @@ struct ProfileLibrarySection: View {
                     title: category.title,
                     subtitle: category.subtitle,
                     primaryActionTitle: category.primaryActionTitle,
-                    secondaryActionTitle: category.secondaryActionTitle
+                    secondaryActionTitle: category.secondaryActionTitle,
+                    onPrimaryAction: onWatchlist.map { handler in { handler(category) } },
+                    onSecondaryAction: onCollection.map { handler in { handler(category) } }
                 )
             }
         }

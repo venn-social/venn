@@ -7,7 +7,8 @@ import SwiftUI
 /// when the submit completes or the user cancels.
 struct ComposerSheetView: View {
     @Bindable var viewModel: ComposerViewModel
-    @Environment(\.dismiss) private var dismiss
+    @Environment(\.dismiss)
+    private var dismiss
 
     var body: some View {
         NavigationStack {
@@ -34,7 +35,8 @@ struct ComposerSheetView: View {
 private struct MediaDetailView: View {
     let candidate: MediaCandidate
     @Bindable var viewModel: ComposerViewModel
-    @Environment(AuthState.self) private var authState
+    @Environment(AuthState.self)
+    private var authState
 
     @State private var pushRating = false
 
@@ -170,8 +172,10 @@ private struct MediaDetailView: View {
 
 private struct RatingView: View {
     @Bindable var viewModel: ComposerViewModel
-    @Environment(AuthState.self) private var authState
-    @Environment(\.dismiss) private var dismiss
+    @Environment(AuthState.self)
+    private var authState
+    @Environment(\.dismiss)
+    private var dismiss
 
     var body: some View {
         Screen {
@@ -374,7 +378,8 @@ private struct SecondaryButtonStyle: ButtonStyle {
         primaryCreator: "Celine Song",
         year: 2023,
         coverURL: nil,
-        overview: "Two childhood sweethearts are separated when Nora's family emigrates from South Korea. Two decades later, they are reunited in New York City for one fateful week.",
+        overview: "Two childhood sweethearts separated when Nora's family emigrates from South Korea. " +
+            "Two decades later, they reunite in New York City for one fateful week.",
         externalID: "976573",
         externalSource: .tmdb,
         kind: .movie

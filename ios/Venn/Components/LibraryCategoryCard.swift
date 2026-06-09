@@ -8,6 +8,8 @@ struct LibraryCategoryCard: View {
     let subtitle: String
     var primaryActionTitle = "Watchlist"
     var secondaryActionTitle = "Data Room"
+    var onPrimaryAction: (() -> Void)?
+    var onSecondaryAction: (() -> Void)?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -41,8 +43,8 @@ struct LibraryCategoryCard: View {
                 .padding(.leading, 64)
 
             HStack(spacing: Theme.Spacing.sm) {
-                actionPill(primaryActionTitle)
-                actionPill(secondaryActionTitle)
+                actionPill(primaryActionTitle, action: onPrimaryAction)
+                actionPill(secondaryActionTitle, action: onSecondaryAction)
             }
             .padding(.horizontal, Theme.Spacing.md)
             .padding(.top, Theme.Spacing.sm)
@@ -54,12 +56,18 @@ struct LibraryCategoryCard: View {
         }
     }
 
-    private func actionPill(_ title: String) -> some View {
-        Text(verbatim: title)
-            .font(Theme.Font.caption.weight(.semibold))
-            .foregroundStyle(Theme.Color.textPrimary)
-            .frame(maxWidth: .infinity, minHeight: 34)
-            .vennGlass(.regular, in: .capsule)
+    private func actionPill(_ title: String, action: (() -> Void)?) -> some View {
+        Button {
+            action?()
+        } label: {
+            Text(verbatim: title)
+                .font(Theme.Font.caption.weight(.semibold))
+                .foregroundStyle(Theme.Color.textPrimary)
+                .frame(maxWidth: .infinity, minHeight: 34)
+                .vennGlass(.regular, in: .capsule)
+        }
+        .buttonStyle(.plain)
+        .disabled(action == nil)
     }
 }
 

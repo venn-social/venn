@@ -46,7 +46,8 @@ final class VennUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Profile"].waitForExistence(timeout: 12))
         XCTAssertTrue(app.staticTexts["Maya Chen"].exists)
         XCTAssertTrue(app.staticTexts["Library"].exists)
-        XCTAssertTrue(app.staticTexts["Data Room"].exists)
+        // Pills are now Buttons — query via buttons(…) not staticTexts(…).
+        XCTAssertTrue(app.buttons["Data Room"].exists)
     }
 
     // MARK: - helpers

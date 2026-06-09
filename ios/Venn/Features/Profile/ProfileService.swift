@@ -24,6 +24,19 @@ protocol ProfileServicing: Sendable {
     /// ~10k posts — at that point this becomes a Postgres RPC with
     /// GROUP BY done server-side.
     func metrics(for userID: UUID) async throws -> ProfileMetrics
+
+    /// Items the user saved for later (`action == .saved`). Pass a `kind`
+    /// to scope the results to one media type; nil returns all kinds.
+    func watchlist(for userID: UUID, kind: MediaKind?) async throws -> [LibraryItem]
+
+    /// Items the user has consumed (`action IN ('logged','rated')`). Pass a
+    /// `kind` to scope; nil returns all kinds.
+    func collection(for userID: UUID, kind: MediaKind?) async throws -> [LibraryItem]
+
+    /// Delete a single post row (the user's own). RLS prevents deleting
+    /// other users' posts server-side; the app only surfaces this action on
+    /// the signed-in user's own library.
+    func removeFromLibrary(postID: UUID) async throws
 }
 
 /// Production implementation backed by the Supabase Postgrest client.
@@ -81,6 +94,96 @@ struct ProfileService: ProfileServicing {
         } catch {
             throw AppError.from(error)
         }
+    }
+
+    func watchlist(for userID: UUID, kind: MediaKind?) async throws -> [LibraryItem] {
+        do {
+            let rows: [LibraryItemRow] = try await client
+                .from("posts")
+                .select(LibraryItemRow.selectClause)
+                .eq("author_id", value: userID)
+                .eq("action", value: PostAction.saved.rawValue)
+                .order("created_at", ascending: false)
+                .execute()
+                .value
+            return rows
+                .compactMap(LibraryItem.init(row:))
+                .filter { kind == nil || $0.media.kind == kind }
+        } catch {
+            throw AppError.from(error)
+        }
+    }
+
+    func collection(for userID: UUID, kind: MediaKind?) async throws -> [LibraryItem] {
+        do {
+            let rows: [LibraryItemRow] = try await client
+                .from("posts")
+                .select(LibraryItemRow.selectClause)
+                .eq("author_id", value: userID)
+                .in("action", values: [PostAction.logged.rawValue, PostAction.rated.rawValue])
+                .order("created_at", ascending: false)
+                .execute()
+                .value
+            return rows
+                .compactMap(LibraryItem.init(row:))
+                .filter { kind == nil || $0.media.kind == kind }
+        } catch {
+            throw AppError.from(error)
+        }
+    }
+
+    func removeFromLibrary(postID: UUID) async throws {
+        do {
+            try await client
+                .from("posts")
+                .delete()
+                .eq("id", value: postID)
+                .execute()
+        } catch {
+            throw AppError.from(error)
+        }
+    }
+}
+
+/// Wire-format row for the `watchlist` / `collection` queries. The PostgREST
+/// `!inner` join embeds the matching `media` row as a nested object.
+private struct LibraryItemRow: Decodable {
+    let id: UUID
+    let authorId: UUID
+    let mediaId: UUID
+    let action: String
+    let rating: Double?
+    let caption: String?
+    let createdAt: Date
+    let media: MediaSchema.Row
+
+    enum CodingKeys: String, CodingKey {
+        case id, action, rating, caption, media
+        case authorId = "author_id"
+        case mediaId = "media_id"
+        case createdAt = "created_at"
+    }
+
+    static let selectClause =
+        "id, author_id, media_id, action, rating, caption, created_at, " +
+        "media!inner(id, kind, title, year, primary_creator, cover_url, external_id, external_source, created_at)"
+}
+
+private extension LibraryItem {
+    init?(row: LibraryItemRow) {
+        guard let action = PostAction(rawValue: row.action),
+              let media = Media(row: row.media)
+        else { return nil }
+        post = Post(
+            id: row.id,
+            authorID: row.authorId,
+            mediaID: row.mediaId,
+            action: action,
+            rating: row.rating,
+            caption: row.caption,
+            createdAt: row.createdAt
+        )
+        self.media = media
     }
 }
 

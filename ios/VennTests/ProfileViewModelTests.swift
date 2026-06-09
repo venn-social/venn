@@ -155,5 +155,15 @@ final class FakeProfileService: ProfileServicing, @unchecked Sendable {
         return try metricsResult.get()
     }
 
+    func watchlist(for _: UUID, kind _: MediaKind?) async throws -> [LibraryItem] {
+        []
+    }
+
+    func collection(for _: UUID, kind _: MediaKind?) async throws -> [LibraryItem] {
+        []
+    }
+
+    func removeFromLibrary(postID _: UUID) async throws {}
+
     private struct NotConfigured: Error {}
 }
