@@ -36,13 +36,16 @@ venn/
 │   │   ├── Features/<name>/               Self-contained feature slices.
 │   │   │                                  Each contains a *Service.swift,
 │   │   │                                  *ViewModel.swift, and *View.swift.
-│   │   ├── Components/                    Design-system primitives (Button, Screen, ...)
+│   │   ├── Components/                    Design system: Theme.swift (tokens)
+│   │   │                                  + reusable primitives (Button, Screen, ...)
 │   │   ├── Services/                      AppConfig, SupabaseClientProvider,
-│   │   │                                  Observability, cross-feature wrappers.
+│   │   │   └── Catalog/                   Observability; external catalog APIs
+│   │   │                                  (TMDB, OpenLibrary, MusicBrainz).
 │   │   ├── Models/                        Cross-feature domain types.
-│   │   ├── Resources/                     Assets.xcassets, Config.xcconfig
-│   │   └── Utils/                         Pure helpers + colocated tests.
-│   ├── VennTests/                         Swift Testing unit suites.
+│   │   ├── Resources/                     Assets.xcassets, Config.xcconfig, videos.
+│   │   └── Utils/                         Pure helpers.
+│   ├── VennTests/                         Swift Testing suites, mirroring the
+│   │                                      source tree (Features/, Services/, ...).
 │   └── VennUITests/                       XCUITest UI suites.
 ├── supabase/migrations/                   SQL migrations (unchanged from RN era).
 ├── docs/                                  WORKFLOW, ARCHITECTURE, CODING_STANDARDS, …
@@ -61,7 +64,7 @@ The "why" behind this layout is in [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.
 2. **Every task starts and ends in Notion.** When a coding task begins, Claude creates or finds the corresponding task in the [venn tasks DB](https://notion.so/34ac60c854a2800ca903ef85907bec3e) with `Task type = tech` and a description of what needs to be done and why. After the PR is opened, Claude updates that task's `PR Link` field with the GitHub PR URL. Notion is the source of truth — GitHub does not need to reference Notion. Task name format: lowercase, short, action-oriented (`add auth screen`, `fix feed crash`).
 3. **Commits follow [Conventional Commits](https://www.conventionalcommits.org/)**: `feat(auth): add sign-in with Apple`. Types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert.
 4. **`make verify` must pass before any PR.** It runs SwiftLint + SwiftFormat (lint mode) + tests.
-5. **Never hardcode** colors, spacing, font sizes — use tokens from `ios/Venn/Resources/Theme.swift` (add it once design starts).
+5. **Never hardcode** colors, spacing, font sizes — use tokens from `ios/Venn/Components/Theme.swift`.
 6. **Never expose API keys.** All secrets are read from `.env` via `AppConfig` ([`ios/Venn/Services/AppConfig.swift`](./ios/Venn/Services/AppConfig.swift)). The build pipeline injects values from `.env` into `Info.plist` at compile time. Don't hardcode a key in source even temporarily — the trufflehog CI scan will catch you.
 7. **Sanitize every user input.** Anything a user can type — usernames, display names, bios, captions, search queries, comments — goes through a validator in `ios/Venn/Utils/Sanitize.swift` before it touches a service or the UI. Postgres CHECK constraints (added per migration) are the final line of defense.
 8. **Rate-limit at the API boundary.** Every Supabase Edge Function and RPC enforces a sliding-window rate limit (see SQL pattern in [`docs/CODING_STANDARDS.md`](./docs/CODING_STANDARDS.md)). Client-side throttling (search debounce, disabled buttons mid-flight) is UX feedback only — it does NOT count as security; anything on the user's device can be bypassed.

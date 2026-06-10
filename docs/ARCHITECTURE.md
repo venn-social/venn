@@ -52,13 +52,20 @@ ios/
 │   │       ├── ProfileView.swift            Screen composition + routing.
 │   │       ├── ProfileHeaderView.swift      Section component.
 │   │       └── Library/                     Subflow when the feature grows.
-│   ├── Components/                        Reusable UI primitives. No business logic.
-│   │                                      Examples: Screen, buttons, ErrorStateView.
+│   ├── Components/                        The design system. Theme.swift (all
+│   │   │                                  tokens) + AppThemeVariant + reusable
+│   │   │                                  UI primitives. No business logic.
+│   │   ├── Glass/                         Liquid Glass surfaces + scroll motion.
+│   │   ├── Controls/                      Segmented controls, inputs.
+│   │   ├── Interaction/                   Press states, haptics.
+│   │   └── Loading/                       Launch splash, video player.
 │   ├── Services/                          Cross-feature service surface.
 │   │   ├── AppConfig.swift                Typed env access (Supabase URL, DSN, ...).
 │   │   ├── SupabaseClientProvider.swift   The single shared client.
-│   │   ├── ExternalAPI.swift              Shared HTTP fetch for catalog services.
-│   │   └── Observability.swift            Sentry + PostHog bootstrap.
+│   │   ├── Observability.swift            Sentry + PostHog bootstrap.
+│   │   └── Catalog/                       External media catalogs: TMDB,
+│   │                                      OpenLibrary, MusicBrainz + the
+│   │                                      shared ExternalAPI fetch helper.
 │   ├── Models/                            Domain types used in 2+ features.
 │   │                                      Includes LoadState (the shared
 │   │                                      loading/loaded/error state machine).
@@ -66,7 +73,9 @@ ios/
 │   │   ├── Assets.xcassets                Images, colors, app icon.
 │   │   └── Config.xcconfig                Build settings (.env values flow here).
 │   └── Utils/                             Pure helpers. Easiest things to test.
-├── VennTests/                             Swift Testing unit suites.
+├── VennTests/                             Swift Testing suites — folders mirror
+│                                          the source tree (Features/Profile/...
+│                                          tests live in Features/Profile/).
 └── VennUITests/                           XCUITest suites.
 ```
 
