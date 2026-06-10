@@ -38,7 +38,7 @@ index_exclude:
 # helpers. Theme.* declares a full token palette upfront; preview helpers
 # are reachable from #Preview blocks that Periphery can't always see.
 report_exclude:
-  - "ios/Venn/Resources/Theme.swift"
+  - "ios/Venn/Components/Theme.swift"
   - "**/*PreviewService*"
   - "**/Preview*Service*"
 

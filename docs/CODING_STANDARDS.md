@@ -172,7 +172,7 @@ import Foundation
 import SwiftUI
 
 // Third-party SPM packages alphabetically.
-import Kingfisher
+import PostHog
 import Sentry
 import Supabase
 ```

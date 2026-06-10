@@ -52,15 +52,6 @@ packages:
   PostHog:
     url: https://github.com/PostHog/posthog-ios
     from: 3.20.0
-  KeychainAccess:
-    url: https://github.com/kishikawakatsumi/KeychainAccess
-    from: 4.2.0
-  Kingfisher:
-    url: https://github.com/onevcat/Kingfisher
-    from: 8.0.0
-  SwiftCollections:
-    url: https://github.com/apple/swift-collections
-    from: 1.1.0
   SnapshotTesting:
     url: https://github.com/pointfreeco/swift-snapshot-testing
     from: 1.18.0
@@ -84,12 +75,6 @@ targets:
         product: Sentry
       - package: PostHog
         product: PostHog
-      - package: KeychainAccess
-        product: KeychainAccess
-      - package: Kingfisher
-        product: Kingfisher
-      - package: SwiftCollections
-        product: Collections
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: social.venn.app
