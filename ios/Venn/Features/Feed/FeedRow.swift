@@ -25,6 +25,7 @@ struct FeedRow: View {
             MediaCoverTile(
                 title: feedPost.media.title,
                 kind: feedPost.media.kind,
+                coverURL: feedPost.media.coverURL,
                 height: 200
             )
 

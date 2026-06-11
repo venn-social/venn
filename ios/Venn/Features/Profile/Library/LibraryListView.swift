@@ -65,7 +65,7 @@ private struct LibraryItemRow: View {
 
     var body: some View {
         HStack(spacing: Theme.Spacing.md) {
-            kindIcon
+            MediaCoverThumb(kind: item.media.kind, coverURL: item.media.coverURL)
             details
             Spacer()
             if let rating = item.post.rating {
@@ -75,14 +75,6 @@ private struct LibraryItemRow: View {
         .padding(Theme.Spacing.md)
         .background(Theme.Color.surface, in: .rect(cornerRadius: Theme.Radius.sm))
         .padding(.horizontal, Theme.Spacing.lg)
-    }
-
-    private var kindIcon: some View {
-        Image(systemName: item.media.kind.systemImage)
-            .font(.title3)
-            .foregroundStyle(Theme.Color.accent)
-            .frame(width: 36, height: 36)
-            .background(Theme.Color.accent.opacity(0.10), in: Circle())
     }
 
     private var details: some View {

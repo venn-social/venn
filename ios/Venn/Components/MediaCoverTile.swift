@@ -1,13 +1,14 @@
 import SwiftUI
 
-/// Cover for a media entry. Until real cover art is available (the external
-/// catalog integrations aren't wired yet), this renders a tonal placeholder
-/// tile keyed to the media kind, with the entry's leading initial. When
-/// cover URLs land, add an `AsyncImage` path here and fall back to the tile
-/// only when the URL is missing — every call site gets it for free.
+/// Cover for a media entry — the visual hero of every item (covers first,
+/// always). Renders the real cover art when `coverURL` is present, fading
+/// in over the tonal placeholder tile (kind color + leading initial), which
+/// also serves as the loading and failure state. Music mostly has no
+/// `coverURL` yet — Cover Art Archive lookup is a separate pass.
 struct MediaCoverTile: View {
     let title: String
     let kind: MediaKind
+    var coverURL: URL?
     var height: CGFloat
     var cornerRadius: CGFloat = Theme.Radius.lg
 
@@ -17,10 +18,35 @@ struct MediaCoverTile: View {
             Text(title.prefix(1))
                 .font(.system(size: height * 0.4, weight: .semibold, design: .rounded))
                 .foregroundStyle(Theme.Color.coverGlyph)
+            if let coverURL {
+                cover(url: coverURL)
+            }
         }
         .frame(maxWidth: .infinity)
         .frame(height: height)
         .clipShape(.rect(cornerRadius: cornerRadius))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(title))
+    }
+
+    private func cover(url: URL) -> some View {
+        // URLCache (memory + disk) handles re-fetches: TMDB / OpenLibrary
+        // serve long-lived cache headers. Swap in Kingfisher only if scroll
+        // performance ever demands it (docs/TECH_DEBT.md).
+        AsyncImage(
+            url: url,
+            transaction: Transaction(animation: .easeIn(duration: 0.2))
+        ) { phase in
+            if case let .success(image) = phase {
+                GeometryReader { proxy in
+                    image
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(width: proxy.size.width, height: proxy.size.height)
+                }
+                .transition(.opacity)
+            }
+        }
     }
 
     private var tint: SwiftUI.Color {
@@ -36,7 +62,12 @@ struct MediaCoverTile: View {
 #Preview {
     HStack(spacing: Theme.Spacing.md) {
         MediaCoverTile(title: "Past Lives", kind: .movie, height: 160)
-        MediaCoverTile(title: "Blonde", kind: .album, height: 160)
+        MediaCoverTile(
+            title: "The Godfather",
+            kind: .movie,
+            coverURL: URL(string: "https://image.tmdb.org/t/p/w500/3bhkrj58Vtu7enYsLegHnDmni2O.jpg"),
+            height: 160
+        )
     }
     .padding(Theme.Spacing.lg)
 }

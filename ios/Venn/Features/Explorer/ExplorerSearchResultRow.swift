@@ -9,7 +9,7 @@ struct ExplorerSearchResultRow: View {
     var body: some View {
         Button(action: onTap) {
             HStack(spacing: Theme.Spacing.md) {
-                kindIcon
+                MediaCoverThumb(kind: candidate.kind, coverURL: candidate.coverURL)
                 details
                 Spacer()
                 Image(systemName: "plus.circle")
@@ -20,14 +20,6 @@ struct ExplorerSearchResultRow: View {
             .background(Theme.Color.surface, in: .rect(cornerRadius: Theme.Radius.sm))
         }
         .buttonStyle(.plain)
-    }
-
-    private var kindIcon: some View {
-        Image(systemName: candidate.kind.systemImage)
-            .font(.title3)
-            .foregroundStyle(Theme.Color.accent)
-            .frame(width: 36, height: 36)
-            .background(Theme.Color.accent.opacity(0.10), in: Circle())
     }
 
     private var details: some View {
