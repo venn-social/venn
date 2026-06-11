@@ -280,7 +280,7 @@ private struct ExplorerMediaCell: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
-            MediaCoverTile(title: media.title, kind: media.kind, height: 180)
+            MediaCoverTile(title: media.title, kind: media.kind, coverURL: media.coverURL, height: 180)
             Text(media.title)
                 .font(Theme.Font.callout.weight(.semibold))
                 .foregroundStyle(Theme.Color.textPrimary)

@@ -41,6 +41,7 @@ struct ProfileShelfGallery: View {
         MediaCoverTile(
             title: item.media.title,
             kind: item.media.kind,
+            coverURL: item.media.coverURL,
             height: 150,
             cornerRadius: Theme.Radius.md
         )
