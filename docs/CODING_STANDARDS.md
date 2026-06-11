@@ -305,7 +305,7 @@ end;
 $$;
 ```
 
-Inside an Edge Function or RPC: call `rl_check('post_create:' || auth.uid()::text, 10, '1 minute')` and return 429 if false.
+Inside an Edge Function or RPC: call `rl_check('post_create:' || auth.uid()::text, 10, '1 minute')`. Edge Functions return HTTP 429 when it's false; RPCs `raise exception 'rate_limited' using errcode = 'P0429'` — the client maps that SQLSTATE to `AppError.rateLimited` (see `AppError.mapPostgrestError`). The canonical implementation lives in the `overlap_rpc` migration.
 
 Client-side throttling (search debounce, disabled buttons mid-flight) is UX feedback only — the server-side check above is the real limit.
 
