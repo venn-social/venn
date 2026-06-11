@@ -181,7 +181,7 @@ struct ExplorerView: View {
                     VStack(spacing: Theme.Spacing.sm) {
                         ForEach(profiles) { profile in
                             NavigationLink(value: profile) {
-                                PeopleSearchResultRow(profile: profile)
+                                ProfileRow(profile: profile)
                             }
                             .buttonStyle(.plain)
                             .vennScrollDepth()

@@ -15,6 +15,7 @@ struct ProfileView: View {
     @State private var editViewModel: ProfileEditViewModel?
     @State private var shelf: ProfileShelf = .collection
     @State private var libraryDestination: LibraryDestination?
+    @State private var followListDestination: FollowListDestination?
 
     var body: some View {
         NavigationStack {
@@ -42,6 +43,16 @@ struct ProfileView: View {
                 }
                 .navigationDestination(item: $libraryDestination) { dest in
                     LibraryListView(viewModel: makeLibraryViewModel(for: dest))
+                }
+                .navigationDestination(item: $followListDestination) { destination in
+                    FollowListView(viewModel: FollowListViewModel(
+                        userID: destination.userID,
+                        kind: destination.kind,
+                        service: FollowService(client: clientProvider.client)
+                    ))
+                }
+                .navigationDestination(for: UserProfile.self) { profile in
+                    PublicProfileView(profile: profile)
                 }
         }
         .task { await ensureLoaded() }
@@ -74,7 +85,13 @@ struct ProfileView: View {
                         name: profile.displayName ?? profile.username,
                         handle: profile.username,
                         followers: snapshot.followCounts.followers,
-                        following: snapshot.followCounts.following
+                        following: snapshot.followCounts.following,
+                        onTapFollowers: {
+                            followListDestination = .init(userID: profile.id, kind: .followers)
+                        },
+                        onTapFollowing: {
+                            followListDestination = .init(userID: profile.id, kind: .following)
+                        }
                     )
                     actionButtons
                     ShelfTabs(selection: $shelf)

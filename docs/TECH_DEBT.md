@@ -17,5 +17,8 @@ Known, deliberate shortcuts — with the reason they exist and what unlocks fixi
 
 CLAUDE.md rule 15 (Figma-first) is suspended until the Figma Pro subscription lands. Every net-new UI surface shipped during the suspension is listed here so it gets recreated in Figma for completeness:
 
-- Explorer "People" category: chip, browse prompt, search result rows (`PeopleSearchResultRow`)
-- `PublicProfileView` — read-only profile (header + bio + shelf tabs + cover gallery)
+- Explorer "People" category: chip, browse prompt, search result rows (`ProfileRow`)
+- `PublicProfileView` — other-user profile (header + bio + follow button + shelf tabs + cover gallery)
+- Follow button states (Follow / Following) on the public profile
+- `FollowListView` — followers / following list (reuses `ProfileRow`)
+- Real cover art treatments: `MediaCoverTile` image state, `MediaCoverThumb` row thumbnails
