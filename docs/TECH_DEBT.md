@@ -12,3 +12,10 @@ Known, deliberate shortcuts — with the reason they exist and what unlocks fixi
 | 6   | Periphery (dead-code scan) is configured but not in CI.                                                                                                                              | macOS CI minutes are expensive; the codebase is still small.                       | Run `make periphery` locally before big refactors; add a CI job when the team grows.                                                 |
 | 7   | A `memory/` folder with personal info existed in git history before PR #84 untracked it.                                                                                             | Committed accidentally by an AI pair session.                                      | If the repo ever goes public: scrub history with `git-filter-repo` first.                                                            |
 | 8   | UI test coverage is a stub (`VennUITests` exercises little beyond boot).                                                                                                             | Core flows were still churning.                                                    | First stable end-to-end flow (auth → log → feed) gets a real XCUITest journey.                                                       |
+
+## Figma backlog
+
+CLAUDE.md rule 15 (Figma-first) is suspended until the Figma Pro subscription lands. Every net-new UI surface shipped during the suspension is listed here so it gets recreated in Figma for completeness:
+
+- Explorer "People" category: chip, browse prompt, search result rows (`PeopleSearchResultRow`)
+- `PublicProfileView` — read-only profile (header + bio + shelf tabs + cover gallery)

@@ -23,6 +23,7 @@ Everything else is plumbing.
 | The Explorer tab (browse + search)               | `ios/Venn/Features/Explorer/ExplorerView.swift`                    |
 | The log-it sheet (pick → rate → post)            | `ios/Venn/Features/Composer/ComposerSheetView.swift`               |
 | The Profile tab                                  | `ios/Venn/Features/Profile/ProfileView.swift`                      |
+| Someone else's profile page                      | `ios/Venn/Features/Profile/PublicProfileView.swift`                |
 | The sign-in screen                               | `ios/Venn/Features/Auth/AuthView.swift`                            |
 | The launch video / splash                        | `ios/Venn/Components/Loading/LaunchVideoSplashView.swift`          |
 | The animated gradient background                 | `ios/Venn/Components/Glass/GlassSkyBackground.swift`               |
