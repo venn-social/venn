@@ -36,3 +36,14 @@ enum LoadErrorReason: Equatable {
         }
     }
 }
+
+/// Search-shaped sibling of `LoadState` for debounced query screens.
+/// `.idle` (no query yet) is distinct from `.searching` and from an empty
+/// `.results` payload, which renders as "no results" copy. Shared by the
+/// composer's media search and the Explorer people search.
+enum SearchState<Value: Equatable>: Equatable {
+    case idle
+    case searching
+    case results(Value)
+    case error(LoadErrorReason)
+}

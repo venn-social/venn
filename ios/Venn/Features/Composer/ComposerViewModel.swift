@@ -15,12 +15,7 @@ import Observation
 final class ComposerViewModel {
     // MARK: - State enums
 
-    enum SearchState: Equatable {
-        case idle
-        case searching
-        case results([MediaCandidate])
-        case error(ErrorReason)
-    }
+    typealias SearchState = Venn.SearchState<[MediaCandidate]>
 
     enum SubmitState: Equatable {
         case ready
