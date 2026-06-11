@@ -36,11 +36,9 @@ struct ExternalAPIFetchTests {
 
     @Test
     func userAgentHeaderIsSentWhenProvided() async throws {
-        var seenUserAgent: String?
-        _ = try await fetch(status: 200, userAgent: "venn-test/1.0") { request in
-            seenUserAgent = request.value(forHTTPHeaderField: "User-Agent")
-        }
-        #expect(seenUserAgent == "venn-test/1.0")
+        _ = try await fetch(status: 200, userAgent: "venn-test/1.0")
+        let seen = StubURLProtocol.lastRequest?.value(forHTTPHeaderField: "User-Agent")
+        #expect(seen == "venn-test/1.0")
     }
 
     // MARK: - Plumbing
@@ -48,17 +46,12 @@ struct ExternalAPIFetchTests {
     private func fetch(
         status: Int,
         body: Data = Data(),
-        userAgent: String? = nil,
-        onRequest: (@Sendable (URLRequest) -> Void)? = nil
+        userAgent: String? = nil
     ) async throws -> Data {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [StubURLProtocol.self]
         let session = URLSession(configuration: configuration)
-        StubURLProtocol.stub = StubURLProtocol.Stub(
-            status: status,
-            body: body,
-            onRequest: onRequest
-        )
+        StubURLProtocol.stub = StubURLProtocol.Stub(status: status, body: body)
         guard let url = URL(string: "https://stub.test/path") else {
             throw AppError.unknown(message: "bad test url")
         }
@@ -66,17 +59,17 @@ struct ExternalAPIFetchTests {
     }
 }
 
-/// Serves every request from the configured stub. State is a single
-/// static slot — fine here because each test configures then awaits one
-/// request at a time.
+/// Serves every request from the configured stub and records the last
+/// request seen. State is a pair of static slots — fine here because each
+/// test configures then awaits one request at a time.
 final class StubURLProtocol: URLProtocol, @unchecked Sendable {
-    struct Stub: @unchecked Sendable {
+    struct Stub {
         let status: Int
         let body: Data
-        let onRequest: (@Sendable (URLRequest) -> Void)?
     }
 
     nonisolated(unsafe) static var stub: Stub?
+    nonisolated(unsafe) static var lastRequest: URLRequest?
 
     override static func canInit(with _: URLRequest) -> Bool {
         true
@@ -91,7 +84,7 @@ final class StubURLProtocol: URLProtocol, @unchecked Sendable {
             client?.urlProtocol(self, didFailWithError: URLError(.badURL))
             return
         }
-        stub.onRequest?(request)
+        Self.lastRequest = request
         if let response = HTTPURLResponse(
             url: url,
             statusCode: stub.status,
