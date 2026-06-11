@@ -2,9 +2,10 @@ import SwiftUI
 
 /// Profile for another user, pushed from People search or a follow list.
 /// Reuses the signed-in profile's building blocks (header, shelf tabs,
-/// cover gallery) via the shared `ProfileViewModel`, plus the Follow /
-/// Following button. The Venn overlap lands here next. Owner affordances
-/// (edit, add, settings) and shelf tap-through stay absent.
+/// cover gallery) via the shared `ProfileViewModel`, plus the two surfaces
+/// that only exist for someone else: the Follow / Following button and the
+/// "Your Venn" taste overlap. Owner affordances (edit, add, settings) and
+/// shelf tap-through stay absent.
 struct PublicProfileView: View {
     @Environment(SupabaseClientProvider.self)
     private var clientProvider
@@ -17,6 +18,7 @@ struct PublicProfileView: View {
 
     @State private var viewModel: ProfileViewModel?
     @State private var followViewModel: FollowViewModel?
+    @State private var overlapViewModel: OverlapViewModel?
     @State private var shelf: ProfileShelf = .collection
     @State private var followListDestination: FollowListDestination?
 
@@ -77,6 +79,7 @@ struct PublicProfileView: View {
                         .foregroundStyle(Theme.Color.textSecondary)
                 }
                 followButton
+                overlapSection
                 ShelfTabs(selection: $shelf)
                 ProfileShelfGallery(
                     items: shelf == .collection ? snapshot.collection : snapshot.watchlist,
@@ -116,6 +119,88 @@ struct PublicProfileView: View {
         await viewModel?.refreshFollowCounts()
     }
 
+    // MARK: - Overlap ("Your Venn")
+
+    /// The product's signature: how the viewer's taste intersects this
+    /// person's. Only renders for a signed-in viewer on someone else's
+    /// profile — same condition as the follow button.
+    @ViewBuilder private var overlapSection: some View {
+        if let overlapViewModel {
+            VStack(alignment: .leading, spacing: Theme.Spacing.md) {
+                Text("Your Venn")
+                    .font(Theme.Font.headline)
+                    .foregroundStyle(Theme.Color.textPrimary)
+
+                switch overlapViewModel.state {
+                case .loading:
+                    ProgressView()
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, Theme.Spacing.xl)
+                case let .loaded(summary):
+                    overlapContent(summary)
+                case .error:
+                    HStack {
+                        Text("Couldn't load your Venn.")
+                            .font(Theme.Font.callout)
+                            .foregroundStyle(Theme.Color.textSecondary)
+                        Spacer()
+                        Button("Try again") {
+                            Task { await overlapViewModel.load() }
+                        }
+                        .font(Theme.Font.callout.weight(.semibold))
+                        .foregroundStyle(Theme.Color.accent)
+                    }
+                }
+            }
+            .padding(.vertical, Theme.Spacing.sm)
+        }
+    }
+
+    @ViewBuilder
+    private func overlapContent(_ summary: OverlapSummary) -> some View {
+        if summary.viewerTotal == 0, summary.otherTotal == 0 {
+            Text("Log a few things and your shared taste shows up here.")
+                .font(Theme.Font.callout)
+                .foregroundStyle(Theme.Color.textSecondary)
+        } else {
+            VStack(spacing: Theme.Spacing.md) {
+                VennOverlap(mode: .pair(
+                    yours: .init(label: "Only you", count: summary.viewerTotal),
+                    theirs: .init(label: "Only @\(profile.username)", count: summary.otherTotal),
+                    shared: summary.sharedTotal
+                ))
+                .frame(maxWidth: .infinity)
+
+                sharedKindRows(summary)
+            }
+        }
+    }
+
+    /// One row per kind with shared items — "Movies in common · 3".
+    @ViewBuilder
+    private func sharedKindRows(_ summary: OverlapSummary) -> some View {
+        let shared = summary.kinds.filter { $0.sharedCount > 0 }
+        if !shared.isEmpty {
+            VStack(spacing: Theme.Spacing.xs) {
+                ForEach(shared, id: \.kind) { slice in
+                    HStack(spacing: Theme.Spacing.sm) {
+                        Image(systemName: slice.kind.systemImage)
+                            .font(.caption)
+                            .foregroundStyle(Theme.Color.accent)
+                        Text(verbatim: "\(slice.kind.displayName.capitalized)s in common")
+                            .font(Theme.Font.callout)
+                            .foregroundStyle(Theme.Color.textPrimary)
+                        Spacer()
+                        Text(verbatim: "\(slice.sharedCount)")
+                            .font(Theme.Font.callout.weight(.semibold))
+                            .foregroundStyle(Theme.Color.textSecondary)
+                            .monospacedDigit()
+                    }
+                }
+            }
+        }
+    }
+
     /// The signed-in user — the follower side of any edge created here.
     private var signedInUserID: UUID? {
         if case let .signedIn(session) = authState.status {
@@ -141,7 +226,13 @@ struct PublicProfileView: View {
                 service: FollowService(client: clientProvider.client)
             )
             self.followViewModel = followViewModel
+            let overlapViewModel = OverlapViewModel(
+                otherUserID: profile.id,
+                service: OverlapService(client: clientProvider.client)
+            )
+            self.overlapViewModel = overlapViewModel
             await followViewModel.load()
+            await overlapViewModel.load()
         }
     }
 }

@@ -22,3 +22,4 @@ CLAUDE.md rule 15 (Figma-first) is suspended until the Figma Pro subscription la
 - Follow button states (Follow / Following) on the public profile
 - `FollowListView` — followers / following list (reuses `ProfileRow`)
 - Real cover art treatments: `MediaCoverTile` image state, `MediaCoverThumb` row thumbnails
+- "Your Venn" overlap section on the public profile (diagram + per-kind shared rows + empty/error states) — the signature visual; deserves real design attention when Figma returns

@@ -76,12 +76,15 @@ extension AppError {
 
     private static func mapPostgrestError(_ error: PostgrestError) -> AppError {
         // Postgrest codes start with "PGRST"; Postgres SQLSTATE codes are
-        // 5 chars. For now we only special-case authorization-style
-        // failures; everything else carries the server message through
-        // as validation so the user sees something useful.
+        // 5 chars. "P0429" is our own convention: RPCs raise it when
+        // rl_check says the caller is over the sliding-window limit (see
+        // the overlap_rpc migration). Everything else carries the server
+        // message through as validation so the user sees something useful.
         switch error.code {
         case "PGRST301", "42501":
             .unauthorized
+        case "P0429":
+            .rateLimited
         default:
             .validation(error.message)
         }

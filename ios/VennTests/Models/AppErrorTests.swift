@@ -40,6 +40,14 @@ struct AppErrorTests {
     }
 
     @Test
+    func mapsRPCRateLimitSQLStateToRateLimited() {
+        // P0429 is the repo convention for rl_check failures inside RPCs —
+        // see the overlap_rpc migration.
+        let error = PostgrestError(code: "P0429", message: "rate_limited")
+        #expect(AppError.from(error) == .rateLimited)
+    }
+
+    @Test
     func mapsUnrecognisedErrorToUnknownCarryingTheLocalizedDescription() {
         struct CustomError: Error, LocalizedError {
             var errorDescription: String? {
