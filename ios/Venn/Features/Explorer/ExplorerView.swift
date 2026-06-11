@@ -15,25 +15,32 @@ struct ExplorerView: View {
     private var clientProvider
     @Environment(AppConfig.self)
     private var config
+    @Environment(AuthState.self)
+    private var authState
 
     @State private var query = ""
     @State private var selectedCategory: ExplorerCategory = .all
     @State private var viewModel: ExplorerViewModel?
     @State private var composerViewModel: ComposerViewModel?
+    @State private var peopleViewModel: PeopleSearchViewModel?
 
     var body: some View {
         NavigationStack {
             Screen {
                 ScrollView {
                     VStack(alignment: .leading, spacing: Theme.Spacing.lg) {
-                        SearchField(text: $query, prompt: "Search movies, TV, music, books")
+                        SearchField(text: $query, prompt: "Search movies, TV, music, books, people")
                         categoryPicker
                         if query.isEmpty {
                             if selectedCategory.browseKind != nil {
                                 browseStack
+                            } else if selectedCategory == .people {
+                                peopleBrowsePrompt
                             } else {
                                 allBrowsePrompt
                             }
+                        } else if selectedCategory == .people {
+                            peopleResultsStack
                         } else {
                             searchResultsStack
                         }
@@ -53,18 +60,32 @@ struct ExplorerView: View {
                     ComposerSheetView(viewModel: vm)
                 }
             }
+            .navigationDestination(for: UserProfile.self) { profile in
+                PublicProfileView(profile: profile)
+            }
         }
         .task { await ensureLoaded() }
         .onChange(of: selectedCategory) { _, newCategory in
             if let kind = newCategory.browseKind {
                 Task { await viewModel?.load(kind: kind) }
             }
-            if !query.isEmpty {
-                composerViewModel?.search(query, kinds: newCategory.searchKinds)
-            }
+            dispatchSearch(query: query, category: newCategory)
         }
         .onChange(of: query) { _, newQuery in
-            composerViewModel?.search(newQuery, kinds: selectedCategory.searchKinds)
+            dispatchSearch(query: newQuery, category: selectedCategory)
+        }
+    }
+
+    /// Route the query to the right search engine for the category —
+    /// profiles for People, the media catalog otherwise — and idle the one
+    /// that's not in use so stale results don't flash on category switch.
+    private func dispatchSearch(query: String, category: ExplorerCategory) {
+        if category == .people {
+            composerViewModel?.clearSearch()
+            peopleViewModel?.search(query)
+        } else {
+            peopleViewModel?.clear()
+            composerViewModel?.search(query, kinds: category.searchKinds)
         }
     }
 
@@ -79,7 +100,7 @@ struct ExplorerView: View {
                 title: \.title,
                 systemImage: \.icon
             )
-            .frame(minWidth: 520)
+            .frame(minWidth: 640)
         }
         .scrollClipDisabled()
     }
@@ -129,6 +150,48 @@ struct ExplorerView: View {
             title: "Search everything",
             message: "Type in the search bar to find movies, TV shows, music, and books all at once."
         )
+    }
+
+    /// Shown in browse mode when the "People" category is selected.
+    private var peopleBrowsePrompt: some View {
+        EmptyStateView(
+            systemImage: "person.2",
+            title: "Find your people",
+            message: "Search by name or username to see what they're into."
+        )
+    }
+
+    // MARK: - People search mode
+
+    @ViewBuilder private var peopleResultsStack: some View {
+        if let vm = peopleViewModel {
+            switch vm.state {
+            case .idle:
+                EmptyView()
+            case .searching:
+                DeferredLoadingView(caption: "Searching…")
+            case let .results(profiles):
+                if profiles.isEmpty {
+                    EmptyStateView(
+                        systemImage: "person.2",
+                        title: "No one found",
+                        message: "Try a different name or username."
+                    )
+                } else {
+                    VStack(spacing: Theme.Spacing.sm) {
+                        ForEach(profiles) { profile in
+                            NavigationLink(value: profile) {
+                                PeopleSearchResultRow(profile: profile)
+                            }
+                            .buttonStyle(.plain)
+                            .vennScrollDepth()
+                        }
+                    }
+                }
+            case let .error(reason):
+                ErrorStateView(reason: reason, unknownTitle: "Search failed")
+            }
+        }
     }
 
     private var browseEmptyView: some View {
@@ -194,6 +257,17 @@ struct ExplorerView: View {
             let tmdb = config.tmdbAPIKey.map { TMDBService(apiKey: $0) }
             composerViewModel = ComposerViewModel(
                 service: ComposerService(tmdb: tmdb, client: clientProvider.client)
+            )
+        }
+        if peopleViewModel == nil {
+            let currentUserID: UUID? = if case let .signedIn(session) = authState.status {
+                session.user.id
+            } else {
+                nil
+            }
+            peopleViewModel = PeopleSearchViewModel(
+                service: PeopleSearchService(client: clientProvider.client),
+                currentUserID: currentUserID
             )
         }
     }

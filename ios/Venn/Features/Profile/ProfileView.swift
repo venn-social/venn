@@ -117,38 +117,17 @@ struct ProfileView: View {
     }
 
     private func shelfGallery(_ snapshot: ProfileSnapshot) -> some View {
-        let items = shelf == .collection ? snapshot.collection : snapshot.watchlist
-        return Group {
-            if items.isEmpty {
-                Text(shelf == .collection ? "Nothing in your collection yet." : "Your watchlist is empty.")
-                    .font(Theme.Font.callout)
-                    .foregroundStyle(Theme.Color.textSecondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.top, Theme.Spacing.md)
-            } else {
-                LazyVGrid(
-                    columns: Array(repeating: GridItem(.flexible(), spacing: Theme.Spacing.sm), count: 3),
-                    spacing: Theme.Spacing.sm
-                ) {
-                    ForEach(items) { item in
-                        Button {
-                            libraryDestination = LibraryDestination(
-                                userID: snapshot.profile.id,
-                                kind: nil,
-                                shelf: shelf
-                            )
-                        } label: {
-                            MediaCoverTile(
-                                title: item.media.title,
-                                kind: item.media.kind,
-                                height: 150,
-                                cornerRadius: Theme.Radius.md
-                            )
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-            }
+        ProfileShelfGallery(
+            items: shelf == .collection ? snapshot.collection : snapshot.watchlist,
+            emptyMessage: shelf == .collection
+                ? "Nothing in your collection yet."
+                : "Your watchlist is empty."
+        ) {
+            libraryDestination = LibraryDestination(
+                userID: snapshot.profile.id,
+                kind: nil,
+                shelf: shelf
+            )
         }
     }
 
@@ -184,27 +163,6 @@ struct ProfileView: View {
             )
             self.viewModel = viewModel
             await viewModel.load()
-        }
-    }
-}
-
-/// Collection / Watchlist text tabs above the cover gallery.
-private struct ShelfTabs: View {
-    @Binding var selection: ProfileShelf
-
-    var body: some View {
-        HStack(spacing: Theme.Spacing.xl) {
-            ForEach(ProfileShelf.allCases) { shelf in
-                let isSelected = shelf == selection
-                Button {
-                    selection = shelf
-                } label: {
-                    Text(shelf.title)
-                        .font(Theme.Font.headline)
-                        .foregroundStyle(isSelected ? Theme.Color.textPrimary : Theme.Color.textSecondary)
-                }
-            }
-            Spacer()
         }
     }
 }
