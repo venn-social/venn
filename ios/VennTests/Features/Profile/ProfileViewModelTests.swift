@@ -92,6 +92,46 @@ struct ProfileViewModelTests {
         }
     }
 
+    @Test
+    func refreshFollowCountsPatchesLoadedSnapshotInPlace() async {
+        let profile = makeProfile(username: "ada")
+        let service = FakeProfileService()
+        service.result = .success(profile)
+        service.followCountsResult = .success(FollowCounts(followers: 1, following: 0))
+        let viewModel = ProfileViewModel(userID: profile.id, service: service)
+        await viewModel.load()
+
+        service.followCountsResult = .success(FollowCounts(followers: 2, following: 0))
+        await viewModel.refreshFollowCounts()
+
+        #expect(viewModel.state == .loaded(
+            .init(
+                profile: profile,
+                followCounts: FollowCounts(followers: 2, following: 0),
+                collection: [],
+                watchlist: []
+            )
+        ))
+    }
+
+    @Test
+    func refreshFollowCountsKeepsStaleCountsOnFailure() async {
+        let profile = makeProfile(username: "ada")
+        let counts = FollowCounts(followers: 1, following: 0)
+        let service = FakeProfileService()
+        service.result = .success(profile)
+        service.followCountsResult = .success(counts)
+        let viewModel = ProfileViewModel(userID: profile.id, service: service)
+        await viewModel.load()
+
+        service.followCountsResult = .failure(AppError.network)
+        await viewModel.refreshFollowCounts()
+
+        #expect(viewModel.state == .loaded(
+            .init(profile: profile, followCounts: counts, collection: [], watchlist: [])
+        ))
+    }
+
     // MARK: - helpers
 
     private func makeViewModel(failingWith error: any Error) -> ProfileViewModel {

@@ -57,4 +57,20 @@ final class ProfileViewModel {
             state = .error(.unknown)
         }
     }
+
+    /// Re-fetch just the follow counts and patch them into the loaded
+    /// snapshot — used after a follow/unfollow so the numbers update
+    /// without bouncing the whole screen through `.loading`. No-ops
+    /// (keeping the stale counts) when not loaded or when the fetch fails.
+    func refreshFollowCounts() async {
+        guard case let .loaded(snapshot) = state,
+              let counts = try? await service.followCounts(for: userID)
+        else { return }
+        state = .loaded(ProfileSnapshot(
+            profile: snapshot.profile,
+            followCounts: counts,
+            collection: snapshot.collection,
+            watchlist: snapshot.watchlist
+        ))
+    }
 }

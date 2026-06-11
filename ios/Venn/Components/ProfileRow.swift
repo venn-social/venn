@@ -1,9 +1,9 @@
 import SwiftUI
 
-/// A single profile in the Explorer People search results. Same surface
-/// shape as `ExplorerSearchResultRow`; tapping pushes the public profile
-/// via the enclosing `NavigationLink`.
-struct PeopleSearchResultRow: View {
+/// A single profile in a list — People search results, follower and
+/// following lists. Avatar, display name, handle, chevron; tapping pushes
+/// the public profile via the enclosing `NavigationLink`.
+struct ProfileRow: View {
     let profile: UserProfile
 
     var body: some View {
@@ -34,7 +34,7 @@ struct PeopleSearchResultRow: View {
 
 #Preview {
     VStack(spacing: 8) {
-        PeopleSearchResultRow(profile: UserProfile(
+        ProfileRow(profile: UserProfile(
             id: UUID(),
             username: "maya",
             displayName: "Maya Chen",
@@ -42,7 +42,7 @@ struct PeopleSearchResultRow: View {
             bio: nil,
             createdAt: Date()
         ))
-        PeopleSearchResultRow(profile: UserProfile(
+        ProfileRow(profile: UserProfile(
             id: UUID(),
             username: "ada_lovelace",
             displayName: nil,
