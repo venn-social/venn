@@ -40,6 +40,27 @@ struct AppErrorTests {
     }
 
     @Test
+    func mapsCommonURLErrorVariantsToNetwork() {
+        let codes: [URLError.Code] = [
+            .notConnectedToInternet, .networkConnectionLost, .timedOut,
+            .cannotFindHost, .cannotConnectToHost, .dnsLookupFailed,
+        ]
+        for code in codes {
+            #expect(AppError.from(URLError(code)) == .network)
+        }
+    }
+
+    @Test
+    func everyAppErrorCollapsesToALoadErrorReason() {
+        #expect(LoadErrorReason(.network) == .offline)
+        #expect(LoadErrorReason(.rateLimited) == .rateLimited)
+        #expect(LoadErrorReason(.unauthorized) == .unknown)
+        #expect(LoadErrorReason(.validation("x")) == .unknown)
+        #expect(LoadErrorReason(.server) == .unknown)
+        #expect(LoadErrorReason(.unknown(message: "x")) == .unknown)
+    }
+
+    @Test
     func mapsRPCRateLimitSQLStateToRateLimited() {
         // P0429 is the repo convention for rl_check failures inside RPCs —
         // see the overlap_rpc migration.

@@ -39,6 +39,12 @@ struct FollowListViewModelTests {
         #expect(viewModel.state == .error(.offline))
     }
 
+    @Test
+    func listKindsCarryTheirNavigationTitles() {
+        #expect(FollowListKind.followers.title == "Followers")
+        #expect(FollowListKind.following.title == "Following")
+    }
+
     private func makeProfile(username: String) -> UserProfile {
         UserProfile(
             id: UUID(),

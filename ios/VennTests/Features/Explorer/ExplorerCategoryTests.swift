@@ -25,4 +25,14 @@ struct ExplorerCategoryTests {
     func allCategorySearchesEveryKind() {
         #expect(Set(ExplorerCategory.all.searchKinds) == Set(MediaKind.allCases))
     }
+
+    @Test
+    func everyCategoryHasAChipTitleAndIcon() {
+        // The segmented control renders these directly — a new category
+        // without them would ship a blank chip.
+        for category in ExplorerCategory.allCases {
+            #expect(!category.title.isEmpty)
+            #expect(!category.icon.isEmpty)
+        }
+    }
 }
