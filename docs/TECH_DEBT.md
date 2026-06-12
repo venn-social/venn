@@ -23,3 +23,4 @@ CLAUDE.md rule 15 (Figma-first) is suspended until the Figma Pro subscription la
 - `FollowListView` — followers / following list (reuses `ProfileRow`)
 - Real cover art treatments: `MediaCoverTile` image state, `MediaCoverThumb` row thumbnails
 - "Your Venn" overlap section on the public profile (diagram + per-kind shared rows + empty/error states) — the signature visual; deserves real design attention when Figma returns
+- `OnboardingView` — claim-username screen after first sign-in (fields mirror AuthView)
