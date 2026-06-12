@@ -28,7 +28,22 @@ struct MusicBrainzServiceTests {
         #expect(candidate.externalID == "f5093c06-23e3-404f-aeaa-40f72885ee3a")
         #expect(candidate.externalSource == .musicbrainz)
         #expect(candidate.kind == .album)
-        #expect(candidate.coverURL == nil)
+    }
+
+    @Test
+    func candidateCoverPointsAtCoverArtArchiveFrontImage() throws {
+        // Derived blind from the MBID — no lookup request. Missing art
+        // 404s at render time and falls back to the tonal tile.
+        let json = Data("""
+        { "id": "f5093c06-23e3-404f-aeaa-40f72885ee3a", "title": "OK Computer",
+          "first-release-date": "1997-05-21", "artist-credit": null }
+        """.utf8)
+        let group = try JSONDecoder().decode(MBReleaseGroup.self, from: json)
+
+        let url = MusicBrainzService.candidate(from: group).coverURL
+
+        #expect(url?.absoluteString ==
+            "https://coverartarchive.org/release-group/f5093c06-23e3-404f-aeaa-40f72885ee3a/front-500")
     }
 
     @Test
