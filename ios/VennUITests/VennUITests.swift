@@ -48,7 +48,50 @@ final class VennUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Maya Chen"].waitForExistence(timeout: 30))
     }
 
+    @MainActor
+    func testPeopleSearchToPublicProfileJourney() {
+        // The social-loop journey: Explorer → People → search a seeded
+        // user → their public profile renders header + shelves. Category
+        // chips are in-screen buttons (not Tab taps), so this avoids the
+        // tab-switching flake documented above.
+        let app = launchApp(extraArgs: ["-previewExplorer"])
+        XCTAssertTrue(app.staticTexts["Search everything"].waitForExistence(timeout: 12))
+
+        app.buttons["People"].tap()
+        XCTAssertTrue(app.staticTexts["Find your people"].waitForExistence(timeout: 5))
+
+        // Search "theo", not "maya": the preview shell's debug session IS
+        // maya (seeded id 1111…), and people search filters yourself out.
+        let searchField = app.textFields["search_field"]
+        focusAndType("theo", into: searchField, app: app)
+
+        // Seeded profile arrives from people search; tap through.
+        let row = app.staticTexts["@theo"]
+        XCTAssertTrue(row.waitForExistence(timeout: 30))
+        row.firstMatch.tap()
+
+        // Public profile: header name + the shelf tabs.
+        XCTAssertTrue(app.staticTexts["Theo Park"].waitForExistence(timeout: 30))
+        XCTAssertTrue(app.buttons["Collection"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["Watchlist"].exists)
+    }
+
     // MARK: - helpers
+
+    /// Tap-to-focus on a SwiftUI `TextField` races layout settling — the
+    /// first tap sometimes lands before the field can take keyboard focus
+    /// ("Neither element nor any descendant has keyboard focus"). Wait for
+    /// the keyboard after tapping and retry with a coordinate tap once
+    /// before typing.
+    @MainActor
+    private func focusAndType(_ text: String, into field: XCUIElement, app: XCUIApplication) {
+        field.tap()
+        if !app.keyboards.firstMatch.waitForExistence(timeout: 3) {
+            field.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+            _ = app.keyboards.firstMatch.waitForExistence(timeout: 3)
+        }
+        field.typeText(text)
+    }
 
     @MainActor
     private func launchApp(extraArgs: [String]) -> XCUIApplication {
