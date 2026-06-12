@@ -8,9 +8,10 @@ import Foundation
 ///      The UI layer must debounce search queries; this service does not
 ///      enforce the rate limit internally.
 ///
-/// Cover art is not included in search results. The Cover Art Archive
-/// (coverartarchive.org) provides images per release but requires a
-/// separate request per item — deferred until the composer UI is built.
+/// Cover art is not included in search results, but the Cover Art Archive
+/// (coverartarchive.org) front-cover URL is derivable from the release
+/// group's MBID alone — no lookup request. Release groups without art 404
+/// at render time, which lands on `MediaCoverTile`'s tonal fallback.
 protocol MusicBrainzServicing: Sendable {
     func searchAlbums(query: String, page: Int) async throws -> [MediaCandidate]
 }
@@ -42,12 +43,20 @@ struct MusicBrainzService: MusicBrainzServicing {
             title: group.title,
             primaryCreator: group.artistCredit?.first?.name,
             year: ExternalAPI.year(from: group.firstReleaseDate),
-            coverURL: nil,
+            coverURL: coverURL(releaseGroupID: group.id),
             overview: nil,
             externalID: group.id,
             externalSource: .musicbrainz,
             kind: .album
         )
+    }
+
+    /// Cover Art Archive front cover for a release group, 500px edition —
+    /// the same pixel budget as TMDB's w500 posters. Constructed blind:
+    /// CAA 404s when no art exists and the cover tile falls back to the
+    /// tonal placeholder, so a wrong guess costs nothing.
+    static func coverURL(releaseGroupID: String) -> URL? {
+        URL(string: "https://coverartarchive.org/release-group/\(releaseGroupID)/front-500")
     }
 
     private static func searchURL(query: String, limit: Int, offset: Int) -> URL {
