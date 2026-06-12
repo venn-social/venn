@@ -33,9 +33,14 @@ final class ProfileEditViewModel {
 
     var displayName: String
     var bio: String
+    /// JPEG bytes of a newly picked avatar, already downscaled by the view
+    /// (`AvatarImage.jpegData`). Nil = avatar untouched this session.
+    var selectedAvatarData: Data?
     var state: State = .editing
 
     let userID: UUID
+    /// Current avatar, for the sheet's preview circle.
+    let currentAvatarURL: URL?
 
     private let initialDisplayName: String
     private let initialBio: String
@@ -45,11 +50,13 @@ final class ProfileEditViewModel {
         userID: UUID,
         displayName: String?,
         bio: String?,
+        avatarURL: URL? = nil,
         service: any ProfileServicing
     ) {
         self.userID = userID
         self.displayName = displayName ?? ""
         self.bio = bio ?? ""
+        currentAvatarURL = avatarURL
         initialDisplayName = displayName ?? ""
         initialBio = bio ?? ""
         self.service = service
@@ -61,7 +68,9 @@ final class ProfileEditViewModel {
     var canSave: Bool {
         if case .saving = state { return false }
         if case .saved = state { return false }
-        return displayName != initialDisplayName || bio != initialBio
+        return displayName != initialDisplayName
+            || bio != initialBio
+            || selectedAvatarData != nil
     }
 
     /// Validate, transition to `.saving`, ask the service to update the
@@ -92,6 +101,9 @@ final class ProfileEditViewModel {
 
         state = .saving
         do {
+            if let avatarData = selectedAvatarData {
+                _ = try await service.uploadAvatar(userID: userID, jpegData: avatarData)
+            }
             try await service.updateProfile(
                 userID: userID,
                 displayName: displayNameValue,

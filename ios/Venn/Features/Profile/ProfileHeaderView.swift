@@ -7,6 +7,7 @@ import SwiftUI
 struct ProfileHeaderView: View {
     let name: String
     let handle: String
+    var avatarURL: URL?
     let followers: Int
     let following: Int
     var onTapFollowers: (() -> Void)?
@@ -14,7 +15,7 @@ struct ProfileHeaderView: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: Theme.Spacing.lg) {
-            AvatarBadge(name: name, size: 72)
+            AvatarBadge(name: name, avatarURL: avatarURL, size: 72)
 
             VStack(alignment: .leading, spacing: Theme.Spacing.xxs) {
                 Text(verbatim: name)

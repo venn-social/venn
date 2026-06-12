@@ -84,6 +84,7 @@ struct ProfileView: View {
                     ProfileHeaderView(
                         name: profile.displayName ?? profile.username,
                         handle: profile.username,
+                        avatarURL: profile.avatarURL,
                         followers: snapshot.followCounts.followers,
                         following: snapshot.followCounts.following,
                         onTapFollowers: {
@@ -159,6 +160,7 @@ struct ProfileView: View {
             userID: profile.id,
             displayName: profile.displayName,
             bio: profile.bio,
+            avatarURL: profile.avatarURL,
             service: ProfileService(client: clientProvider.client)
         )
     }

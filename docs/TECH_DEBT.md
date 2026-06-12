@@ -24,3 +24,4 @@ CLAUDE.md rule 15 (Figma-first) is suspended until the Figma Pro subscription la
 - Real cover art treatments: `MediaCoverTile` image state, `MediaCoverThumb` row thumbnails
 - "Your Venn" overlap section on the public profile (diagram + per-kind shared rows + empty/error states) — the signature visual; deserves real design attention when Figma returns
 - `OnboardingView` — claim-username screen after first sign-in (fields mirror AuthView)
+- Avatar photo treatments: `AvatarBadge` image state, edit-sheet avatar row + photo picker
