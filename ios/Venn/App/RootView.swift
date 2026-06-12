@@ -40,16 +40,27 @@ struct RootView: View {
         }
     }
 
+    /// True when any of the preview-shell launch args is present —
+    /// `-designPreview` plus the tab-pinning variants the UI tests use.
+    private static var wantsDesignPreview: Bool {
+        let arguments = ProcessInfo.processInfo.arguments
+        return arguments.contains("-designPreview")
+            || arguments.contains("-previewExplorer")
+            || arguments.contains("-previewProfile")
+    }
+
     @ViewBuilder private var appContent: some View {
         #if DEBUG
+            // DEBUG boots the real app (sign-in and all) — the team now
+            // runs on real data. The preview shells are opt-in:
+            //   -designPreview  three-tab shell with a synthetic session
+            //   -previewStyle   static design-language reference
             if ProcessInfo.processInfo.arguments.contains("-previewStyle") {
-                // Visual style preview of the refreshed design language.
-                // DEBUG-only design reference — see Features/StylePreview.
                 StylePreviewShell()
-            } else if ProcessInfo.processInfo.arguments.contains("-authFlow") {
-                routedContent
-            } else {
+            } else if Self.wantsDesignPreview {
                 DesignPreviewView()
+            } else {
+                routedContent
             }
         #else
             routedContent
