@@ -19,18 +19,23 @@ import SwiftUI
             Group {
                 if let debugAuth {
                     TabView(selection: $selection) {
+                        // Mirrors MainView: hidden tab-bar background so
+                        // only the floating glass pill sits over the app.
                         Tab(value: MainTab.feed) {
                             FeedView()
+                                .toolbarBackground(.hidden, for: .tabBar)
                         } label: {
                             Image(systemName: "house").accessibilityLabel("Home")
                         }
                         Tab(value: MainTab.explorer) {
                             ExplorerView()
+                                .toolbarBackground(.hidden, for: .tabBar)
                         } label: {
                             Image(systemName: "magnifyingglass").accessibilityLabel("Search")
                         }
                         Tab(value: MainTab.profile) {
                             ProfileView()
+                                .toolbarBackground(.hidden, for: .tabBar)
                         } label: {
                             Image(systemName: "person.fill").accessibilityLabel("Profile")
                         }
