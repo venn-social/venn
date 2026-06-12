@@ -65,8 +65,10 @@ struct RootView: View {
                 service: AuthService(client: clientProvider.client),
                 redirectURL: config.authCallbackURL
             ))
-        case .signedIn:
-            MainView()
+        case let .signedIn(session):
+            // Gate guarantees a profiles row exists before MainView —
+            // first sign-ins detour through username onboarding.
+            OnboardingGate(userID: session.user.id)
         }
     }
 

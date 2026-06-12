@@ -25,6 +25,7 @@ Everything else is plumbing.
 | The Profile tab                                  | `ios/Venn/Features/Profile/ProfileView.swift`                      |
 | Someone else's profile page                      | `ios/Venn/Features/Profile/PublicProfileView.swift`                |
 | The sign-in screen                               | `ios/Venn/Features/Auth/AuthView.swift`                            |
+| The claim-username screen (first sign-in)        | `ios/Venn/Features/Onboarding/OnboardingView.swift`                |
 | The launch video / splash                        | `ios/Venn/Components/Loading/LaunchVideoSplashView.swift`          |
 | The animated gradient background                 | `ios/Venn/Components/Glass/GlassSkyBackground.swift`               |
 | Which tab bar items exist                        | `ios/Venn/App/MainView.swift`                                      |
