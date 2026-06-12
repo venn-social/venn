@@ -4,6 +4,11 @@ import SwiftUI
 /// call-to-action button. Used when a feed has no posts, a search returns
 /// no results, a profile has no activity yet, and so on.
 ///
+/// Deliberately has no container or icon-chip background: everything
+/// floats directly on the screen's `GlassSkyBackground` (material cards
+/// and white chips read as mismatched boxes against the gradient —
+/// direct feedback, 2026-06-12).
+///
 /// Pass `actionTitle` and `action` together (or neither) — they're tied so
 /// the button only appears when there's something to do.
 struct EmptyStateView: View {
@@ -29,14 +34,9 @@ struct EmptyStateView: View {
 
     var body: some View {
         VStack(spacing: Theme.Spacing.lg) {
-            ZStack {
-                RoundedRectangle(cornerRadius: Theme.Radius.sm)
-                    .fill(Theme.Color.surfaceStrong)
-                    .frame(width: 74, height: 74)
-                Image(systemName: systemImage)
-                    .font(Theme.Font.title)
-                    .foregroundStyle(Theme.Color.accent)
-            }
+            Image(systemName: systemImage)
+                .font(Theme.Font.largeTitle)
+                .foregroundStyle(Theme.Color.accent)
 
             VStack(spacing: Theme.Spacing.xs) {
                 Text(title)
@@ -54,8 +54,6 @@ struct EmptyStateView: View {
         }
         .padding(Theme.Spacing.xl)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(.ultraThinMaterial, in: .rect(cornerRadius: Theme.Radius.sm))
-        .padding(Theme.Spacing.lg)
         .accessibilityIdentifier("empty_state")
     }
 }
