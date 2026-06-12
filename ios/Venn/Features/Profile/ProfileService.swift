@@ -34,6 +34,12 @@ protocol ProfileServicing: Sendable {
     /// other users' posts server-side; the app only surfaces this action on
     /// the signed-in user's own library.
     func removeFromLibrary(postID: UUID) async throws
+
+    /// Upload a JPEG avatar to Storage (`avatars/<uid>/avatar.jpg`,
+    /// replacing any previous one), point `profiles.avatar_url` at it, and
+    /// return the public URL. Storage policies scope writes to the caller's
+    /// own folder.
+    func uploadAvatar(userID: UUID, jpegData: Data) async throws -> URL
 }
 
 /// Production implementation backed by the Supabase Postgrest client.
@@ -70,6 +76,38 @@ struct ProfileService: ProfileServicing {
                 .update(payload)
                 .eq("id", value: userID)
                 .execute()
+        } catch {
+            throw AppError.from(error)
+        }
+    }
+
+    func uploadAvatar(userID: UUID, jpegData: Data) async throws -> URL {
+        do {
+            // Lowercased to match the folder-scoped Storage policy —
+            // auth.uid()::text renders lowercase.
+            let path = "\(userID.uuidString.lowercased())/avatar.jpg"
+            try await client.storage
+                .from("avatars")
+                .upload(
+                    path,
+                    data: jpegData,
+                    options: FileOptions(cacheControl: "3600", contentType: "image/jpeg", upsert: true)
+                )
+            let publicURL = try client.storage.from("avatars").getPublicURL(path: path)
+            // Cache-busting version param: the path is stable across
+            // re-uploads, and URLCache/AsyncImage would happily keep
+            // serving the old picture without it.
+            var components = URLComponents(url: publicURL, resolvingAgainstBaseURL: false)
+            components?.queryItems = [
+                URLQueryItem(name: "v", value: String(Int(Date().timeIntervalSince1970))),
+            ]
+            let url = components?.url ?? publicURL
+            try await client
+                .from("profiles")
+                .update(["avatar_url": url.absoluteString])
+                .eq("id", value: userID)
+                .execute()
+            return url
         } catch {
             throw AppError.from(error)
         }

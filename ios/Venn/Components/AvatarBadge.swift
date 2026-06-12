@@ -1,8 +1,11 @@
 import SwiftUI
 
-/// Minimal circular avatar fallback used anywhere a profile image is missing.
+/// Circular avatar. Renders the profile photo when `avatarURL` is set,
+/// fading in over the initial-on-graphite fallback (which doubles as the
+/// loading and no-photo state).
 struct AvatarBadge: View {
     let name: String
+    var avatarURL: URL?
     var size: CGFloat = 36
 
     var body: some View {
@@ -13,6 +16,23 @@ struct AvatarBadge: View {
                 Text(initial)
                     .font(font)
                     .foregroundStyle(Theme.Color.onAccent)
+            }
+            .overlay {
+                if let avatarURL {
+                    AsyncImage(
+                        url: avatarURL,
+                        transaction: Transaction(animation: .easeIn(duration: 0.2))
+                    ) { phase in
+                        if case let .success(image) = phase {
+                            image
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                                .frame(width: size, height: size)
+                                .clipShape(Circle())
+                                .transition(.opacity)
+                        }
+                    }
+                }
             }
             .accessibilityLabel(Text(name))
     }

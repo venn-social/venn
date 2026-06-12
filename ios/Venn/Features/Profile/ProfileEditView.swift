@@ -1,8 +1,8 @@
+import PhotosUI
 import SwiftUI
 
-/// "Edit profile" sheet. Lets the signed-in user update their display name
-/// and bio. Handle/username editing and avatar upload are deferred to
-/// follow-up PRs.
+/// "Edit profile" sheet. Lets the signed-in user update their photo,
+/// display name, and bio. Handle/username editing stays deferred.
 ///
 /// Drives off `ProfileEditViewModel` for state; on success, calls
 /// `onSaved` so the parent `ProfileView` can re-fetch the profile and
@@ -13,6 +13,8 @@ struct ProfileEditView: View {
     var onCancel: () -> Void
 
     @FocusState private var focusedField: Field?
+    @State private var pickedItem: PhotosPickerItem?
+    @State private var pickedPreview: UIImage?
 
     private enum Field {
         case displayName
@@ -25,6 +27,8 @@ struct ProfileEditView: View {
         NavigationStack {
             Screen {
                 VStack(alignment: .leading, spacing: Theme.Spacing.lg) {
+                    avatarRow
+
                     fieldGroup(label: "Display name") {
                         TextField("Your name", text: $viewModel.displayName)
                             .textContentType(.name)
@@ -98,6 +102,47 @@ struct ProfileEditView: View {
         }
     }
 
+    /// Current (or freshly picked) avatar with a photo-library picker.
+    /// The picked image is downscaled and JPEG-encoded immediately so the
+    /// view-model only ever holds upload-ready bytes.
+    private var avatarRow: some View {
+        HStack(spacing: Theme.Spacing.lg) {
+            if let pickedPreview {
+                Image(uiImage: pickedPreview)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .frame(width: 72, height: 72)
+                    .clipShape(Circle())
+            } else {
+                AvatarBadge(
+                    name: viewModel.displayName.isEmpty ? "?" : viewModel.displayName,
+                    avatarURL: viewModel.currentAvatarURL,
+                    size: 72
+                )
+            }
+
+            PhotosPicker(selection: $pickedItem, matching: .images) {
+                Text("Change photo")
+                    .font(Theme.Font.callout.weight(.semibold))
+                    .foregroundStyle(Theme.Color.accent)
+            }
+            .accessibilityIdentifier("profile_edit_change_photo")
+
+            Spacer()
+        }
+        .onChange(of: pickedItem) { _, item in
+            guard let item else { return }
+            Task {
+                guard let data = try? await item.loadTransferable(type: Data.self),
+                      let image = UIImage(data: data),
+                      let jpeg = AvatarImage.jpegData(from: image)
+                else { return }
+                viewModel.selectedAvatarData = jpeg
+                pickedPreview = UIImage(data: jpeg)
+            }
+        }
+    }
+
     private func fieldGroup(
         label: LocalizedStringKey,
         @ViewBuilder content: () -> some View
@@ -154,6 +199,10 @@ private struct PreviewProfileService: ProfileServicing {
     }
 
     func updateProfile(userID _: UUID, displayName _: String?, bio _: String?) async throws {}
+
+    func uploadAvatar(userID _: UUID, jpegData _: Data) async throws -> URL {
+        URL(filePath: "/dev/null")
+    }
 
     func followCounts(for _: UUID) async throws -> FollowCounts {
         .zero

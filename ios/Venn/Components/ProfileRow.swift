@@ -8,7 +8,10 @@ struct ProfileRow: View {
 
     var body: some View {
         HStack(spacing: Theme.Spacing.md) {
-            AvatarBadge(name: profile.displayName ?? profile.username)
+            AvatarBadge(
+                name: profile.displayName ?? profile.username,
+                avatarURL: profile.avatarURL
+            )
 
             VStack(alignment: .leading, spacing: Theme.Spacing.xxs) {
                 Text(verbatim: profile.displayName ?? profile.username)

@@ -196,5 +196,9 @@ final class FakeLibraryService: ProfileServicing, @unchecked Sendable {
         try removeResult.get()
     }
 
+    func uploadAvatar(userID _: UUID, jpegData _: Data) async throws -> URL {
+        URL(filePath: "/dev/null")
+    }
+
     private struct NotConfigured: Error {}
 }

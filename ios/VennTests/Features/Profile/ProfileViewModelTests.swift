@@ -164,12 +164,14 @@ final class FakeProfileService: ProfileServicing, @unchecked Sendable {
 
     var result: Result<UserProfile, Error> = .failure(NotConfigured())
     var updateResult: Result<Void, Error> = .success(())
+    var uploadAvatarResult: Result<URL, Error> = .success(URL(filePath: "/dev/null"))
     var followCountsResult: Result<FollowCounts, Error> = .success(.zero)
     var collectionResult: Result<[LibraryItem], Error> = .success([])
     var watchlistResult: Result<[LibraryItem], Error> = .success([])
     private(set) var lastRequestedID: UUID?
     private(set) var lastFollowCountsID: UUID?
     private(set) var updateCalls: [UpdateCall] = []
+    private(set) var uploadedAvatarData: [Data] = []
 
     func profile(for userID: UUID) async throws -> UserProfile {
         lastRequestedID = userID
@@ -183,6 +185,11 @@ final class FakeProfileService: ProfileServicing, @unchecked Sendable {
     ) async throws {
         updateCalls.append(.init(userID: userID, displayName: displayName, bio: bio))
         try updateResult.get()
+    }
+
+    func uploadAvatar(userID _: UUID, jpegData: Data) async throws -> URL {
+        uploadedAvatarData.append(jpegData)
+        return try uploadAvatarResult.get()
     }
 
     func followCounts(for userID: UUID) async throws -> FollowCounts {

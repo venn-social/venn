@@ -47,6 +47,46 @@ struct ProfileEditViewModelTests {
     }
 
     @Test
+    func pickingAnAvatarAloneEnablesSaveAndUploads() async {
+        let service = FakeProfileService()
+        let viewModel = ProfileEditViewModel(
+            userID: UUID(),
+            displayName: "Ada",
+            bio: nil,
+            service: service
+        )
+        #expect(viewModel.canSave == false)
+
+        let jpeg = Data([0xFF, 0xD8, 0x01, 0x02])
+        viewModel.selectedAvatarData = jpeg
+        #expect(viewModel.canSave == true)
+
+        await viewModel.save()
+
+        #expect(viewModel.state == .saved)
+        #expect(service.uploadedAvatarData == [jpeg])
+    }
+
+    @Test
+    func failedAvatarUploadSurfacesSaveFailedWithoutTextUpdate() async {
+        let service = FakeProfileService()
+        service.uploadAvatarResult = .failure(AppError.server)
+        let viewModel = ProfileEditViewModel(
+            userID: UUID(),
+            displayName: "Ada",
+            bio: nil,
+            service: service
+        )
+        viewModel.selectedAvatarData = Data([0xFF, 0xD8])
+
+        await viewModel.save()
+
+        #expect(viewModel.state == .error(.saveFailed))
+        // Avatar upload runs first; the text update must not have fired.
+        #expect(service.updateCalls.isEmpty)
+    }
+
+    @Test
     func emptyDisplayNameSendsNullToClearTheColumn() async {
         let userID = UUID()
         let service = FakeProfileService()

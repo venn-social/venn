@@ -64,6 +64,7 @@ struct PublicProfileView: View {
                 ProfileHeaderView(
                     name: snapshot.profile.displayName ?? snapshot.profile.username,
                     handle: snapshot.profile.username,
+                    avatarURL: snapshot.profile.avatarURL,
                     followers: snapshot.followCounts.followers,
                     following: snapshot.followCounts.following,
                     onTapFollowers: {
