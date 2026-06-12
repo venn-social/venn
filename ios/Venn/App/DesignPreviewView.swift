@@ -68,13 +68,16 @@ import SwiftUI
             return .feed
         }
 
-        /// Synthetic signed-in session pinned to a seeded profile id so the
-        /// Profile tab loads real data. The token is never transmitted —
-        /// reads go through the anon key.
+        /// Synthetic signed-in session pinned to a fixed "ghost" id that
+        /// has no profile row. The shell is for layout work, not account
+        /// flows: the Feed/Explorer tabs render real public data, the
+        /// Profile tab shows its error surface, and People search can find
+        /// every real account (a ghost is never filtered out as "self").
+        /// The token is never transmitted — reads go through the anon key.
         private static var debugSession: Session {
             let now = Date()
             let user = User(
-                id: UUID(uuidString: "11111111-1111-1111-1111-111111111111") ?? UUID(),
+                id: UUID(uuidString: "0000dead-0000-4000-8000-000000000001") ?? UUID(),
                 appMetadata: [:],
                 userMetadata: [:],
                 aud: "authenticated",

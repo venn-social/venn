@@ -1,11 +1,11 @@
 -- =============================================================================
--- seed.sql — demo data.
+-- seed.sql — demo data. LOCAL DEVELOPMENT ONLY.
 -- =============================================================================
--- Runs after migrations on `npm run db:reset` (local). Also applicable to
--- the remote during early development via `npm run db:seed` (which uses
--- scripts/seed-remote.mjs to run this file over a SUPABASE_DB_URL
--- connection). Re-run is safe: every insert uses fixed UUIDs +
--- ON CONFLICT DO NOTHING.
+-- Runs after migrations on `npm run db:reset` (local), so local
+-- environments keep the demo trio even though the remove_demo_seed
+-- migration retired them from production (2026-06-12 — the remote runs
+-- real data now; do NOT `npm run db:seed` against it). Re-run is safe:
+-- every insert uses fixed UUIDs + ON CONFLICT DO NOTHING.
 --
 -- Rules:
 --   - Demo / fictional data only. No real users, no real emails.

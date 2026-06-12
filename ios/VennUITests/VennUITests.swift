@@ -16,15 +16,19 @@ final class VennUITests: XCTestCase {
     // The full-flow tab-switching journey lands back when stub services
     // are wired via launch arg (see Notion follow-up).
 
-    // Each test waits for *loaded*, data-backed content (CI has Supabase
-    // creds and the remote carries the committed seed) rather than just the
-    // tab shell. Waiting for the seeded row keeps the loaded views alive long
-    // enough to render — which is also what they're meant to verify.
+    // The remote no longer carries demo content (the remove_demo_seed
+    // migration retired it) — production data is real and therefore not
+    // assertable. Tests anchor on the official @venn account (stable,
+    // created by the same migration) and on data-independent chrome.
 
     @MainActor
-    func testFeedTabRenders() {
-        let app = launchApp(extraArgs: [])
-        XCTAssertTrue(app.staticTexts["Past Lives"].waitForExistence(timeout: 30))
+    func testFeedTabMounts() {
+        // Real feed content is whatever real users posted — unassertable.
+        // Smoke: the preview shell mounts with the tab pill present.
+        let app = launchApp(extraArgs: ["-designPreview"])
+        XCTAssertTrue(app.buttons["Home"].waitForExistence(timeout: 12))
+        XCTAssertTrue(app.buttons["Search"].exists)
+        XCTAssertTrue(app.buttons["Profile"].exists)
     }
 
     @MainActor
@@ -42,10 +46,15 @@ final class VennUITests: XCTestCase {
     }
 
     @MainActor
-    func testProfileTabRenders() {
-        // -previewProfile pins the debug session to the seeded "Maya Chen".
+    func testProfileTabShowsErrorSurfaceForGhostSession() {
+        // The preview shell's synthetic session is a ghost id with no
+        // profile row, so the own-profile tab renders its designed error
+        // surface. This pins the load → error → retry path; the *loaded*
+        // profile rendering is covered by the people-search journey via
+        // PublicProfileView (same view-model and components).
         let app = launchApp(extraArgs: ["-previewProfile"])
-        XCTAssertTrue(app.staticTexts["Maya Chen"].waitForExistence(timeout: 30))
+        XCTAssertTrue(app.staticTexts["Couldn't load your profile"].waitForExistence(timeout: 30))
+        XCTAssertTrue(app.buttons["Try again"].exists)
     }
 
     @MainActor
@@ -60,35 +69,40 @@ final class VennUITests: XCTestCase {
         app.buttons["People"].tap()
         XCTAssertTrue(app.staticTexts["Find your people"].waitForExistence(timeout: 5))
 
-        // Search "theo", not "maya": the preview shell's debug session IS
-        // maya (seeded id 1111…), and people search filters yourself out.
+        // The official @venn account (created by the remove_demo_seed
+        // migration) is the stable search anchor. The preview session is a
+        // ghost id, so @venn is never filtered out as "self".
         let searchField = app.textFields["search_field"]
-        focusAndType("theo", into: searchField, app: app)
+        focusAndType("venn", into: searchField, app: app)
 
-        // Seeded profile arrives from people search; tap through.
-        let row = app.staticTexts["@theo"]
+        // Official account arrives from people search; tap through.
+        let row = app.staticTexts["@venn"]
         XCTAssertTrue(row.waitForExistence(timeout: 30))
         row.firstMatch.tap()
 
-        // Public profile: header name + the shelf tabs.
-        XCTAssertTrue(app.staticTexts["Theo Park"].waitForExistence(timeout: 30))
+        // Public profile: bio + the shelf tabs.
+        XCTAssertTrue(app.staticTexts["The official venn account."].waitForExistence(timeout: 30))
         XCTAssertTrue(app.buttons["Collection"].waitForExistence(timeout: 10))
         XCTAssertTrue(app.buttons["Watchlist"].exists)
     }
 
     // MARK: - helpers
 
-    /// Tap-to-focus on a SwiftUI `TextField` races layout settling — the
-    /// first tap sometimes lands before the field can take keyboard focus
-    /// ("Neither element nor any descendant has keyboard focus"). Wait for
-    /// the keyboard after tapping and retry with a coordinate tap once
-    /// before typing.
+    /// Tap-to-focus on a SwiftUI `TextField` races layout settling — taps
+    /// can land before the field can take keyboard focus ("Neither element
+    /// nor any descendant has keyboard focus"), especially on a cold
+    /// simulator. Poll actual keyboard focus (not the software keyboard,
+    /// which never appears when a hardware keyboard is connected) and
+    /// re-tap until it sticks.
     @MainActor
-    private func focusAndType(_ text: String, into field: XCUIElement, app: XCUIApplication) {
-        field.tap()
-        if !app.keyboards.firstMatch.waitForExistence(timeout: 3) {
-            field.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
-            _ = app.keyboards.firstMatch.waitForExistence(timeout: 3)
+    private func focusAndType(_ text: String, into field: XCUIElement, app _: XCUIApplication) {
+        for attempt in 0..<6 {
+            field.tap()
+            if (field.value(forKey: "hasKeyboardFocus") as? Bool) == true {
+                break
+            }
+            // Give layout/animation half a beat before the next attempt.
+            Thread.sleep(forTimeInterval: 0.5 * Double(attempt + 1))
         }
         field.typeText(text)
     }
