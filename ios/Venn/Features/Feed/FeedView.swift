@@ -66,7 +66,7 @@ struct FeedView: View {
             EmptyStateView(
                 systemImage: "square.stack.3d.up",
                 title: "Quiet for now",
-                message: "Posts from people you follow will land here once they start logging."
+                message: "Your feed shows people you follow. Find them under People in the Explorer tab — or log something yourself."
             )
         }
     }

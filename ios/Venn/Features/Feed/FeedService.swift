@@ -5,14 +5,12 @@ import Supabase
 /// with a hand-rolled fake (we don't mock Supabase). Posting and reacting
 /// land in follow-up PRs once the composer is designed.
 protocol FeedServicing: Sendable {
-    /// Recent posts across the entire graph, newest first. Capped at
-    /// `limit` rows. Includes each post's media and author profile so
-    /// callers get the full render shape in one round-trip.
+    /// Recent posts from people the signed-in user follows (plus their
+    /// own), newest first. Capped at `limit` rows. Includes each post's
+    /// media and author profile so callers get the full render shape.
     ///
-    /// Today this is a global feed (no follow-graph filter) because there
-    /// is no signed-in state most of the time. When auth is the default
-    /// path, this will narrow to "people you follow + you" via a server-
-    /// side RPC; the protocol contract won't change.
+    /// Without a session (previews, DEBUG design boot) this degrades to
+    /// the global feed rather than failing — there's no graph to scope to.
     func recentPosts(limit: Int) async throws -> [FeedPost]
 }
 
@@ -24,9 +22,24 @@ struct FeedService: FeedServicing {
 
     func recentPosts(limit: Int = 20) async throws -> [FeedPost] {
         do {
+            guard let viewerID = try? await client.auth.session.user.id else {
+                return try await globalPosts(limit: limit)
+            }
+            let followees: [FolloweeRow] = try await client
+                .from("follows")
+                .select("followee_id")
+                .eq("follower_id", value: viewerID)
+                .execute()
+                .value
+            // Two round trips (graph, then posts) keeps the proven embed
+            // query shape. Fine while follow counts are double-digit; past
+            // a few hundred the in-list bloats the URL — that's the cue to
+            // move this into an RPC (docs/TECH_DEBT.md).
+            let authorIDs = followees.map(\.followeeId) + [viewerID]
             let rows: [FeedPostRow] = try await client
                 .from("posts")
                 .select("*, media(*), author:profiles(*)")
+                .in("author_id", values: authorIDs)
                 .order("created_at", ascending: false)
                 .limit(limit)
                 .execute()
@@ -35,6 +48,26 @@ struct FeedService: FeedServicing {
         } catch {
             throw AppError.from(error)
         }
+    }
+
+    private func globalPosts(limit: Int) async throws -> [FeedPost] {
+        let rows: [FeedPostRow] = try await client
+            .from("posts")
+            .select("*, media(*), author:profiles(*)")
+            .order("created_at", ascending: false)
+            .limit(limit)
+            .execute()
+            .value
+        return rows.compactMap(FeedPost.init(row:))
+    }
+}
+
+/// Wire-format row for the follow-graph fetch — just the followee column.
+struct FolloweeRow: Decodable, Equatable {
+    let followeeId: UUID
+
+    enum CodingKeys: String, CodingKey {
+        case followeeId = "followee_id"
     }
 }
 

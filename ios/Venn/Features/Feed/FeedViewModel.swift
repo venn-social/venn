@@ -6,9 +6,8 @@ import Observation
 /// the same way `ProfileViewModel` does — keeps the view free of
 /// imperative `if/else` over an async load.
 ///
-/// Today this is a global feed (whatever `FeedService.recentPosts`
-/// returns). When the follow graph is the source of truth, the model's
-/// API stays the same; only the service implementation changes.
+/// What lands in the feed (people you follow + you) is the service's
+/// concern — this model just renders whatever `recentPosts` returns.
 @MainActor
 @Observable
 final class FeedViewModel {

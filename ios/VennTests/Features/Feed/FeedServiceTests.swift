@@ -37,6 +37,17 @@ struct FeedServiceTests {
         #expect(feed.post.rating == 4.5)
     }
 
+    // MARK: - FolloweeRow
+
+    @Test
+    func followeeRowDecodesTheGraphColumn() throws {
+        let json = Data("""
+        [{ "followee_id": "33333333-3333-3333-3333-333333333333" }]
+        """.utf8)
+        let rows = try JSONDecoder().decode([FolloweeRow].self, from: json)
+        #expect(rows.map(\.followeeId.uuidString) == ["33333333-3333-3333-3333-333333333333"])
+    }
+
     // MARK: - forwards-compat
 
     @Test
