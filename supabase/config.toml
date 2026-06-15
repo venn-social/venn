@@ -16,6 +16,12 @@ extra_search_path = ["public", "extensions"]
 # The maximum number of rows returns from a view, table, or stored procedure. Limits payload size
 # for accidental or malicious requests.
 max_rows = 1000
+# Supabase CLI 2.106.0 flipped this default to false: new public tables/sequences/functions are no
+# longer auto-exposed through the Data API on local start/reset. We keep the pre-2.106 behavior so
+# `npm run db:reset` still exposes new tables locally without per-table GRANTs. DEPRECATED upstream —
+# sunset 2026-10-30. Durable migration path: add explicit GRANTs (anon/authenticated/service_role)
+# in each new-table migration, then remove this flag. See supabase/cli#5524.
+auto_expose_new_tables = true
 
 [api.tls]
 # Enable HTTPS endpoints locally using a self-signed certificate.
