@@ -57,6 +57,8 @@ struct RootView: View {
             //   -previewStyle   static design-language reference
             if ProcessInfo.processInfo.arguments.contains("-previewStyle") {
                 StylePreviewShell()
+            } else if ProcessInfo.processInfo.arguments.contains("-previewOnboarding") {
+                OnboardingPreviewView()
             } else if Self.wantsDesignPreview {
                 DesignPreviewView()
             } else {

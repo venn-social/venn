@@ -86,6 +86,46 @@ final class VennUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Watchlist"].exists)
     }
 
+    // The onboarding flow needs a session + writes, so it runs against the
+    // `-previewOnboarding` shell (in-memory stubs): username step with live
+    // availability, then the optional photo step. The shell treats "venn"
+    // as taken and everything else as free.
+
+    @MainActor
+    func testOnboardingUsernameStepFlagsTakenHandle() {
+        let app = launchApp(extraArgs: ["-previewOnboarding"])
+        XCTAssertTrue(app.staticTexts["Step 1 of 2"].waitForExistence(timeout: 12))
+
+        let field = app.textFields["onboarding_username_field"]
+        XCTAssertTrue(field.waitForExistence(timeout: 5))
+        focusAndType("venn", into: field, app: app)
+
+        XCTAssertTrue(
+            app.staticTexts["@venn is taken — try another"].waitForExistence(timeout: 5)
+        )
+    }
+
+    @MainActor
+    func testOnboardingJourneyFreeHandleThroughPhotoStep() {
+        let app = launchApp(extraArgs: ["-previewOnboarding"])
+        XCTAssertTrue(app.staticTexts["Step 1 of 2"].waitForExistence(timeout: 12))
+
+        let field = app.textFields["onboarding_username_field"]
+        XCTAssertTrue(field.waitForExistence(timeout: 5))
+        focusAndType("ada", into: field, app: app)
+
+        // Live ✓ verdict, then advance to the photo step.
+        XCTAssertTrue(app.staticTexts["@ada is available"].waitForExistence(timeout: 5))
+        app.buttons["Create profile"].tap()
+
+        // Step 2: optional photo. Skip lands on the shell's done screen.
+        XCTAssertTrue(app.staticTexts["Add a face to the name"].waitForExistence(timeout: 5))
+        app.buttons["onboarding_photo_skip"].tap()
+        XCTAssertTrue(
+            app.staticTexts["onboarding_preview_done"].waitForExistence(timeout: 5)
+        )
+    }
+
     // MARK: - helpers
 
     /// Tap-to-focus on a SwiftUI `TextField` races layout settling — taps
