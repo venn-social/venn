@@ -155,17 +155,24 @@ struct ProfileService: ProfileServicing {
         kind: MediaKind?
     ) async throws -> [LibraryItem] {
         do {
-            let rows: [LibraryItemRow] = try await client
+            var query = client
                 .from("posts")
                 .select(LibraryItemRow.selectClause)
                 .eq("author_id", value: userID)
                 .in("action", values: actions)
+            // Scope to one kind server-side instead of fetching every kind and
+            // discarding most client-side. `media!inner` (see selectClause)
+            // makes the join inner, so filtering the embedded `media.kind`
+            // (a Postgres enum — pass a valid MediaKind.rawValue) restricts the
+            // parent rows. Verified against the remote PostgREST API.
+            if let kind {
+                query = query.eq("media.kind", value: kind.rawValue)
+            }
+            let rows: [LibraryItemRow] = try await query
                 .order("created_at", ascending: false)
                 .execute()
                 .value
-            return rows
-                .compactMap(LibraryItem.init(row:))
-                .filter { kind == nil || $0.media.kind == kind }
+            return rows.compactMap(LibraryItem.init(row:))
         } catch {
             throw AppError.from(error)
         }
