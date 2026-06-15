@@ -98,6 +98,17 @@ jobs:
       # from .env" phase injects real Supabase credentials. Without these the
       # UI tests can't render loaded (data-backed) views, which tanks line
       # coverage. Only the two required keys; telemetry stays off in CI.
+      #
+      # NOTE: Dependabot-triggered runs do NOT see Actions secrets — they read
+      # from the separate *Dependabot* secrets store. Both SUPABASE_URL and
+      # SUPABASE_ANON_KEY are mirrored there so Dependabot PRs run the full
+      # suite (it matters most for SPM bumps like supabase-swift). These are
+      # the publishable anon key + project URL — already shipped in the app
+      # binary — so mirroring them is not a secret-exposure concern. If you
+      # ever rotate the Actions secrets, rotate the Dependabot ones too, or
+      # Dependabot PRs will start failing with "Missing SUPABASE_URL":
+      #   gh secret set SUPABASE_URL       --app dependabot < value
+      #   gh secret set SUPABASE_ANON_KEY  --app dependabot < value
       - name: Write .env + generate config from secrets
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
