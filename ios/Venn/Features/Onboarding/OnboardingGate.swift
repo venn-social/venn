@@ -14,6 +14,7 @@ struct OnboardingGate: View {
     private enum GateState: Equatable {
         case checking
         case needsOnboarding
+        case needsPhoto
         case ready
         case error(LoadErrorReason)
     }
@@ -29,6 +30,13 @@ struct OnboardingGate: View {
             OnboardingView(viewModel: OnboardingViewModel(
                 userID: userID,
                 service: OnboardingService(client: clientProvider.client)
+            )) {
+                state = .needsPhoto
+            }
+        case .needsPhoto:
+            OnboardingPhotoView(viewModel: OnboardingPhotoViewModel(
+                userID: userID,
+                service: ProfileService(client: clientProvider.client)
             )) {
                 state = .ready
             }

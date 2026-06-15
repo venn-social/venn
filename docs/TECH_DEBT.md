@@ -25,3 +25,5 @@ CLAUDE.md rule 15 (Figma-first) is suspended until the Figma Pro subscription la
 - "Your Venn" overlap section on the public profile (diagram + per-kind shared rows + empty/error states) — the signature visual; deserves real design attention when Figma returns
 - `OnboardingView` — claim-username screen after first sign-in (fields mirror AuthView)
 - Avatar photo treatments: `AvatarBadge` image state, edit-sheet avatar row + photo picker
+- Sign-in revamp: "check your inbox" screen (bold email, resend countdown, change-email)
+- Stepped onboarding: step indicators, live username availability (✓/✗ + hint line), photo step with circular picker hero

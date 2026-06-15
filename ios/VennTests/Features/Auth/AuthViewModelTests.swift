@@ -150,6 +150,74 @@ struct AuthViewModelTests {
 
     // MARK: - helpers
 
+    // MARK: - resend cooldown
+
+    @Test
+    func resendLockedDuringCooldownThenUnlocks() async {
+        let service = FakeAuthService()
+        var fakeNow = Date(timeIntervalSince1970: 1_000_000)
+        let viewModel = AuthViewModel(
+            service: service,
+            redirectURL: URL(staticString: "social.venn.app://auth-callback")
+        ) { fakeNow }
+        viewModel.email = "charles@example.com"
+        await viewModel.submit()
+        #expect(viewModel.state == .sent)
+        #expect(viewModel.canResend == false)
+        #expect(viewModel.resendSecondsRemaining == 30)
+
+        fakeNow = fakeNow.addingTimeInterval(31)
+        #expect(viewModel.canResend == true)
+        #expect(viewModel.resendSecondsRemaining == 0)
+    }
+
+    @Test
+    func resendSendsAgainAndRestartsCooldown() async {
+        let service = FakeAuthService()
+        var fakeNow = Date(timeIntervalSince1970: 1_000_000)
+        let viewModel = AuthViewModel(
+            service: service,
+            redirectURL: URL(staticString: "social.venn.app://auth-callback")
+        ) { fakeNow }
+        viewModel.email = "charles@example.com"
+        await viewModel.submit()
+        fakeNow = fakeNow.addingTimeInterval(31)
+
+        await viewModel.resend()
+
+        #expect(service.sendCount == 2)
+        #expect(viewModel.state == .sent)
+        #expect(viewModel.canResend == false)
+    }
+
+    @Test
+    func resendIgnoredWhileCooldownActive() async {
+        let service = FakeAuthService()
+        let fakeNow = Date(timeIntervalSince1970: 1_000_000)
+        let viewModel = AuthViewModel(
+            service: service,
+            redirectURL: URL(staticString: "social.venn.app://auth-callback")
+        ) { fakeNow }
+        viewModel.email = "charles@example.com"
+        await viewModel.submit()
+
+        await viewModel.resend()
+
+        #expect(service.sendCount == 1)
+    }
+
+    @Test
+    func resetClearsCooldownState() async {
+        let viewModel = makeViewModel()
+        viewModel.email = "charles@example.com"
+        await viewModel.submit()
+
+        viewModel.reset()
+
+        #expect(viewModel.lastSentAt == nil)
+        #expect(viewModel.state == .idle)
+    }
+
     private func makeViewModel() -> AuthViewModel {
         AuthViewModel(
             service: FakeAuthService(),
@@ -188,7 +256,10 @@ final class FakeAuthService: AuthServicing, @unchecked Sendable {
         try currentSessionResult.get()
     }
 
+    private(set) var sendCount = 0
+
     func sendMagicLink(email: String, redirectTo: URL) async throws {
+        sendCount += 1
         lastMagicLinkEmail = email
         lastMagicLinkURL = redirectTo
         if holdSendMagicLink {

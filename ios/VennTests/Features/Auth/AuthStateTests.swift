@@ -7,21 +7,33 @@
     @MainActor
     struct AuthStateTests {
         /// When anonymous sign-ins are disabled (the service throws), the
-        /// DEBUG guest bypass still lands the app in a signed-in state via the
-        /// local fallback session.
+        /// guest bypass reports failure and leaves auth state untouched —
+        /// it must NOT fabricate a session. A fabricated session can't pass
+        /// RLS, so every write would fail with opaque errors (the
+        /// onboarding bug of 2026-06-12).
         @Test
-        func enterGuestSessionFallsBackToDebugSession() async {
+        func enterGuestSessionReportsFailureWithoutFabricatingASession() async {
             let service = FakeAuthService()
             service.signInAnonymouslyResult = .failure(NSError(domain: "test", code: 1))
             let state = AuthState(service: service)
+            state.status = .signedOut
 
-            await state.enterGuestSession()
+            let ok = await state.enterGuestSession()
 
-            guard case let .signedIn(session) = state.status else {
-                Issue.record("expected .signedIn, got \(state.status)")
-                return
-            }
-            #expect(session.user.isAnonymous == true)
+            #expect(ok == false)
+            #expect(state.status == .signedOut)
+        }
+
+        /// Success path: the service call goes through; the real session
+        /// arrives later via the auth-state listener (not asserted here).
+        @Test
+        func enterGuestSessionSucceedsWhenAnonymousSignInsAreEnabled() async {
+            let service = FakeAuthService()
+            let state = AuthState(service: service)
+
+            let ok = await state.enterGuestSession()
+
+            #expect(ok == true)
         }
     }
 #endif

@@ -118,12 +118,83 @@ struct OnboardingViewModelTests {
         #expect(viewModel.state == .done)
     }
 
+    // MARK: - Live availability
+
+    @Test
+    func emptyUsernameIsIdle() {
+        let viewModel = makeViewModel()
+        viewModel.username = "   "
+        viewModel.usernameChanged()
+        #expect(viewModel.availability == .idle)
+    }
+
+    @Test
+    func malformedUsernameIsInvalidWithoutNetworkCall() {
+        let service = FakeOnboardingService()
+        let viewModel = makeViewModel(service: service)
+        viewModel.username = "no spaces!"
+        viewModel.usernameChanged()
+        #expect(viewModel.availability == .invalid(.usernameInvalidCharacters))
+        #expect(service.checkedUsernames.isEmpty)
+    }
+
+    @Test
+    func freeUsernameBecomesAvailableNormalized() async {
+        let service = FakeOnboardingService()
+        let viewModel = makeViewModel(service: service)
+        viewModel.username = "  Ada_Lovelace "
+        viewModel.usernameChanged()
+        #expect(viewModel.availability == .checking)
+
+        await settle(viewModel)
+
+        #expect(viewModel.availability == .available("ada_lovelace"))
+        #expect(service.checkedUsernames == ["ada_lovelace"])
+    }
+
+    @Test
+    func claimedUsernameBecomesTaken() async {
+        let service = FakeOnboardingService()
+        service.availabilityResult = .success(false)
+        let viewModel = makeViewModel(service: service)
+        viewModel.username = "venn"
+        viewModel.usernameChanged()
+
+        await settle(viewModel)
+
+        #expect(viewModel.availability == .taken("venn"))
+    }
+
+    @Test
+    func availabilityNetworkFailureFallsBackToIdle() async {
+        let service = FakeOnboardingService()
+        service.availabilityResult = .failure(AppError.network)
+        let viewModel = makeViewModel(service: service)
+        viewModel.username = "ada"
+        viewModel.usernameChanged()
+
+        await settle(viewModel)
+
+        // Quietly idle — submit remains the authority and will surface
+        // real errors with retryable copy.
+        #expect(viewModel.availability == .idle)
+    }
+
     // MARK: - Helpers
 
     private func makeViewModel(
         service: FakeOnboardingService = FakeOnboardingService()
     ) -> OnboardingViewModel {
-        OnboardingViewModel(userID: UUID(), service: service)
+        OnboardingViewModel(userID: UUID(), service: service, availabilityDebounce: .zero)
+    }
+
+    /// Yield until the debounced availability task settles.
+    private func settle(_ viewModel: OnboardingViewModel) async {
+        for _ in 0..<20 {
+            if viewModel.availability != .checking { return }
+            await Task.yield()
+            try? await Task.sleep(for: .milliseconds(10))
+        }
     }
 }
 
@@ -131,12 +202,19 @@ struct OnboardingViewModelTests {
 
 final class FakeOnboardingService: OnboardingServicing, @unchecked Sendable {
     var hasProfileResult: Result<Bool, Error> = .success(false)
+    var availabilityResult: Result<Bool, Error> = .success(true)
     var createResult: Result<Void, Error> = .success(())
     private(set) var createdUsernames: [String] = []
     private(set) var createdDisplayNames: [String?] = []
+    private(set) var checkedUsernames: [String] = []
 
     func hasProfile(userID _: UUID) async throws -> Bool {
         try hasProfileResult.get()
+    }
+
+    func isUsernameAvailable(_ username: String) async throws -> Bool {
+        checkedUsernames.append(username)
+        return try availabilityResult.get()
     }
 
     func createProfile(userID _: UUID, username: String, displayName: String?) async throws {

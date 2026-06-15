@@ -27,15 +27,40 @@ final class AuthViewModel {
         case sendFailed
     }
 
+    /// Resend is gated behind a cooldown so an impatient tap-storm doesn't
+    /// burn through the server-side rate limit (and so the button honestly
+    /// communicates that email takes a moment to arrive).
+    static let resendCooldown: TimeInterval = 30
+
     var email = ""
     var state: State = .idle
+    private(set) var lastSentAt: Date?
 
     private let service: any AuthServicing
     private let redirectURL: URL
+    private let now: () -> Date
 
-    init(service: any AuthServicing, redirectURL: URL) {
+    /// `now` is injectable so cooldown tests don't sleep.
+    init(
+        service: any AuthServicing,
+        redirectURL: URL,
+        now: @escaping () -> Date = { Date() }
+    ) {
         self.service = service
         self.redirectURL = redirectURL
+        self.now = now
+    }
+
+    /// Seconds until "Resend link" unlocks (0 = ready). The view ticks a
+    /// `TimelineView` against this.
+    var resendSecondsRemaining: Int {
+        guard let lastSentAt else { return 0 }
+        let elapsed = now().timeIntervalSince(lastSentAt)
+        return max(0, Int((Self.resendCooldown - elapsed).rounded(.up)))
+    }
+
+    var canResend: Bool {
+        state == .sent && resendSecondsRemaining == 0
     }
 
     /// True when the email passes validation and we're not mid-send. The
@@ -56,7 +81,25 @@ final class AuthViewModel {
         state = .sending
         do {
             try await service.sendMagicLink(email: normalized, redirectTo: redirectURL)
+            lastSentAt = now()
             state = .sent
+        } catch let error as AppError {
+            state = .error(reason(for: error))
+        } catch {
+            state = .error(.sendFailed)
+        }
+    }
+
+    /// Send the link again to the same address. Only valid from `.sent`
+    /// once the cooldown has elapsed; failures drop back to the error
+    /// branch like a first send would.
+    func resend() async {
+        guard canResend,
+              case let .valid(normalized) = Sanitize.email(email)
+        else { return }
+        do {
+            try await service.sendMagicLink(email: normalized, redirectTo: redirectURL)
+            lastSentAt = now()
         } catch let error as AppError {
             state = .error(reason(for: error))
         } catch {
@@ -78,5 +121,6 @@ final class AuthViewModel {
     /// on the `.sent` and `.error` screens.
     func reset() {
         state = .idle
+        lastSentAt = nil
     }
 }

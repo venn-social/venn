@@ -16,6 +16,7 @@ struct AuthView: View {
         @Environment(AuthState.self)
         private var authState
         @State private var isEnteringGuest = false
+        @State private var guestFailed = false
     #endif
 
     var body: some View {
@@ -49,19 +50,34 @@ struct AuthView: View {
     }
 
     #if DEBUG
-        /// Temporary developer affordance: skip the magic-link flow and drop
-        /// straight into the app. DEBUG-only — see `AuthState.enterGuestSession`.
+        /// Developer affordance: a real anonymous session, straight into the
+        /// app. Fails honestly when the project has anonymous sign-ins
+        /// disabled (Supabase dashboard → Authentication → Providers).
         private var guestBypass: some View {
-            Button {
-                isEnteringGuest = true
-                Task { await authState.enterGuestSession() }
-            } label: {
-                Text(isEnteringGuest ? "Signing in…" : "Continue as guest")
-                    .font(Theme.Font.footnote.weight(.semibold))
-                    .foregroundStyle(Theme.Color.accent)
+            VStack(spacing: Theme.Spacing.xs) {
+                Button {
+                    isEnteringGuest = true
+                    guestFailed = false
+                    Task {
+                        let ok = await authState.enterGuestSession()
+                        isEnteringGuest = false
+                        guestFailed = !ok
+                    }
+                } label: {
+                    Text(isEnteringGuest ? "Signing in…" : "Continue as guest")
+                        .font(Theme.Font.footnote.weight(.semibold))
+                        .foregroundStyle(Theme.Color.accent)
+                }
+                .disabled(isEnteringGuest)
+                .accessibilityIdentifier("auth_guest_button")
+
+                if guestFailed {
+                    Text("Guest sign-in is disabled for this project — enable anonymous sign-ins in Supabase.")
+                        .font(Theme.Font.caption)
+                        .foregroundStyle(.red)
+                        .multilineTextAlignment(.center)
+                }
             }
-            .disabled(isEnteringGuest)
-            .accessibilityIdentifier("auth_guest_button")
         }
     #endif
 
@@ -124,22 +140,46 @@ struct AuthView: View {
         }
     }
 
+    /// The "verify your email" screen. The magic link doubles as email
+    /// verification, so the copy says so; resend unlocks after a cooldown
+    /// (the TimelineView re-evaluates the countdown once per second).
     private var sentConfirmation: some View {
         VStack(spacing: Theme.Spacing.md) {
             Image(systemName: "envelope.badge")
                 .font(Theme.Font.largeTitle)
                 .foregroundStyle(Theme.Color.accent)
+
             Text("Check your inbox")
                 .font(Theme.Font.title2)
                 .foregroundStyle(Theme.Color.textPrimary)
-            Text("We sent a sign-in link to \(viewModel.email). Tap it to finish signing in.")
-                .font(Theme.Font.body)
-                .foregroundStyle(Theme.Color.textSecondary)
-                .multilineTextAlignment(.center)
-            SecondaryButton(title: "Use a different email") {
-                viewModel.reset()
+
+            Text(
+                "We emailed a sign-in link to \(Text(verbatim: viewModel.email).bold()). Tapping it verifies your email and signs you in."
+            )
+            .font(Theme.Font.body)
+            .foregroundStyle(Theme.Color.textSecondary)
+            .multilineTextAlignment(.center)
+
+            TimelineView(.periodic(from: .now, by: 1)) { _ in
+                let remaining = viewModel.resendSecondsRemaining
+                PrimaryButton(
+                    title: remaining > 0 ? "Resend in \(remaining)s" : "Resend link",
+                    isEnabled: viewModel.canResend
+                ) {
+                    Task { await viewModel.resend() }
+                }
             }
-            .padding(.top, Theme.Spacing.md)
+            .padding(.top, Theme.Spacing.sm)
+            .accessibilityIdentifier("auth_resend_button")
+
+            Button {
+                viewModel.reset()
+            } label: {
+                Text("Use a different email")
+                    .font(Theme.Font.callout.weight(.semibold))
+                    .foregroundStyle(Theme.Color.accent)
+            }
+            .padding(.top, Theme.Spacing.xs)
         }
         .padding(Theme.Spacing.lg)
         .background(.ultraThinMaterial, in: .rect(cornerRadius: Theme.Radius.sm))

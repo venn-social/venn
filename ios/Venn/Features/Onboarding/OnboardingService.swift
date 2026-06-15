@@ -13,6 +13,11 @@ protocol OnboardingServicing: Sendable {
     /// Whether a `profiles` row exists for `userID`.
     func hasProfile(userID: UUID) async throws -> Bool
 
+    /// Whether `username` (already normalized) is unclaimed. Advisory only
+    /// — drives the live ✓/✗ indicator while typing. The DB unique
+    /// constraint remains the authority at insert time.
+    func isUsernameAvailable(_ username: String) async throws -> Bool
+
     /// Insert the user's profile row. Throws `UsernameTakenError` when the
     /// username is already claimed (DB unique constraint — the only
     /// authority on uniqueness; no pre-check race).
@@ -35,6 +40,20 @@ struct OnboardingService: OnboardingServicing {
                 .execute()
                 .count ?? 0
             return count > 0
+        } catch {
+            throw AppError.from(error)
+        }
+    }
+
+    func isUsernameAvailable(_ username: String) async throws -> Bool {
+        do {
+            let count = try await client
+                .from("profiles")
+                .select("id", head: true, count: .exact)
+                .eq("username", value: username)
+                .execute()
+                .count ?? 0
+            return count == 0
         } catch {
             throw AppError.from(error)
         }
