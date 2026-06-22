@@ -30,14 +30,14 @@ supabase = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
 
 # Load embedding model once
 print("Loading embedding model...")
-model = SentenceTransformer("all-mpnet-base-v2")  # 768-dim, excellent for clustering
+model = SentenceTransformer("all-MiniLM-L6-v2")  # 384-dim, fast, still excellent for clustering
 
 def fetch_media(limit: Optional[int] = None) -> list[dict]:
     """Fetch media items from Supabase."""
     print(f"Fetching media from Supabase{'...' if limit is None else f' (limit {limit})...'}")
 
     query = supabase.table("media").select(
-        "id, kind, title, primary_creator, year, overview, external_source"
+        "id, kind, title, primary_creator, year, external_source"
     )
 
     if limit:
@@ -52,7 +52,7 @@ def embed_items(items: list[dict]) -> tuple[list[dict], np.ndarray]:
     """Embed media items using sentence-transformers."""
     print(f"Embedding {len(items)} items...")
 
-    # Build text representation: "title by creator (year) — kind: overview"
+    # Build text representation: "title by creator (year) [kind]"
     texts = []
     for item in items:
         parts = [item.get("title", "")]
@@ -61,9 +61,10 @@ def embed_items(items: list[dict]) -> tuple[list[dict], np.ndarray]:
         if item.get("year"):
             parts.append(f"({item['year']})")
 
+        kind = item.get("kind", "")
         text = " ".join(parts)
-        if item.get("overview"):
-            text += f" — {item['overview'][:200]}"  # Truncate long overviews
+        if kind:
+            text += f" [{kind}]"
         texts.append(text)
 
     embeddings = model.encode(texts, show_progress_bar=True)
