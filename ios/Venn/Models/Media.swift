@@ -14,6 +14,7 @@ struct Media: Identifiable, Equatable, Hashable {
     let externalID: String?
     let externalSource: ExternalSource?
     let createdAt: Date
+    let genres: [Int]
 }
 
 /// Discriminator for the media catalog. Mirrors `public.media_kind`.
@@ -68,5 +69,6 @@ extension Media {
         externalID = row.externalId
         externalSource = row.externalSource.flatMap(ExternalSource.init(rawValue:))
         createdAt = row.createdAt
+        genres = row.genres ?? []
     }
 }
