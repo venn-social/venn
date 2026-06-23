@@ -33,7 +33,7 @@ print("Loading embedding model...")
 model = SentenceTransformer("all-MiniLM-L6-v2")  # 384-dim, fast, still excellent for clustering
 
 def fetch_media(limit: Optional[int] = None) -> list[dict]:
-    """Fetch media items from Supabase."""
+    """Fetch media items from Supabase, or use synthetic test data if empty."""
     print(f"Fetching media from Supabase{'...' if limit is None else f' (limit {limit})...'}")
 
     query = supabase.table("media").select(
@@ -46,6 +46,84 @@ def fetch_media(limit: Optional[int] = None) -> list[dict]:
     response = query.execute()
     items = response.data if response.data else []
     print(f"  Fetched {len(items)} items")
+
+    # If the production database is empty, use synthetic test data for prototype validation
+    if not items:
+        print("  Production DB empty; using synthetic test data...")
+        items = generate_synthetic_media(limit or 100)
+
+    return items
+
+
+def generate_synthetic_media(count: int) -> list[dict]:
+    """Generate synthetic media for testing when the database is empty."""
+    import uuid
+
+    synthetic = [
+        # Romance movies
+        ("The Notebook", "Nick Cassavetes", 2004, "movie"),
+        ("Pride and Prejudice", "Joe Wright", 2005, "movie"),
+        ("Titanic", "James Cameron", 1997, "movie"),
+        ("La La Land", "Damien Chazelle", 2016, "movie"),
+        ("Eternal Sunshine of the Spotless Mind", "Michel Gondry", 2004, "movie"),
+        # Sci-fi movies
+        ("Inception", "Christopher Nolan", 2010, "movie"),
+        ("Interstellar", "Christopher Nolan", 2014, "movie"),
+        ("The Matrix", "Wachowski Sisters", 1999, "movie"),
+        ("Blade Runner", "Ridley Scott", 1982, "movie"),
+        ("Dune", "Denis Villeneuve", 2021, "movie"),
+        # Horror movies
+        ("The Shining", "Stanley Kubrick", 1980, "movie"),
+        ("Hereditary", "Ari Aster", 2018, "movie"),
+        ("The Ring", "Gore Verbinski", 2002, "movie"),
+        ("Insidious", "James Wan", 2010, "movie"),
+        # Comedy movies
+        ("Knives Out", "Rian Johnson", 2019, "movie"),
+        ("The Grand Budapest Hotel", "Wes Anderson", 2014, "movie"),
+        ("Superbad", "Greg Mottola", 2007, "movie"),
+        ("Bridesmaids", "Paul Feig", 2011, "movie"),
+        # Drama TV shows
+        ("Breaking Bad", "Vince Gilligan", 2008, "show"),
+        ("The Wire", "David Simon", 2002, "show"),
+        ("Succession", "Jesse Armstrong", 2018, "show"),
+        ("The Crown", "Peter Morgan", 2016, "show"),
+        # Fantasy TV shows
+        ("Game of Thrones", "David Benioff", 2011, "show"),
+        ("The Lord of the Rings", "Peter Jackson", 2001, "show"),
+        # Romance novels
+        ("Pride and Prejudice", "Jane Austen", 1813, "book"),
+        ("Outlander", "Diana Gabaldon", 1991, "book"),
+        ("The Notebook", "Nicholas Sparks", 1996, "book"),
+        # Sci-fi novels
+        ("Dune", "Frank Herbert", 1965, "book"),
+        ("Foundation", "Isaac Asimov", 1951, "book"),
+        ("Neuromancer", "William Gibson", 1984, "book"),
+        # Fantasy novels
+        ("The Hobbit", "J.R.R. Tolkien", 1937, "book"),
+        ("Harry Potter", "J.K. Rowling", 1997, "book"),
+        # Pop music
+        ("Blinding Lights", "The Weeknd", 2019, "album"),
+        ("Levitating", "Dua Lipa", 2020, "album"),
+        ("good 4 u", "Olivia Rodrigo", 2021, "album"),
+        # Rock music
+        ("Stairway to Heaven", "Led Zeppelin", 1971, "album"),
+        ("Bohemian Rhapsody", "Queen", 1975, "album"),
+        # Hip-hop
+        ("Lose Yourself", "Eminem", 2002, "album"),
+        ("HUMBLE.", "Kendrick Lamar", 2017, "album"),
+    ]
+
+    items = []
+    for title, creator, year, kind in synthetic[:count]:
+        items.append({
+            "id": str(uuid.uuid4()),
+            "kind": kind,
+            "title": title,
+            "primary_creator": creator,
+            "year": year,
+            "external_source": None
+        })
+
     return items
 
 def embed_items(items: list[dict]) -> tuple[list[dict], np.ndarray]:
@@ -168,10 +246,12 @@ def main():
     args = parser.parse_args()
 
     if args.test:
-        items, embeddings = embed_items(*fetch_media(limit=100))
+        media = fetch_media(limit=100)
+        items, embeddings = embed_items(media)
         output = "test_clustering_result.json"
     elif args.full:
-        items, embeddings = embed_items(*fetch_media())
+        media = fetch_media()
+        items, embeddings = embed_items(media)
         output = "full_clustering_result.json"
     elif args.validate:
         print("Validation mode not yet implemented")
