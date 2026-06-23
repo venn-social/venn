@@ -64,16 +64,55 @@ Outputs: `full_clustering_result.json`
 }
 ```
 
-## Next steps
+## Integration
 
-1. **Validate clusters:** Review the JSON output, ensure clusters are semantically coherent (e.g., cluster 0 is all sci-fi, cluster 1 is all romance, etc.)
-2. **Tune resolution:** If clusters are too broad or too granular, adjust `resolution` in `cluster_with_leiden()` (line 97)
-3. **Wire into schema:** Add a `genres` text[] field to the `media` table via migration, map cluster labels to cluster IDs
-4. **GitHub Actions:** Create a scheduled job (weekly?) to re-embed and re-cluster new items, backfill the `genres` field
+### Backfill the database
+
+After clustering, populate the `media.genres` field (which stores cluster IDs):
+
+```bash
+cd scripts/genre-clustering
+python backfill_genres.py test_clustering_result.json    # test run
+python backfill_genres.py full_clustering_result.json    # production
+```
+
+This upserts cluster IDs for all media items in the result.
+
+### Automatic weekly re-clustering
+
+A GitHub Actions workflow runs every Monday at 2 AM UTC (`.github/workflows/genre-clustering.yml`):
+
+1. Runs the full clustering on the entire catalog
+2. Backfills genres into the database
+3. Reports metrics (cluster count, balance)
+
+Trigger manually: `gh workflow run genre-clustering.yml`
+
+### Schema
+
+The `media.genres` field stores an int[] of cluster IDs (0-30). Query for similar items:
+
+```sql
+-- Find media in the same genre clusters as a given item
+select * from media
+where genres && (select genres from media where id = 'uuid')
+  and id != 'uuid'
+limit 10;
+```
+
+### Tuning
+
+- **Resolution parameter** (line 97 in `cluster_genres.py`): Controls cluster count
+  - Lower = fewer, larger clusters
+  - Higher = more, smaller clusters
+  - Default 0.5 gives ~25-30 clusters for most catalogs
+- **Similarity threshold** (line 87): Only connect nodes with cosine similarity > 0.5
+  - Lower = denser graph, more connections, larger clusters
+  - Higher = sparser graph, tighter clusters
 
 ## Technical notes
 
-- **Embedding model:** `all-mpnet-base-v2` is excellent for clustering (multi-lingual, 768-dim, 330M params). Pre-downloaded on first run; cached locally (~1.4GB).
+- **Embedding model:** `all-MiniLM-L6-v2` is excellent for clustering (384-dim, ~22M params, 47MB download). Fast and memory-efficient. Pre-downloaded on first run; cached locally (~47MB).
 - **Graph construction:** Only edges with cosine similarity > 0.5 to avoid a fully-connected graph (O(n²) edges).
 - **Leiden algorithm:** Non-deterministic by default; seeded with `seed=42` for reproducibility.
 - **Cluster balance:** Std dev < 3 is healthy; > 5 suggests over- or under-clustering.
