@@ -37,6 +37,7 @@ enum MediaSchema {
         let externalId: String?
         let externalSource: String?
         let createdAt: Date
+        let genres: [Int]?
 
         enum CodingKeys: String, CodingKey {
             case id
@@ -48,6 +49,31 @@ enum MediaSchema {
             case externalId = "external_id"
             case externalSource = "external_source"
             case createdAt = "created_at"
+            case genres
+        }
+
+        init(
+            id: UUID,
+            kind: String,
+            title: String,
+            year: Int?,
+            primaryCreator: String?,
+            coverUrl: String?,
+            externalId: String?,
+            externalSource: String?,
+            createdAt: Date,
+            genres: [Int]? = nil
+        ) {
+            self.id = id
+            self.kind = kind
+            self.title = title
+            self.year = year
+            self.primaryCreator = primaryCreator
+            self.coverUrl = coverUrl
+            self.externalId = externalId
+            self.externalSource = externalSource
+            self.createdAt = createdAt
+            self.genres = genres
         }
     }
 }

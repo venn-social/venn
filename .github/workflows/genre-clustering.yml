@@ -1,0 +1,55 @@
+name: Weekly Genre Clustering
+
+on:
+  schedule:
+    # Run every Monday at 2 AM UTC
+    - cron: "0 2 * * 1"
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  cluster-genres:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        working-directory: scripts/genre-clustering
+        run: |
+          pip install --quiet -r requirements.txt
+
+      - name: Run genre clustering
+        working-directory: scripts/genre-clustering
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          python cluster_genres.py --full
+
+      - name: Backfill genres into database
+        working-directory: scripts/genre-clustering
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          python backfill_genres.py full_clustering_result.json
+
+      - name: Report metrics
+        working-directory: scripts/genre-clustering
+        run: |
+          python -c "
+          import json
+          with open('full_clustering_result.json') as f:
+              data = json.load(f)
+              m = data['metadata']
+              print(f'✓ Clustered {len(data[\"clusters\"])} items into {m[\"n_clusters\"]} genres')
+              print(f'  Balance (std dev): {m[\"std_dev\"]:.2f}')
+              print(f'  Cluster range: {m[\"min_cluster_size\"]}-{m[\"max_cluster_size\"]}')
+          "
