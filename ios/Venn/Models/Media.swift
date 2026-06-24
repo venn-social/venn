@@ -15,6 +15,30 @@ struct Media: Identifiable, Equatable, Hashable {
     let externalSource: ExternalSource?
     let createdAt: Date
     let genres: [Int]
+
+    init(
+        id: UUID,
+        kind: MediaKind,
+        title: String,
+        year: Int?,
+        primaryCreator: String?,
+        coverURL: URL?,
+        externalID: String?,
+        externalSource: ExternalSource?,
+        createdAt: Date,
+        genres: [Int] = []
+    ) {
+        self.id = id
+        self.kind = kind
+        self.title = title
+        self.year = year
+        self.primaryCreator = primaryCreator
+        self.coverURL = coverURL
+        self.externalID = externalID
+        self.externalSource = externalSource
+        self.createdAt = createdAt
+        self.genres = genres
+    }
 }
 
 /// Discriminator for the media catalog. Mirrors `public.media_kind`.
