@@ -22,7 +22,7 @@ CLAUDE.md rule 15 (Figma-first) is suspended until the Figma Pro subscription la
 - Follow button states (Follow / Following) on the public profile
 - `FollowListView` — followers / following list (reuses `ProfileRow`)
 - Real cover art treatments: `MediaCoverTile` image state, `MediaCoverThumb` row thumbnails
-- "Your Venn" overlap section on the public profile (diagram + per-kind shared rows + empty/error states) — the signature visual; deserves real design attention when Figma returns
+- "Your Venn" overlap section — **rebuilt in code 2026-06-24** (`VennOverlap`): proportional lobes + neon-blue lens via `Canvas` (replacing the invisible `.plusLighter` version), a Jaccard "NN% match" headline, and a shared-count chip. Light/dark verified. Remaining for a Figma pass: a more modern visual treatment of the diagram (depth, motion, typography) when Figma returns.
 - `OnboardingView` — claim-username screen after first sign-in (fields mirror AuthView)
 - Avatar photo treatments: `AvatarBadge` image state, edit-sheet avatar row + photo picker
 - Sign-in revamp: "check your inbox" screen (bold email, resend countdown, change-email)

@@ -32,6 +32,12 @@ struct OverlapSummary: Equatable {
         otherTotal = kinds.reduce(0) { $0 + $1.otherCount }
         sharedTotal = kinds.reduce(0) { $0 + $1.sharedCount }
     }
+
+    /// Taste match (Jaccard) across all kinds as a whole-number percent.
+    /// `nil` when neither person has logged anything to compare.
+    var matchPercent: Int? {
+        TasteMatch.percent(shared: sharedTotal, viewer: viewerTotal, other: otherTotal)
+    }
 }
 
 /// Fetches the taste overlap via the `compute_overlap` RPC. The server

@@ -39,6 +39,56 @@ struct OverlapTests {
         #expect(summary.otherTotal == 0)
         #expect(summary.sharedTotal == 0)
     }
+
+    @Test
+    func matchPercentIsJaccardAcrossKinds() {
+        // viewer 17, other 21, shared 5 → union 33 → 5/33 ≈ 15%.
+        let summary = OverlapSummary(kinds: [
+            KindOverlap(kind: .movie, viewerCount: 12, otherCount: 8, sharedCount: 3),
+            KindOverlap(kind: .book, viewerCount: 5, otherCount: 9, sharedCount: 2),
+            KindOverlap(kind: .album, viewerCount: 0, otherCount: 4, sharedCount: 0),
+        ])
+
+        #expect(summary.matchPercent == 15)
+    }
+
+    @Test
+    func matchPercentIsNilWhenNothingToCompare() {
+        #expect(OverlapSummary(kinds: []).matchPercent == nil)
+    }
+
+    @Test
+    func matchPercentIsOneHundredForIdenticalCollections() {
+        let summary = OverlapSummary(kinds: [
+            KindOverlap(kind: .movie, viewerCount: 10, otherCount: 10, sharedCount: 10),
+        ])
+
+        #expect(summary.matchPercent == 100)
+    }
+
+    @Test
+    func matchPercentIsZeroWhenNothingShared() {
+        let summary = OverlapSummary(kinds: [
+            KindOverlap(kind: .movie, viewerCount: 20, otherCount: 15, sharedCount: 0),
+        ])
+
+        #expect(summary.matchPercent == 0)
+    }
+}
+
+struct TasteMatchTests {
+    @Test
+    func percentRoundsToNearestWholeNumber() {
+        // 1 of 3 union → 33.33% → 33.
+        #expect(TasteMatch.percent(shared: 1, viewer: 2, other: 2) == 33)
+        // 2 of 3 union → 66.66% → 67.
+        #expect(TasteMatch.percent(shared: 2, viewer: 3, other: 2) == 67)
+    }
+
+    @Test
+    func percentIsNilForEmptyUnion() {
+        #expect(TasteMatch.percent(shared: 0, viewer: 0, other: 0) == nil)
+    }
 }
 
 @MainActor
