@@ -1,9 +1,9 @@
 import SwiftUI
 
 /// Shared geometry constants for the Venn diagram. File-private so both
-/// `VennOverlap` and `LobeLayout` read the same numbers.
+/// `VennOverlap` and `PairGeometry` read the same numbers.
 private enum VennLayout {
-    static let diagramHeight: CGFloat = 196
+    static let diagramHeight: CGFloat = 180
     static let maxRadius: CGFloat = 78
     static let minRadius: CGFloat = 38
 }
@@ -11,10 +11,11 @@ private enum VennLayout {
 /// The brand primitive: a true Venn diagram of how the viewer's taste
 /// intersects the profile they're viewing.
 ///
-/// The lens (the shared region) is drawn **explicitly** via `Canvas` —
-/// clip to one lobe, fill the other in the brand accent — rather than the
-/// old `.blendMode(.plusLighter)` trick, which rendered invisibly on a light
-/// background. The result is identical in light and dark.
+/// Built from plain SwiftUI shapes (two `Circle` lobes; the lens is a blue
+/// circle `.mask`ed to the other lobe) — deliberately **not** `Canvas`, which
+/// renders blank through the snapshot-test layer path. No blend modes, so it
+/// looks identical in light and dark, and the same in the app, in
+/// `ImageRenderer`, and in snapshot baselines.
 ///
 /// Two modes:
 /// - `.solo` — a single accent circle with a count. Used on your own profile,
@@ -45,6 +46,7 @@ struct VennOverlap: View {
             header
             diagram
                 .frame(height: VennLayout.diagramHeight)
+                .frame(maxWidth: .infinity)
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(accessibilityLabel)
             legend
@@ -83,7 +85,7 @@ struct VennOverlap: View {
         case let .solo(only):
             soloCircle(only)
         case let .pair(yours, theirs, shared):
-            pairCanvas(yours: yours, theirs: theirs, shared: shared)
+            pairDiagram(yours: yours, theirs: theirs, shared: shared)
         }
     }
 
@@ -97,46 +99,57 @@ struct VennOverlap: View {
                     .foregroundStyle(Theme.Color.onAccent)
                     .monospacedDigit()
             )
-            .frame(maxWidth: .infinity)
     }
 
-    private func pairCanvas(yours: Set, theirs: Set, shared: Int) -> some View {
-        // The lens is always horizontally + vertically centered, so the
-        // shared chip can ride a plain centered overlay — no coordinate math,
-        // and it stays legible however thin the lens gets.
-        ZStack {
-            Canvas { context, size in
-                let layout = LobeLayout(
-                    in: size,
-                    viewer: yours.count,
-                    other: theirs.count,
-                    shared: shared
-                )
-                let viewerPath = Path(ellipseIn: layout.viewerRect)
-                let otherPath = Path(ellipseIn: layout.otherRect)
+    private func pairDiagram(yours: Set, theirs: Set, shared: Int) -> some View {
+        let geometry = PairGeometry(viewer: yours.count, other: theirs.count, shared: shared)
+        return GeometryReader { proxy in
+            let centerX = proxy.size.width / 2
+            let centerY = proxy.size.height / 2
+            let viewerX = centerX - geometry.halfDistance
+            let otherX = centerX + geometry.halfDistance
 
-                // Lobes: translucent fill + hairline stroke — legible in both
-                // themes because graphite flips with the color scheme.
-                context.fill(viewerPath, with: .color(Self.lobeFill))
-                context.fill(otherPath, with: .color(Self.lobeFill))
-                context.stroke(viewerPath, with: .color(Self.lobeStroke), lineWidth: 1.5)
-                context.stroke(otherPath, with: .color(Self.lobeStroke), lineWidth: 1.5)
+            ZStack {
+                lobe(diameter: geometry.viewerDiameter).position(x: viewerX, y: centerY)
+                lobe(diameter: geometry.otherDiameter).position(x: otherX, y: centerY)
 
-                // The lens: the intersection, filled with the brand accent.
-                context.drawLayer { layer in
-                    layer.clip(to: viewerPath)
-                    layer.fill(otherPath, with: .color(Theme.Color.accentBlue))
-                }
+                // The lens: the brand-accent other-lobe, masked to the viewer
+                // lobe, so only the intersection shows.
+                Circle()
+                    .fill(Theme.Color.accentBlue)
+                    .frame(width: geometry.otherDiameter, height: geometry.otherDiameter)
+                    .position(x: otherX, y: centerY)
+                    .mask(
+                        Circle()
+                            .frame(width: geometry.viewerDiameter, height: geometry.viewerDiameter)
+                            .position(x: viewerX, y: centerY)
+                    )
 
                 // Unique counts sit out in each crescent.
-                draw(yours.count - shared, at: layout.viewerLabelPoint, in: &context)
-                draw(theirs.count - shared, at: layout.otherLabelPoint, in: &context)
-            }
+                countText(yours.count - shared)
+                    .position(x: viewerX - geometry.viewerRadius * 0.45, y: centerY)
+                countText(theirs.count - shared)
+                    .position(x: otherX + geometry.otherRadius * 0.45, y: centerY)
 
-            if shared > 0 {
-                sharedChip(shared)
+                if shared > 0 {
+                    sharedChip(shared).position(x: centerX, y: centerY)
+                }
             }
         }
+    }
+
+    private func lobe(diameter: CGFloat) -> some View {
+        Circle()
+            .fill(Self.lobeFill)
+            .overlay(Circle().strokeBorder(Self.lobeStroke, lineWidth: 1.5))
+            .frame(width: diameter, height: diameter)
+    }
+
+    private func countText(_ value: Int) -> some View {
+        Text(verbatim: "\(value)")
+            .font(Theme.Font.headline)
+            .monospacedDigit()
+            .foregroundStyle(Theme.Color.textPrimary)
     }
 
     /// The shared count, as a brand-blue chip pinned over the lens. A chip
@@ -151,14 +164,6 @@ struct VennOverlap: View {
             .padding(.vertical, Theme.Spacing.xxs)
             .background(Capsule().fill(Theme.Color.accentBlue))
             .overlay(Capsule().strokeBorder(Theme.Color.background, lineWidth: 2))
-    }
-
-    private func draw(_ value: Int, at point: CGPoint, in context: inout GraphicsContext) {
-        var text = context.resolve(
-            Text(verbatim: "\(value)").font(Theme.Font.headline).monospacedDigit()
-        )
-        text.shading = .color(Theme.Color.textPrimary)
-        context.draw(text, at: point, anchor: .center)
     }
 
     // MARK: - Legend
@@ -222,53 +227,39 @@ struct VennOverlap: View {
     private static let lobeStroke = Theme.Color.graphite.opacity(0.45)
 }
 
-/// Geometry for the two-lobe diagram, derived purely from the three counts
-/// and the available canvas size. Lobe area tracks collection size (radius ∝
-/// √count); the more the two share, the closer the centers sit.
-private struct LobeLayout {
-    let viewerRect: CGRect
-    let otherRect: CGRect
-    let viewerLabelPoint: CGPoint
-    let otherLabelPoint: CGPoint
-    let lensCenter: CGPoint
+/// Geometry for the two-lobe diagram, derived purely from the three counts.
+/// Lobe area tracks collection size (radius ∝ √count); the more the two
+/// share, the closer the centers sit.
+private struct PairGeometry {
+    let viewerRadius: CGFloat
+    let otherRadius: CGFloat
+    let halfDistance: CGFloat
 
-    init(in size: CGSize, viewer: Int, other: Int, shared: Int) {
+    init(viewer: Int, other: Int, shared: Int) {
         let maxCount = max(viewer, other, 1)
-        let rViewer = LobeLayout.radius(for: viewer, maxCount: maxCount)
-        let rOther = LobeLayout.radius(for: other, maxCount: maxCount)
+        viewerRadius = PairGeometry.radius(for: viewer, maxCount: maxCount)
+        otherRadius = PairGeometry.radius(for: other, maxCount: maxCount)
 
         // More shared (relative to the union) → centers move closer.
         let union = max(viewer + other - shared, 1)
         let overlap = min(max(Double(shared) / Double(union), 0), 1)
-        let maxDistance = Double(rViewer + rOther)
-        let minDistance = Double(max(rViewer, rOther)) * 0.65
-        let distance = CGFloat(maxDistance - (maxDistance - minDistance) * overlap)
+        let maxDistance = Double(viewerRadius + otherRadius)
+        let minDistance = Double(max(viewerRadius, otherRadius)) * 0.65
+        halfDistance = CGFloat(maxDistance - (maxDistance - minDistance) * overlap) / 2
+    }
 
-        let mid = CGPoint(x: size.width / 2, y: size.height / 2)
-        let viewerCenter = CGPoint(x: mid.x - distance / 2, y: mid.y)
-        let otherCenter = CGPoint(x: mid.x + distance / 2, y: mid.y)
+    var viewerDiameter: CGFloat {
+        viewerRadius * 2
+    }
 
-        viewerRect = LobeLayout.rect(center: viewerCenter, radius: rViewer)
-        otherRect = LobeLayout.rect(center: otherCenter, radius: rOther)
-        lensCenter = mid
-        // Unique counts sit out in each crescent, away from the lens.
-        viewerLabelPoint = CGPoint(x: viewerCenter.x - rViewer * 0.45, y: mid.y)
-        otherLabelPoint = CGPoint(x: otherCenter.x + rOther * 0.45, y: mid.y)
+    var otherDiameter: CGFloat {
+        otherRadius * 2
     }
 
     private static func radius(for count: Int, maxCount: Int) -> CGFloat {
         let ratio = (Double(max(count, 0)) / Double(maxCount)).squareRoot()
         return VennLayout.minRadius
             + (VennLayout.maxRadius - VennLayout.minRadius) * CGFloat(ratio)
-    }
-
-    private static func rect(center: CGPoint, radius: CGFloat) -> CGRect {
-        CGRect(
-            x: center.x - radius,
-            y: center.y - radius,
-            width: radius * 2,
-            height: radius * 2
-        )
     }
 }
 
