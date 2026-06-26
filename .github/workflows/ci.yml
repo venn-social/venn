@@ -134,6 +134,14 @@ jobs:
       - name: Prepare test simulator
         run: bash scripts/ci-select-simulator.sh
       - name: Run tests
+        env:
+          # Forward CI=true into the simulator test process so the snapshot
+          # suite (gated on environment["CI"] == "true") actually runs.
+          # xcodebuild strips the TEST_RUNNER_ prefix when injecting an env
+          # var into the test-runner process; the ambient GitHub `CI=true`
+          # lives only in the runner shell and never reaches the test process,
+          # so without this the suite silently skips on CI.
+          TEST_RUNNER_CI: "true"
         run: |
           set -o pipefail
           xcodebuild \
