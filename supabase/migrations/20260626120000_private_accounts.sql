@@ -6,10 +6,13 @@
 -- only to ACCEPTED followers; following a private user becomes a PENDING
 -- request the user approves. Public accounts are unchanged.
 --
--- ⚠️  UNVERIFIED at authoring time: there was no container runtime available to
---     run `npm run db:reset`, so this migration has NOT been applied/tested
---     locally. Before merge + `db:push`, apply it and exercise the RLS (see
---     docs/specs/private-accounts.md "Verification"). Then `make codegen`.
+-- ✅  RLS VERIFIED 2026-06-28 via supabase/tests/private_accounts_rls_test.sql —
+--     this file is applied to a throwaway Postgres with emulated Supabase auth
+--     roles and all 10 gating/RPC assertions pass (private posts hidden from
+--     non-followers, visible to accepted followers + owner; public unchanged;
+--     request_follow pending/accepted; no direct-insert bypass). A full
+--     `npm run db:reset` on the real stack + `make codegen` is still pending
+--     (was blocked on disk space this session).
 --
 -- ⚠️  CLIENT DEPENDENCY — DO NOT `db:push` THIS ALONE. It drops
 --     `follows_insert_own`, so the current app's direct-insert follow stops
