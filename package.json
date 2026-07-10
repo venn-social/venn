@@ -23,11 +23,11 @@
     "db:seed": "node --env-file=.env scripts/seed-remote.mjs"
   },
   "devDependencies": {
-    "@commitlint/cli": "^21.0.2",
+    "@commitlint/cli": "^21.1.0",
     "@commitlint/config-conventional": "^21.0.2",
     "husky": "^9.1.7",
     "pg": "^8.22.0",
-    "prettier": "^3.8.4",
-    "supabase": "2.107.0"
+    "prettier": "^3.9.1",
+    "supabase": "2.108.0"
   }
 }
