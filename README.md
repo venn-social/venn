@@ -12,13 +12,14 @@ See the [product vision](https://www.notion.so/product-vision-34bc60c854a2810993
 
 The three-tab app — **Feed**, **Explorer**, **Profile** — is wired to real Supabase data:
 
-- **Auth** — magic-link email sign-in with deep-link callback (plus a DEBUG-only "continue as guest" bypass for development).
-- **Feed** — recent posts with media + author, rendered as an image-forward stream. Global for now; narrows to the follow graph once following ships.
-- **Explorer** — browse the media catalog by category, or live-search movies/TV (TMDB), books (OpenLibrary), and music (MusicBrainz). Tapping a result opens the composer.
+- **Auth + onboarding** — magic-link email sign-in with deep-link callback, then a stepped first-run flow: claim a username, optional avatar upload. (Plus a DEBUG-only "continue as guest" bypass for development.)
+- **Feed** — an image-forward stream of posts from people you follow (plus your own), with real cover art.
+- **Explorer** — browse the media catalog by category, live-search movies/TV (TMDB), books (OpenLibrary), and music (MusicBrainz + Cover Art Archive), or search **People** and open their profiles. Tapping a media result opens the composer.
 - **Composer** — the log flow: pick an item → rate (Love/Like/Dislike) → optional caption → log it or add to watchlist.
-- **Profile** — real profile, follow counts, edit sheet, and Collection / Watchlist shelves with tap-through library lists.
+- **Profile** — your profile with follow counts, edit sheet + avatar upload, and Collection / Watchlist shelves with tap-through library lists.
+- **Public profiles + the Venn** — other users' profiles with follow/unfollow, follower/following lists, and the signature **"Your Venn"** taste overlap: a proportional Venn diagram with a Jaccard "NN% match" headline.
 
-Still ahead (tracked in Notion): follow/unfollow UI, user search, the Venn overlap computation, onboarding (username setup), and avatar upload.
+Still ahead (tracked in Notion): private accounts with follow requests (backend in review), the TestFlight release pipeline (see [`docs/RELEASE.md`](./docs/RELEASE.md), blocked on Apple Developer enrollment), and — per the [product vision](https://www.notion.so/product-vision-34bc60c854a28109939dd2d83bb135a4) — the first external-app sync and rule-based recommendations v0.
 
 ## For first-time contributors
 
