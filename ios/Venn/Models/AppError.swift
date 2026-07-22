@@ -38,7 +38,9 @@ extension AppError {
     /// auth case we want to surface differently) is a one-line change
     /// here — call sites don't change.
     static func from(_ error: any Error) -> AppError {
-        if let app = error as? AppError { return app }
+        if let app = error as? AppError {
+            return app
+        }
         if let url = error as? URLError {
             return mapURLError(url)
         }
