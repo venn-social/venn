@@ -30,7 +30,9 @@ import SwiftUI
                 }
             }
             .onChange(of: viewModel.submitState) { _, state in
-                if state == .submitted { isDone = true }
+                if state == .submitted {
+                    isDone = true
+                }
             }
         }
 

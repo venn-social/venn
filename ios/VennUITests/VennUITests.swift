@@ -173,13 +173,14 @@ final class VennUITests: XCTestCase {
         let app = launchApp(extraArgs: ["-previewComposer"])
         XCTAssertTrue(app.staticTexts["Past Lives"].waitForExistence(timeout: 12))
 
-        app.buttons["Log it"].tap()
-        XCTAssertTrue(app.staticTexts["How was it?"].waitForExistence(timeout: 5))
+        let ratingTitle = app.staticTexts["How was it?"]
+        tapReliably(app.buttons["Log it"], until: ratingTitle)
+        XCTAssertTrue(ratingTitle.exists)
 
         app.buttons["rating_chip_love"].tap()
-        app.buttons["Finish"].tap()
-
-        XCTAssertTrue(app.staticTexts["composer_preview_done"].waitForExistence(timeout: 10))
+        let done = app.staticTexts["composer_preview_done"]
+        tapReliably(app.buttons["Finish"], until: done)
+        XCTAssertTrue(done.exists)
     }
 
     @MainActor
@@ -187,9 +188,9 @@ final class VennUITests: XCTestCase {
         let app = launchApp(extraArgs: ["-previewComposer"])
         XCTAssertTrue(app.staticTexts["Past Lives"].waitForExistence(timeout: 12))
 
-        app.buttons["Add to Watchlist"].tap()
-
-        XCTAssertTrue(app.staticTexts["composer_preview_done"].waitForExistence(timeout: 10))
+        let done = app.staticTexts["composer_preview_done"]
+        tapReliably(app.buttons["Add to Watchlist"], until: done)
+        XCTAssertTrue(done.exists)
     }
 
     // MARK: - helpers
@@ -211,6 +212,23 @@ final class VennUITests: XCTestCase {
             Thread.sleep(forTimeInterval: 0.5 * Double(attempt + 1))
         }
         field.typeText(text)
+    }
+
+    /// A tap that lands before the button is fully hittable (mid-transition,
+    /// under-provisioned CI/local hardware) is silently swallowed — same
+    /// root cause as `focusAndType`'s keyboard-focus race, different
+    /// symptom. Re-tap (when hittable) between short polls for `target`
+    /// rather than trusting a single tap blindly.
+    @MainActor
+    private func tapReliably(_ element: XCUIElement, until target: XCUIElement, attempts: Int = 6) {
+        for _ in 0..<attempts {
+            if element.isHittable {
+                element.tap()
+            }
+            if target.waitForExistence(timeout: 1) {
+                return
+            }
+        }
     }
 
     @MainActor
