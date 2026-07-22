@@ -122,7 +122,9 @@ struct PeopleSearchViewModelTests {
     /// few hops of the main actor are enough).
     private func waitForSettle(_ viewModel: PeopleSearchViewModel) async {
         for _ in 0..<20 {
-            if viewModel.state != .searching { return }
+            if viewModel.state != .searching {
+                return
+            }
             await Task.yield()
             try? await Task.sleep(for: .milliseconds(10))
         }
