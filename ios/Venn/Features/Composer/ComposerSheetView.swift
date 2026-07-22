@@ -25,7 +25,9 @@ struct ComposerSheetView: View {
             }
         }
         .onChange(of: viewModel.submitState) { _, state in
-            if state == .submitted { dismiss() }
+            if state == .submitted {
+                dismiss()
+            }
         }
     }
 }

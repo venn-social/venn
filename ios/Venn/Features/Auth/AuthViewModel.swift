@@ -66,8 +66,12 @@ final class AuthViewModel {
     /// True when the email passes validation and we're not mid-send. The
     /// view binds the submit button's disabled state to this.
     var canSubmit: Bool {
-        if case .sending = state { return false }
-        if case .valid = Sanitize.email(email) { return true }
+        if case .sending = state {
+            return false
+        }
+        if case .valid = Sanitize.email(email) {
+            return true
+        }
         return false
     }
 

@@ -30,7 +30,7 @@ struct FeedView: View {
                 if posts.isEmpty {
                     emptyView
                 } else {
-                    loadedView(posts: posts)
+                    loadedView(posts: posts, viewModel: viewModel)
                 }
             case let .error(reason):
                 Screen {
@@ -44,7 +44,7 @@ struct FeedView: View {
         }
     }
 
-    private func loadedView(posts: [FeedPost]) -> some View {
+    private func loadedView(posts: [FeedPost], viewModel: FeedViewModel) -> some View {
         Screen {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: Theme.Spacing.xxl) {
@@ -52,11 +52,21 @@ struct FeedView: View {
                         FeedRow(feedPost: feedPost)
                             .vennScrollDepth()
                     }
+                    // Lazy footer: appears only when scrolled to, so its
+                    // .task IS the infinite-scroll trigger. Hidden once the
+                    // feed is exhausted (hasMore == false).
+                    if viewModel.hasMore {
+                        ProgressView()
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, Theme.Spacing.lg)
+                            .task { await viewModel.loadMore() }
+                    }
                 }
                 .padding(.top, Theme.Spacing.md)
                 .padding(.bottom, Theme.Spacing.xxxl)
             }
             .scrollContentBackground(.hidden)
+            .refreshable { await viewModel.refresh() }
             .tracksGlassSkyParallax()
         }
     }

@@ -191,7 +191,9 @@ struct OnboardingViewModelTests {
     /// Yield until the debounced availability task settles.
     private func settle(_ viewModel: OnboardingViewModel) async {
         for _ in 0..<20 {
-            if viewModel.availability != .checking { return }
+            if viewModel.availability != .checking {
+                return
+            }
             await Task.yield()
             try? await Task.sleep(for: .milliseconds(10))
         }
