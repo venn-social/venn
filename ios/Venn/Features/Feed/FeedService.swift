@@ -9,9 +9,15 @@ protocol FeedServicing: Sendable {
     /// own), newest first. Capped at `limit` rows. Includes each post's
     /// media and author profile so callers get the full render shape.
     ///
+    /// `before` is the pagination cursor: pass the `createdAt` of the last
+    /// post already shown to fetch the next page (strictly older posts).
+    /// `nil` fetches the first page. Keyset-on-created_at rides the
+    /// existing `posts_created_at_idx` and never duplicates rows when new
+    /// posts land between pages, unlike an offset.
+    ///
     /// Without a session (previews, DEBUG design boot) this degrades to
     /// the global feed rather than failing — there's no graph to scope to.
-    func recentPosts(limit: Int) async throws -> [FeedPost]
+    func recentPosts(limit: Int, before: Date?) async throws -> [FeedPost]
 }
 
 /// Production implementation backed by Supabase Postgrest. Funnels
@@ -20,10 +26,10 @@ protocol FeedServicing: Sendable {
 struct FeedService: FeedServicing {
     let client: SupabaseClient
 
-    func recentPosts(limit: Int = 20) async throws -> [FeedPost] {
+    func recentPosts(limit: Int, before: Date?) async throws -> [FeedPost] {
         do {
             guard let viewerID = try? await client.auth.session.user.id else {
-                return try await globalPosts(limit: limit)
+                return try await globalPosts(limit: limit, before: before)
             }
             let followees: [FolloweeRow] = try await client
                 .from("follows")
@@ -36,10 +42,14 @@ struct FeedService: FeedServicing {
             // a few hundred the in-list bloats the URL — that's the cue to
             // move this into an RPC (docs/TECH_DEBT.md).
             let authorIDs = followees.map(\.followeeId) + [viewerID]
-            let rows: [FeedPostRow] = try await client
+            var query = client
                 .from("posts")
                 .select("*, media(*), author:profiles(*)")
                 .in("author_id", values: authorIDs)
+            if let before {
+                query = query.lt("created_at", value: Self.cursor(before))
+            }
+            let rows: [FeedPostRow] = try await query
                 .order("created_at", ascending: false)
                 .limit(limit)
                 .execute()
@@ -50,15 +60,30 @@ struct FeedService: FeedServicing {
         }
     }
 
-    private func globalPosts(limit: Int) async throws -> [FeedPost] {
-        let rows: [FeedPostRow] = try await client
+    private func globalPosts(limit: Int, before: Date?) async throws -> [FeedPost] {
+        var query = client
             .from("posts")
             .select("*, media(*), author:profiles(*)")
+        if let before {
+            query = query.lt("created_at", value: Self.cursor(before))
+        }
+        let rows: [FeedPostRow] = try await query
             .order("created_at", ascending: false)
             .limit(limit)
             .execute()
             .value
         return rows.compactMap(FeedPost.init(row:))
+    }
+
+    /// Serializes the cursor date the way Postgres expects a `timestamptz`
+    /// literal. Fractional seconds matter: without them every post created
+    /// in the same second as the cursor would be skipped. Built per call —
+    /// `ISO8601DateFormatter` isn't Sendable, so a shared static is illegal
+    /// under strict concurrency, and this runs once per page fetch.
+    private static func cursor(_ date: Date) -> String {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return formatter.string(from: date)
     }
 }
 

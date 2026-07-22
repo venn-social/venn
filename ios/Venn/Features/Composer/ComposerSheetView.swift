@@ -25,7 +25,9 @@ struct ComposerSheetView: View {
             }
         }
         .onChange(of: viewModel.submitState) { _, state in
-            if state == .submitted { dismiss() }
+            if state == .submitted {
+                dismiss()
+            }
         }
     }
 }
@@ -143,22 +145,15 @@ private struct MediaDetailView: View {
 
     private var actionButtons: some View {
         VStack(spacing: Theme.Spacing.sm) {
-            Button {
+            PrimaryButton(title: "Log it") {
                 pushRating = true
-            } label: {
-                Text("Log it")
-                    .frame(maxWidth: .infinity)
             }
-            .buttonStyle(PrimaryButtonStyle())
-
-            Button {
+            SecondaryButton(
+                title: "Add to Watchlist",
+                isEnabled: viewModel.submitState != .submitting
+            ) {
                 Task { await handleWatchlist() }
-            } label: {
-                Text("Add to Watchlist")
-                    .frame(maxWidth: .infinity)
             }
-            .buttonStyle(SecondaryButtonStyle())
-            .disabled(viewModel.submitState == .submitting)
         }
     }
 
@@ -327,34 +322,6 @@ private struct RatingView: View {
     private func handleSubmit() async {
         guard case let .signedIn(session) = authState.status else { return }
         await viewModel.submit(authorID: session.user.id)
-    }
-}
-
-// MARK: - Button styles
-
-private struct PrimaryButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(Theme.Font.body.weight(.semibold))
-            .foregroundStyle(.white)
-            .padding(.vertical, Theme.Spacing.md)
-            .background(
-                Theme.Color.accent.opacity(configuration.isPressed ? 0.7 : 1),
-                in: .rect(cornerRadius: Theme.Radius.md)
-            )
-    }
-}
-
-private struct SecondaryButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(Theme.Font.body.weight(.medium))
-            .foregroundStyle(Theme.Color.accent)
-            .padding(.vertical, Theme.Spacing.md)
-            .background(
-                Theme.Color.accent.opacity(configuration.isPressed ? 0.15 : 0.1),
-                in: .rect(cornerRadius: Theme.Radius.md)
-            )
     }
 }
 

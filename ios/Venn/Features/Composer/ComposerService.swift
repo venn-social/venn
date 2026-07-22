@@ -114,7 +114,9 @@ struct ComposerService: ComposerServicing {
             .limit(1)
             .execute()
             .value
-        if let row = existing.first { return row.id }
+        if let row = existing.first {
+            return row.id
+        }
 
         let inserted: [MediaIDRow] = try await client
             .from("media")

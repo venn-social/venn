@@ -24,7 +24,11 @@ struct ProfileView: View {
                 .sheet(
                     isPresented: Binding(
                         get: { editViewModel != nil },
-                        set: { if !$0 { editViewModel = nil } }
+                        set: {
+                            if !$0 {
+                                editViewModel = nil
+                            }
+                        }
                     )
                 ) {
                     if let editViewModel {
