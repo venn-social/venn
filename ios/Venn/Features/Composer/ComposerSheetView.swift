@@ -256,6 +256,7 @@ private struct RatingView: View {
             )
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("rating_chip_\(label.lowercased())")
     }
 
     // MARK: - Caption

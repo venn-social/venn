@@ -126,6 +126,72 @@ final class VennUITests: XCTestCase {
         )
     }
 
+    // The auth (magic-link send) and composer (log flow) write paths run
+    // against the `-previewAuth` / `-previewComposer` shells (in-memory
+    // stubs) — write journeys would otherwise create rows in the shared
+    // remote DB on every CI run. See docs/TECH_DEBT.md item 8.
+
+    @MainActor
+    func testAuthSubmitValidEmailShowsSentConfirmationThenResets() {
+        let app = launchApp(extraArgs: ["-previewAuth"])
+        let field = app.textFields["auth_email_field"]
+        XCTAssertTrue(field.waitForExistence(timeout: 12))
+
+        focusAndType("charles@example.com", into: field, app: app)
+        app.buttons["Continue"].tap()
+
+        XCTAssertTrue(app.staticTexts["Check your inbox"].waitForExistence(timeout: 5))
+        // The address is embedded in an interpolated sentence ("We emailed a
+        // sign-in link to <email>. ..."), not a standalone element — match
+        // by substring rather than the full paragraph.
+        let emailMention = app.staticTexts.matching(
+            NSPredicate(format: "label CONTAINS[c] %@", "charles@example.com")
+        ).firstMatch
+        XCTAssertTrue(emailMention.exists)
+
+        app.buttons["Use a different email"].tap()
+        XCTAssertTrue(field.waitForExistence(timeout: 5))
+    }
+
+    @MainActor
+    func testAuthSubmitRateLimitedEmailShowsError() {
+        let app = launchApp(extraArgs: ["-previewAuth"])
+        let field = app.textFields["auth_email_field"]
+        XCTAssertTrue(field.waitForExistence(timeout: 12))
+
+        focusAndType("blocked@example.com", into: field, app: app)
+        app.buttons["Continue"].tap()
+
+        XCTAssertTrue(
+            app.staticTexts["Too many sign-in requests. Try again in a few minutes."]
+                .waitForExistence(timeout: 5)
+        )
+    }
+
+    @MainActor
+    func testComposerLogWithRatingCompletesTheFlow() {
+        let app = launchApp(extraArgs: ["-previewComposer"])
+        XCTAssertTrue(app.staticTexts["Past Lives"].waitForExistence(timeout: 12))
+
+        app.buttons["Log it"].tap()
+        XCTAssertTrue(app.staticTexts["How was it?"].waitForExistence(timeout: 5))
+
+        app.buttons["rating_chip_love"].tap()
+        app.buttons["Finish"].tap()
+
+        XCTAssertTrue(app.staticTexts["composer_preview_done"].waitForExistence(timeout: 10))
+    }
+
+    @MainActor
+    func testComposerAddToWatchlistCompletesTheFlow() {
+        let app = launchApp(extraArgs: ["-previewComposer"])
+        XCTAssertTrue(app.staticTexts["Past Lives"].waitForExistence(timeout: 12))
+
+        app.buttons["Add to Watchlist"].tap()
+
+        XCTAssertTrue(app.staticTexts["composer_preview_done"].waitForExistence(timeout: 10))
+    }
+
     // MARK: - helpers
 
     /// Tap-to-focus on a SwiftUI `TextField` races layout settling — taps
