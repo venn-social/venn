@@ -239,7 +239,11 @@ struct ExplorerView: View {
     private var isComposerPresented: Binding<Bool> {
         Binding(
             get: { composerViewModel?.selectedCandidate != nil },
-            set: { if !$0 { composerViewModel?.clearPick() } }
+            set: {
+                if !$0 {
+                    composerViewModel?.clearPick()
+                }
+            }
         )
     }
 

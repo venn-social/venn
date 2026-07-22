@@ -9,6 +9,15 @@ struct VennApp: App {
     private let authService: AuthService
 
     init() {
+        // Cover art (TMDB / OpenLibrary / Cover Art Archive) rides
+        // AsyncImage + the shared URLCache, and iOS's default cache is far
+        // too small for an image-forward feed — covers re-download on every
+        // scroll-back. Size it once at boot (docs/TECH_DEBT.md item 4).
+        URLCache.shared = URLCache(
+            memoryCapacity: 64 * 1024 * 1024,
+            diskCapacity: 256 * 1024 * 1024
+        )
+
         let config = AppConfig.load()
         let provider = SupabaseClientProvider.shared
         let service = AuthService(client: provider.client)
