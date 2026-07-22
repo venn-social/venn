@@ -186,7 +186,9 @@ final class FakeFeedService: FeedServicing, @unchecked Sendable {
 
     func recentPosts(limit: Int, before: Date?) async throws -> [FeedPost] {
         calls.append((limit, before))
-        if let error { throw error }
+        if let error {
+            throw error
+        }
         guard !pages.isEmpty else { throw AppError.network }
         return pages.removeFirst()
     }

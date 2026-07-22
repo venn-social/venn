@@ -46,10 +46,14 @@ final class FeedViewModel {
             hasMore = posts.count == pageSize
             state = .loaded(posts)
         } catch let error as AppError {
-            if case .loaded = state { return }
+            if case .loaded = state {
+                return
+            }
             state = .error(LoadErrorReason(error))
         } catch {
-            if case .loaded = state { return }
+            if case .loaded = state {
+                return
+            }
             state = .error(.unknown)
         }
     }
