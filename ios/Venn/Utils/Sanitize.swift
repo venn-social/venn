@@ -151,15 +151,25 @@ enum Sanitize {
     private static func isProblematic(_ scalar: Unicode.Scalar) -> Bool {
         let value = scalar.value
         // C0 controls, except tab + newline.
-        if value <= 0x1F, value != 0x09, value != 0x0A { return true }
+        if value <= 0x1F, value != 0x09, value != 0x0A {
+            return true
+        }
         // DEL + C1 controls.
-        if value >= 0x7F, value <= 0x9F { return true }
+        if value >= 0x7F, value <= 0x9F {
+            return true
+        }
         // Zero-width / direction marks.
-        if (0x200B...0x200F).contains(value) { return true }
+        if (0x200B...0x200F).contains(value) {
+            return true
+        }
         // Bidi embedding / override.
-        if (0x202A...0x202E).contains(value) { return true }
+        if (0x202A...0x202E).contains(value) {
+            return true
+        }
         // Byte order mark / zero-width no-break space.
-        if value == 0xFEFF { return true }
+        if value == 0xFEFF {
+            return true
+        }
         return false
     }
 }
