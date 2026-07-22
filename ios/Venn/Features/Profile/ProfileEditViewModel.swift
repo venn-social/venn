@@ -66,8 +66,12 @@ final class ProfileEditViewModel {
     /// we're not mid-save. View binds the Save button's disabled state to
     /// this. Validation errors only surface on submit.
     var canSave: Bool {
-        if case .saving = state { return false }
-        if case .saved = state { return false }
+        if case .saving = state {
+            return false
+        }
+        if case .saved = state {
+            return false
+        }
         return displayName != initialDisplayName
             || bio != initialBio
             || selectedAvatarData != nil
