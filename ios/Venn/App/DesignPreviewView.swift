@@ -51,7 +51,11 @@ import SwiftUI
             .task {
                 if debugAuth == nil {
                     let state = AuthState(service: AuthService(client: clientProvider.client))
-                    state.status = .signedIn(Self.debugSession)
+                    // Ghost id: the Feed/Explorer tabs render real public data, the
+                    // Profile tab shows its error surface (no profiles row), and
+                    // People search can find every real account (a ghost is never
+                    // filtered out as "self").
+                    state.status = .signedIn(DebugSession.make())
                     debugAuth = state
                 }
             }
@@ -66,33 +70,6 @@ import SwiftUI
                 return .profile
             }
             return .feed
-        }
-
-        /// Synthetic signed-in session pinned to a fixed "ghost" id that
-        /// has no profile row. The shell is for layout work, not account
-        /// flows: the Feed/Explorer tabs render real public data, the
-        /// Profile tab shows its error surface, and People search can find
-        /// every real account (a ghost is never filtered out as "self").
-        /// The token is never transmitted — reads go through the anon key.
-        private static var debugSession: Session {
-            let now = Date()
-            let user = User(
-                id: UUID(uuidString: "0000dead-0000-4000-8000-000000000001") ?? UUID(),
-                appMetadata: [:],
-                userMetadata: [:],
-                aud: "authenticated",
-                createdAt: now,
-                updatedAt: now,
-                isAnonymous: true
-            )
-            return Session(
-                accessToken: "design-preview",
-                tokenType: "bearer",
-                expiresIn: 3600,
-                expiresAt: now.addingTimeInterval(3600).timeIntervalSince1970,
-                refreshToken: "design-preview",
-                user: user
-            )
         }
     }
 

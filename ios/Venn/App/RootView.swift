@@ -53,12 +53,20 @@ struct RootView: View {
         #if DEBUG
             // DEBUG boots the real app (sign-in and all) — the team now
             // runs on real data. The preview shells are opt-in:
-            //   -designPreview  three-tab shell with a synthetic session
-            //   -previewStyle   static design-language reference
+            //   -designPreview     three-tab shell with a synthetic session
+            //   -previewStyle      static design-language reference
+            //   -previewAuth       sign-in screen against a stub (no real
+            //                      magic-link send, no email rate limit)
+            //   -previewComposer   the log flow against a stub (no writes
+            //                      to the shared remote DB)
             if ProcessInfo.processInfo.arguments.contains("-previewStyle") {
                 StylePreviewShell()
             } else if ProcessInfo.processInfo.arguments.contains("-previewOnboarding") {
                 OnboardingPreviewView()
+            } else if ProcessInfo.processInfo.arguments.contains("-previewAuth") {
+                AuthPreviewView()
+            } else if ProcessInfo.processInfo.arguments.contains("-previewComposer") {
+                ComposerPreviewView()
             } else if Self.wantsDesignPreview {
                 DesignPreviewView()
             } else {
