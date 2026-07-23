@@ -126,6 +126,73 @@ final class VennUITests: XCTestCase {
         )
     }
 
+    // The auth (magic-link send) and composer (log flow) write paths run
+    // against the `-previewAuth` / `-previewComposer` shells (in-memory
+    // stubs) — write journeys would otherwise create rows in the shared
+    // remote DB on every CI run. See docs/TECH_DEBT.md item 8.
+
+    @MainActor
+    func testAuthSubmitValidEmailShowsSentConfirmationThenResets() {
+        let app = launchApp(extraArgs: ["-previewAuth"])
+        let field = app.textFields["auth_email_field"]
+        XCTAssertTrue(field.waitForExistence(timeout: 12))
+
+        focusAndType("charles@example.com", into: field, app: app)
+        app.buttons["Continue"].tap()
+
+        XCTAssertTrue(app.staticTexts["Check your inbox"].waitForExistence(timeout: 5))
+        // The address is embedded in an interpolated sentence ("We emailed a
+        // sign-in link to <email>. ..."), not a standalone element — match
+        // by substring rather than the full paragraph.
+        let emailMention = app.staticTexts.matching(
+            NSPredicate(format: "label CONTAINS[c] %@", "charles@example.com")
+        ).firstMatch
+        XCTAssertTrue(emailMention.exists)
+
+        app.buttons["Use a different email"].tap()
+        XCTAssertTrue(field.waitForExistence(timeout: 5))
+    }
+
+    @MainActor
+    func testAuthSubmitRateLimitedEmailShowsError() {
+        let app = launchApp(extraArgs: ["-previewAuth"])
+        let field = app.textFields["auth_email_field"]
+        XCTAssertTrue(field.waitForExistence(timeout: 12))
+
+        focusAndType("blocked@example.com", into: field, app: app)
+        app.buttons["Continue"].tap()
+
+        XCTAssertTrue(
+            app.staticTexts["Too many sign-in requests. Try again in a few minutes."]
+                .waitForExistence(timeout: 5)
+        )
+    }
+
+    @MainActor
+    func testComposerLogWithRatingCompletesTheFlow() {
+        let app = launchApp(extraArgs: ["-previewComposer"])
+        XCTAssertTrue(app.staticTexts["Past Lives"].waitForExistence(timeout: 12))
+
+        let ratingTitle = app.staticTexts["How was it?"]
+        tapReliably(app.buttons["Log it"], until: ratingTitle)
+        XCTAssertTrue(ratingTitle.exists)
+
+        app.buttons["rating_chip_love"].tap()
+        let done = app.staticTexts["composer_preview_done"]
+        tapReliably(app.buttons["Finish"], until: done)
+        XCTAssertTrue(done.exists)
+    }
+
+    @MainActor
+    func testComposerAddToWatchlistCompletesTheFlow() {
+        let app = launchApp(extraArgs: ["-previewComposer"])
+        XCTAssertTrue(app.staticTexts["Past Lives"].waitForExistence(timeout: 12))
+
+        let done = app.staticTexts["composer_preview_done"]
+        tapReliably(app.buttons["Add to Watchlist"], until: done)
+        XCTAssertTrue(done.exists)
+    }
+
     // MARK: - helpers
 
     /// Tap-to-focus on a SwiftUI `TextField` races layout settling — taps
@@ -145,6 +212,23 @@ final class VennUITests: XCTestCase {
             Thread.sleep(forTimeInterval: 0.5 * Double(attempt + 1))
         }
         field.typeText(text)
+    }
+
+    /// A tap that lands before the button is fully hittable (mid-transition,
+    /// under-provisioned CI/local hardware) is silently swallowed — same
+    /// root cause as `focusAndType`'s keyboard-focus race, different
+    /// symptom. Re-tap (when hittable) between short polls for `target`
+    /// rather than trusting a single tap blindly.
+    @MainActor
+    private func tapReliably(_ element: XCUIElement, until target: XCUIElement, attempts: Int = 6) {
+        for _ in 0..<attempts {
+            if element.isHittable {
+                element.tap()
+            }
+            if target.waitForExistence(timeout: 1) {
+                return
+            }
+        }
     }
 
     @MainActor
