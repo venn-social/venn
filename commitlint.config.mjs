@@ -30,11 +30,22 @@
 //
 // Why? Conventional commits make changelogs, release notes, and git history
 // legible at a glance. They also let us automate semantic versioning later.
+//
+// Dependabot commits are exempt (see `ignores` below). Dependabot's
+// auto-generated body embeds a YAML `updated-dependencies:` block ahead of
+// its `Signed-off-by:` trailer — a format @commitlint/cli 21.2.1 (itself a
+// past Dependabot bump) started rejecting under `footer-leading-blank`,
+// even though the header already follows Conventional Commits. We don't
+// control Dependabot's commit body, so we skip linting it rather than
+// fight an upstream parser change on every future dependency PR. This
+// still lints every human-authored commit exactly as before; the ignore
+// only matches on Dependabot's own signoff line.
 // =============================================================================
 
 /** @type {import('@commitlint/types').UserConfig} */
 export default {
   extends: ['@commitlint/config-conventional'],
+  ignores: [(message) => message.includes('Signed-off-by: dependabot[bot]')],
   rules: {
     'type-enum': [
       2,
