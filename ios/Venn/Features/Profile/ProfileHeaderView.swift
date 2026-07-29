@@ -55,11 +55,11 @@ private struct FollowStat: View {
     private var content: some View {
         HStack(spacing: Theme.Spacing.xs) {
             Text("\(value)")
-                .font(Theme.Font.callout.weight(.semibold))
-                .foregroundStyle(Theme.Color.textPrimary)
+                .font(Theme.Font.footnote.weight(.medium))
+                .foregroundStyle(Theme.Color.textSecondary)
                 .monospacedDigit()
             Text(label)
-                .font(Theme.Font.callout)
+                .font(Theme.Font.footnote)
                 .foregroundStyle(Theme.Color.textSecondary)
         }
     }
