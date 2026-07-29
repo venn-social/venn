@@ -11,15 +11,44 @@ import Foundation
 
 enum FollowsSchema {
     /// Row shape for the `public.follows` table.
+    ///
+    /// `status` was added by hand by `20260626120000_private_accounts.sql`
+    /// ('pending' | 'accepted') — no container runtime was available to run
+    /// `make codegen` against the real schema this session. Regenerate for
+    /// real (and drop this note + the custom decoder below) once that
+    /// migration is applied and `make codegen` can run.
+    ///
+    /// Decoded leniently: the migration hasn't been pushed to the live
+    /// database yet, so `status` is absent from today's real API responses.
+    /// Falling back to the column's own DB default ('accepted') means this
+    /// client works unchanged before *and* after that migration lands —
+    /// no coordinated deploy required.
     struct Row: Codable, Equatable {
         let followerId: UUID
         let followeeId: UUID
+        let status: String
         let createdAt: Date
 
         enum CodingKeys: String, CodingKey {
             case followerId = "follower_id"
             case followeeId = "followee_id"
+            case status
             case createdAt = "created_at"
+        }
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            followerId = try container.decode(UUID.self, forKey: .followerId)
+            followeeId = try container.decode(UUID.self, forKey: .followeeId)
+            status = try container.decodeIfPresent(String.self, forKey: .status) ?? "accepted"
+            createdAt = try container.decode(Date.self, forKey: .createdAt)
+        }
+
+        init(followerId: UUID, followeeId: UUID, status: String, createdAt: Date) {
+            self.followerId = followerId
+            self.followeeId = followeeId
+            self.status = status
+            self.createdAt = createdAt
         }
     }
 }
@@ -103,12 +132,17 @@ enum PostsSchema {
 
 enum ProfilesSchema {
     /// Row shape for the `public.profiles` table.
+    ///
+    /// `isPrivate` was added by hand by `20260626120000_private_accounts.sql`
+    /// — see the note on `FollowsSchema.Row.status` for why, including the
+    /// lenient decode (defaults to the column's own DB default, `false`).
     struct Row: Codable, Equatable {
         let id: UUID
         let username: String
         let displayName: String?
         let avatarUrl: String?
         let bio: String?
+        let isPrivate: Bool
         let createdAt: Date
 
         enum CodingKeys: String, CodingKey {
@@ -117,7 +151,37 @@ enum ProfilesSchema {
             case displayName = "display_name"
             case avatarUrl = "avatar_url"
             case bio
+            case isPrivate = "is_private"
             case createdAt = "created_at"
+        }
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            id = try container.decode(UUID.self, forKey: .id)
+            username = try container.decode(String.self, forKey: .username)
+            displayName = try container.decodeIfPresent(String.self, forKey: .displayName)
+            avatarUrl = try container.decodeIfPresent(String.self, forKey: .avatarUrl)
+            bio = try container.decodeIfPresent(String.self, forKey: .bio)
+            isPrivate = try container.decodeIfPresent(Bool.self, forKey: .isPrivate) ?? false
+            createdAt = try container.decode(Date.self, forKey: .createdAt)
+        }
+
+        init(
+            id: UUID,
+            username: String,
+            displayName: String?,
+            avatarUrl: String?,
+            bio: String?,
+            isPrivate: Bool,
+            createdAt: Date
+        ) {
+            self.id = id
+            self.username = username
+            self.displayName = displayName
+            self.avatarUrl = avatarUrl
+            self.bio = bio
+            self.isPrivate = isPrivate
+            self.createdAt = createdAt
         }
     }
 }

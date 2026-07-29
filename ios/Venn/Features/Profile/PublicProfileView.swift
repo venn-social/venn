@@ -96,15 +96,23 @@ struct PublicProfileView: View {
         .tracksGlassSkyParallax()
     }
 
-    /// Follow / Following toggle. Hidden when nobody is signed in (the
-    /// DEBUG design-preview boot) — there's no follower side for the edge.
+    /// Follow / Requested / Following toggle. Hidden when nobody is signed
+    /// in (the DEBUG design-preview boot) — there's no follower side for
+    /// the edge. "Requested" reuses the "Following" secondary-button
+    /// treatment (styling polish for the locked-content state that goes
+    /// with it lands separately).
     @ViewBuilder private var followButton: some View {
         if let followViewModel {
-            if followViewModel.state == .following {
+            switch followViewModel.state {
+            case .following:
                 SecondaryButton(title: "Following", isEnabled: !followViewModel.isWorking) {
                     Task { await toggleFollow() }
                 }
-            } else {
+            case .requested:
+                SecondaryButton(title: "Requested", isEnabled: !followViewModel.isWorking) {
+                    Task { await toggleFollow() }
+                }
+            case .notFollowing:
                 PrimaryButton(
                     title: "Follow",
                     isLoading: followViewModel.isWorking

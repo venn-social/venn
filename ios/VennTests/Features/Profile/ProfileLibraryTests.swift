@@ -183,6 +183,8 @@ final class FakeLibraryService: ProfileServicing, @unchecked Sendable {
         try followCountsResult.get()
     }
 
+    func updatePrivacy(userID _: UUID, isPrivate _: Bool) async throws {}
+
     func watchlist(for _: UUID, kind _: MediaKind?) async throws -> [LibraryItem] {
         try watchlistResult.get()
     }
