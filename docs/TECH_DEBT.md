@@ -27,3 +27,4 @@ CLAUDE.md rule 15 (Figma-first) is suspended until the Figma Pro subscription la
 - Avatar photo treatments: `AvatarBadge` image state, edit-sheet avatar row + photo picker
 - Sign-in revamp: "check your inbox" screen (bold email, resend countdown, change-email)
 - Stepped onboarding: step indicators, live username availability (✓/✗ + hint line), photo step with circular picker hero
+- `YearInReviewView` — personal stats screen (total-logged header, trailing-12-month activity bars, per-kind breakdown cards), reached from a new icon button in `ProfileView`'s top bar
