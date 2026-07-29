@@ -67,7 +67,7 @@ struct VennOverlap: View {
             VStack(spacing: Theme.Spacing.xxs) {
                 Text(verbatim: "\(percent)%")
                     .font(Theme.Font.largeTitle.weight(.bold))
-                    .foregroundStyle(Theme.Color.accentBlue)
+                    .foregroundStyle(Theme.Color.accent)
                     .monospacedDigit()
                 Text("taste match")
                     .font(Theme.Font.caption.weight(.semibold))
@@ -91,7 +91,7 @@ struct VennOverlap: View {
 
     private func soloCircle(_ set: Set) -> some View {
         Circle()
-            .fill(Theme.Color.accentBlue)
+            .fill(Theme.Color.accent)
             .frame(width: VennLayout.maxRadius * 2, height: VennLayout.maxRadius * 2)
             .overlay(
                 Text(verbatim: "\(set.count)")
@@ -116,7 +116,7 @@ struct VennOverlap: View {
                 // The lens: the brand-accent other-lobe, masked to the viewer
                 // lobe, so only the intersection shows.
                 Circle()
-                    .fill(Theme.Color.accentBlue)
+                    .fill(Theme.Color.accent)
                     .frame(width: geometry.otherDiameter, height: geometry.otherDiameter)
                     .position(x: otherX, y: centerY)
                     .mask(
@@ -162,7 +162,7 @@ struct VennOverlap: View {
             .foregroundStyle(Theme.Color.onAccent)
             .padding(.horizontal, Theme.Spacing.sm)
             .padding(.vertical, Theme.Spacing.xxs)
-            .background(Capsule().fill(Theme.Color.accentBlue))
+            .background(Capsule().fill(Theme.Color.accent))
             .overlay(Capsule().strokeBorder(Theme.Color.background, lineWidth: 2))
     }
 
@@ -190,7 +190,7 @@ struct VennOverlap: View {
     ) -> some View {
         HStack(spacing: Theme.Spacing.sm) {
             Circle()
-                .fill(emphasised ? Theme.Color.accentBlue : Theme.Color.graphite.opacity(0.55))
+                .fill(emphasised ? Theme.Color.accent : Theme.Color.graphite.opacity(0.55))
                 .frame(width: 8, height: 8)
             Text(label)
                 .font(emphasised ? Theme.Font.body.weight(.semibold) : Theme.Font.body)

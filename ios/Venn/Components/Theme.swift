@@ -45,7 +45,6 @@ enum Theme {
         static let paper = SwiftUI.Color(.systemBackground)
         static let mist = SwiftUI.Color(.secondarySystemBackground)
         static let ash = SwiftUI.Color(.tertiarySystemBackground)
-        static let violet = graphite
         static let onAccent = adaptive(light: .white, dark: .black)
 
         /// Reduce-Transparency fallback solid for the glass-sky background.
@@ -71,9 +70,12 @@ enum Theme {
             dark: UIColor(red: 0.02, green: 0.04, blue: 0.10, alpha: 1)
         )
 
-        /// Brand accent. Used for primary actions and the center of the Venn
-        /// overlap motif.
-        static let accent = violet
+        /// Brand accent — the single deliberate spot of color in an
+        /// otherwise monochrome UI. Used for primary actions, selection
+        /// state, and the center of the Venn overlap motif. Everything else
+        /// (surfaces, text, secondary actions) stays grayscale so this reads
+        /// clearly wherever it appears.
+        static let accent = hex(light: 0x0070F3, dark: 0x4DA3FF)
 
         /// Default screen background.
         static let background = paper
@@ -92,12 +94,6 @@ enum Theme {
         /// 1pt separator hairline.
         static let separator = SwiftUI.Color(.separator).opacity(0.7)
 
-        /// Neon-blue accent for the refreshed design language — used for
-        /// precise highlight moments (e.g. a rating star). Distinct from
-        /// `accent` (still the monochrome brand default) until the full
-        /// accent change ships as its own deliberate pass.
-        static let accentBlue = hex(light: 0x0070F3, dark: 0x4DA3FF)
-
         /// Glyph color for a media cover placeholder's initial.
         static let coverGlyph = hex(light: 0x474C57, dark: 0xB6BAC4)
 
@@ -109,12 +105,6 @@ enum Theme {
     }
 
     enum Gradient {
-        static let overlap = LinearGradient(
-            colors: [Color.graphite, Color.graphite],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
-
         /// App-wide background for the "glass-floating-over-sky" treatment.
         /// Cool atmospheric stops (pale morning sky in light mode, deep
         /// night sky in dark) read top-to-bottom. The mid stop in dark mode

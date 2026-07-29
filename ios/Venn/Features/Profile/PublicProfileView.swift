@@ -187,7 +187,7 @@ struct PublicProfileView: View {
                     HStack(spacing: Theme.Spacing.sm) {
                         Image(systemName: slice.kind.systemImage)
                             .font(.caption)
-                            .foregroundStyle(Theme.Color.accentBlue)
+                            .foregroundStyle(Theme.Color.accent)
                         Text(verbatim: "\(slice.kind.displayName.capitalized)s in common")
                             .font(Theme.Font.callout)
                             .foregroundStyle(Theme.Color.textPrimary)
