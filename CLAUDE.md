@@ -6,7 +6,9 @@ This file is read automatically when Claude Code starts in this repo. It's the "
 
 ## What this repo is
 
-**venn** — a social app where people log what they consume (movies, music, books, restaurants, games) in one place, and share their favorites with friends. Every profile shows a Venn diagram of where your tastes overlap with the person you're viewing; that overlap primitive is the whole point. **iOS only**, TestFlight target **December 2026**.
+**venn** — a social app where people log what they consume (movies, music, books, restaurants, games) in one place, and share their favorites with friends. Every profile shows a Venn diagram of where your tastes overlap with the person you're viewing; that overlap primitive is the whole point. **iOS + web**, both targeting **December 2026**.
+
+> **Two platforms, one product (2026-07-30):** venn is no longer iOS-only. A web app (`web/`, Next.js, same Supabase backend) is being built alongside iOS to launch together. See [`docs/superpowers/specs/2026-07-30-web-app-phase1-foundation-design.md`](./docs/superpowers/specs/2026-07-30-web-app-phase1-foundation-design.md) for the phase roadmap and Phase 1 scope. **Cross-platform parity is a standing rule — see rule 17 below.**
 
 The founding team is small and non-technical. The codebase is being treated like a professional, Meta-grade engineering project from day one. For the full product vision (MVP scope, what's in and what's out, phasing), see the [product vision](https://www.notion.so/product-vision-34bc60c854a28109939dd2d83bb135a4) page in Notion.
 
@@ -23,6 +25,7 @@ The founding team is small and non-technical. The codebase is being treated like
 - **Testing:** Swift Testing (`import Testing`, `@Test`) for units; XCUITest for UI flows. Services and pure utilities are unit-tested; views are not.
 - **Lint/format:** [SwiftLint](https://github.com/realm/SwiftLint) (strict mode) + [SwiftFormat](https://github.com/nicklockwood/SwiftFormat). Pre-commit hooks enforce both via Husky.
 - **CI:** GitHub Actions on `macos-latest`. Lint, format check, prettier check (for docs), and tests run on every PR.
+- **Web (new, Phase 1 in progress):** Next.js (App Router, TypeScript) in `web/`, against the _same_ Supabase project as iOS — no second backend. Tailwind, styled from tokens mirroring `Theme.swift`. Vitest + React Testing Library for units, Playwright for E2E. Full detail in the Phase 1 spec linked above; this section gets fleshed out once Phase 1 actually lands.
 
 ## Repo layout
 
@@ -47,6 +50,9 @@ venn/
 │   ├── VennTests/                         Swift Testing suites, mirroring the
 │   │                                      source tree (Features/, Services/, ...).
 │   └── VennUITests/                       XCUITest UI suites.
+├── web/                                   Next.js web app (Phase 1 in progress —
+│                                          see the Phase 1 spec linked above).
+│                                          Same Supabase backend as ios/.
 ├── supabase/migrations/                   SQL migrations (unchanged from RN era).
 ├── docs/                                  WORKFLOW, ARCHITECTURE, CODING_STANDARDS, …
 ├── .github/                               CI workflows, PR + issue templates, CODEOWNERS.
@@ -77,6 +83,7 @@ The "why" behind this layout is in [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.
 15. **Frontend design goes through Figma first — no improvising.** Any net-new UI surface (screen, component, sheet, empty state, error state, or a meaningful re-skin) must be designed in Figma before code is written. The implementation PR description must include the Figma node URL. Tweaks within existing design-system tokens (already-defined spacing, color, type) don't require a new frame — but a new layout, a new component, or a fresh visual direction does. The reasoning lives in [`docs/decisions/0008-figma-first-frontend.md`](./docs/decisions/0008-figma-first-frontend.md).
     > **Temporarily suspended (2026-06-11, by Charles):** the team's Figma plan limits make the design-first loop impractical right now. Until the Figma Pro subscription lands, build UI directly from the existing tokens + components in `Components/`, and add every net-new surface to the Figma backlog section of [`docs/TECH_DEBT.md`](./docs/TECH_DEBT.md) so it gets recreated in Figma for completeness later.
 16. **Frontend code is component-first and split by folder.** Never build large SwiftUI screens by stacking private one-off subviews in a single file. Each tab or flow lives in its own `Features/<Name>/` folder, and meaningful screen sections get their own files. Reusable UI belongs in `Components/`, feature-only UI belongs in that feature folder, and repeated layout/styling must be extracted before it is copied. If a view file is becoming hard to scan, split it immediately.
+17. **iOS and web stay in sync — always, not just at launch.** Any new user-facing feature, screen, or meaningful visual change ships to both platforms together (same session/PR pair where practical). If one platform has to lag, log the gap explicitly in [`docs/TECH_DEBT.md`](./docs/TECH_DEBT.md) rather than letting it drift silently. Design tokens (`ios/Venn/Components/Theme.swift` ↔ the web Tailwind config) are one conceptual source of truth, kept in lockstep by hand. Copy/wording (button labels, empty states, error messages) matches across platforms unless there's a genuine platform-specific reason to differ. See the Phase 1 spec linked above for the full reasoning.
 
 ## Common commands (from repo root)
 
@@ -137,7 +144,7 @@ All tasks and meetings live in the [venn Notion HQ](https://notion.so/HQ-34ac60c
 - Don't switch from XcodeGen to a hand-edited `.xcodeproj` — pbxproj merge conflicts are why we use XcodeGen.
 - Don't add CocoaPods or Carthage. SPM only.
 - Don't lower the iOS deployment target below 26.0 — that breaks Liquid Glass and other locked-in API choices.
-- Don't add Android. We are iOS-only.
+- Don't add Android. We are iOS + web only.
 - Don't edit CI workflows, Husky hooks, SwiftLint/SwiftFormat configs, or CODEOWNERS without a heads-up — those enforce the team's guarantees.
 - Don't commit to `main` or force-push to anyone's branch.
 
