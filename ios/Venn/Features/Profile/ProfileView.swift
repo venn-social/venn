@@ -16,6 +16,7 @@ struct ProfileView: View {
     @State private var shelf: ProfileShelf = .collection
     @State private var libraryDestination: LibraryDestination?
     @State private var followListDestination: FollowListDestination?
+    @State private var showYearInReview = false
 
     var body: some View {
         NavigationStack {
@@ -74,6 +75,9 @@ struct ProfileView: View {
                 .navigationDestination(for: UserProfile.self) { profile in
                     PublicProfileView(profile: profile)
                 }
+                .navigationDestination(isPresented: $showYearInReview) {
+                    YearInReviewView()
+                }
         }
         .task { await ensureLoaded() }
     }
@@ -130,6 +134,7 @@ struct ProfileView: View {
         HStack {
             iconButton("square.and.arrow.up", label: "Share") {}
             Spacer()
+            iconButton("chart.bar.xaxis", label: "Year in Review") { showYearInReview = true }
             iconButton("gearshape", label: "Settings") { presentSettingsSheet() }
         }
     }
