@@ -19,8 +19,17 @@ protocol ProfileServicing: Sendable {
         bio: String?
     ) async throws
 
-    /// Follower / following counts from the `follows` table.
+    /// Follower / following counts, accepted-only. Goes through the
+    /// `follow_counts` RPC (not a direct `follows` count) so a private
+    /// account's counts stay visible to third parties even though the
+    /// tightened `follows` SELECT policy hides its individual edges.
     func followCounts(for userID: UUID) async throws -> FollowCounts
+
+    /// Flip the account between public and private
+    /// (`20260626120000_private_accounts.sql`). A direct update — RLS
+    /// (`profiles_update_own`) already restricts this to the caller's own
+    /// row, no RPC needed.
+    func updatePrivacy(userID: UUID, isPrivate: Bool) async throws
 
     /// Items the user saved for later (`action == .saved`). Pass a `kind`
     /// to scope the results to one media type; nil returns all kinds.
@@ -115,9 +124,24 @@ struct ProfileService: ProfileServicing {
 
     func followCounts(for userID: UUID) async throws -> FollowCounts {
         do {
-            async let followers = edgeCount(column: "followee_id", value: userID)
-            async let following = edgeCount(column: "follower_id", value: userID)
-            return try await FollowCounts(followers: followers, following: following)
+            let rows: [FollowCountsRow] = try await client
+                .rpc("follow_counts", params: ["target": userID])
+                .execute()
+                .value
+            guard let row = rows.first else { return .zero }
+            return FollowCounts(followers: row.followers, following: row.following)
+        } catch {
+            throw AppError.from(error)
+        }
+    }
+
+    func updatePrivacy(userID: UUID, isPrivate: Bool) async throws {
+        do {
+            try await client
+                .from("profiles")
+                .update(PrivacyUpdate(isPrivate: isPrivate))
+                .eq("id", value: userID)
+                .execute()
         } catch {
             throw AppError.from(error)
         }
@@ -176,16 +200,6 @@ struct ProfileService: ProfileServicing {
         } catch {
             throw AppError.from(error)
         }
-    }
-
-    /// Head-only count of `follows` rows matching `column == value`.
-    private func edgeCount(column: String, value: UUID) async throws -> Int {
-        try await client
-            .from("follows")
-            .select("*", head: true, count: .exact)
-            .eq(column, value: value)
-            .execute()
-            .count ?? 0
     }
 }
 
@@ -256,5 +270,20 @@ private struct ProfileUpdate: Encodable {
         } else {
             try container.encodeNil(forKey: .bio)
         }
+    }
+}
+
+/// Wire-format row for the `follow_counts` RPC — a set-returning function,
+/// so Postgrest wraps even this single-row result in an array.
+private struct FollowCountsRow: Decodable {
+    let followers: Int
+    let following: Int
+}
+
+private struct PrivacyUpdate: Encodable {
+    let isPrivate: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case isPrivate = "is_private"
     }
 }

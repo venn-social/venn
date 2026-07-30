@@ -1,18 +1,23 @@
 import Foundation
 import Observation
 
-/// Drives the Follow / Following button on `PublicProfileView`.
+/// Drives the Follow / Requested / Following button on `PublicProfileView`.
 ///
-/// `toggle()` is optimistic per the data-flow rules in
-/// `docs/ARCHITECTURE.md`: the button flips immediately and reverts if the
-/// write fails. A failed `load()` falls back to `.notFollowing` rather
-/// than hiding the button — `FollowService.follow` is idempotent, so the
-/// worst case ("Follow" shown while already following) self-heals on tap.
+/// Unfollowing (from `.following`) and cancelling a request (from
+/// `.requested`) are both a delete, so they stay optimistic per the
+/// data-flow rules in `docs/ARCHITECTURE.md`: the button flips immediately
+/// and reverts if the write fails.
+///
+/// Starting a follow is different: whether it lands as `.requested` or
+/// `.following` depends on the target's privacy, which this view-model
+/// doesn't know ahead of the server's answer — so that path is NOT
+/// optimistic. `isWorking` covers the round trip instead.
 @MainActor
 @Observable
 final class FollowViewModel {
     enum State: Equatable {
         case notFollowing
+        case requested
         case following
     }
 
@@ -33,30 +38,51 @@ final class FollowViewModel {
     }
 
     func load() async {
-        let following = await (try? service.isFollowing(
-            followerID: followerID,
-            followeeID: followeeID
-        )) ?? false
-        state = following ? .following : .notFollowing
+        let status = try? await service.followStatus(followerID: followerID, followeeID: followeeID)
+        state = Self.state(for: status)
     }
 
-    /// Optimistically flip, write the edge, revert on failure. Re-entrant
-    /// taps while a write is in flight are ignored.
+    /// Re-entrant taps while a write is in flight are ignored.
     func toggle() async {
         guard !isWorking else { return }
         isWorking = true
         defer { isWorking = false }
 
+        switch state {
+        case .following, .requested:
+            await cancelOrUnfollow()
+        case .notFollowing:
+            await startFollowing()
+        }
+    }
+
+    /// Delete is optimistic: flip to `.notFollowing`, write, revert on failure.
+    private func cancelOrUnfollow() async {
         let original = state
-        state = original == .following ? .notFollowing : .following
+        state = .notFollowing
         do {
-            if original == .following {
-                try await service.unfollow(followerID: followerID, followeeID: followeeID)
-            } else {
-                try await service.follow(followerID: followerID, followeeID: followeeID)
-            }
+            try await service.unfollow(followerID: followerID, followeeID: followeeID)
         } catch {
             state = original
+        }
+    }
+
+    /// Not optimistic — the resulting state depends on the server's answer
+    /// (public target → accepted instantly; private target → pending).
+    private func startFollowing() async {
+        do {
+            let status = try await service.requestFollow(followerID: followerID, followeeID: followeeID)
+            state = Self.state(for: status)
+        } catch {
+            state = .notFollowing
+        }
+    }
+
+    private static func state(for status: FollowStatus?) -> State {
+        switch status {
+        case .none: .notFollowing
+        case .pending: .requested
+        case .accepted: .following
         }
     }
 }

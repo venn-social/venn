@@ -3,8 +3,7 @@ import SwiftUI
 /// Profile tab. Loads the signed-in user's profile from Supabase and renders
 /// the identity header, follow counts, primary actions, and a Collection /
 /// Watchlist cover gallery. Tapping a shelf opens the full, editable
-/// `LibraryListView`. Share + settings live in a top bar; both, like the Add
-/// and Edit buttons, are wired in a later pass.
+/// `LibraryListView`. Share is wired in a later pass.
 struct ProfileView: View {
     @Environment(AuthState.self)
     private var authState
@@ -13,6 +12,7 @@ struct ProfileView: View {
 
     @State private var viewModel: ProfileViewModel?
     @State private var editViewModel: ProfileEditViewModel?
+    @State private var settingsViewModel: SettingsViewModel?
     @State private var shelf: ProfileShelf = .collection
     @State private var libraryDestination: LibraryDestination?
     @State private var followListDestination: FollowListDestination?
@@ -41,6 +41,22 @@ struct ProfileView: View {
                             },
                             onCancel: { self.editViewModel = nil }
                         )
+                    }
+                }
+                .sheet(
+                    isPresented: Binding(
+                        get: { settingsViewModel != nil },
+                        set: {
+                            if !$0 {
+                                settingsViewModel = nil
+                            }
+                        }
+                    )
+                ) {
+                    if let settingsViewModel {
+                        SettingsView(viewModel: settingsViewModel) {
+                            self.settingsViewModel = nil
+                        }
                     }
                 }
                 .containerBackground(for: .navigation) {
@@ -119,7 +135,7 @@ struct ProfileView: View {
             iconButton("square.and.arrow.up", label: "Share") {}
             Spacer()
             iconButton("chart.bar.xaxis", label: "Year in Review") { showYearInReview = true }
-            iconButton("gearshape", label: "Settings") {}
+            iconButton("gearshape", label: "Settings") { presentSettingsSheet() }
         }
     }
 
@@ -170,6 +186,19 @@ struct ProfileView: View {
             displayName: profile.displayName,
             bio: profile.bio,
             avatarURL: profile.avatarURL,
+            service: ProfileService(client: clientProvider.client)
+        )
+    }
+
+    private func presentSettingsSheet() {
+        guard let viewModel,
+              case let .loaded(snapshot) = viewModel.state
+        else {
+            return
+        }
+        settingsViewModel = SettingsViewModel(
+            userID: snapshot.profile.id,
+            isPrivate: snapshot.profile.isPrivate,
             service: ProfileService(client: clientProvider.client)
         )
     }

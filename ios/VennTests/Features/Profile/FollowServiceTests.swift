@@ -50,6 +50,33 @@ struct FollowServiceTests {
         #expect(row.followee.displayName == nil)
     }
 
+    @Test
+    func decodesFollowStatusRowPending() throws {
+        let json = Data(#"{"status": "pending"}"#.utf8)
+
+        let row = try decoder().decode(FollowStatusRow.self, from: json)
+
+        #expect(row.status == "pending")
+        #expect(FollowStatus(rawValue: row.status) == .pending)
+    }
+
+    @Test
+    func decodesFollowStatusRowAccepted() throws {
+        let json = Data(#"{"status": "accepted"}"#.utf8)
+
+        let row = try decoder().decode(FollowStatusRow.self, from: json)
+
+        #expect(FollowStatus(rawValue: row.status) == .accepted)
+    }
+
+    @Test
+    func unknownFollowStatusRawValueMapsToNil() {
+        // Forwards-compat: an unrecognized status (a future migration adds
+        // a case the client doesn't know about yet) fails closed rather
+        // than crashing.
+        #expect(FollowStatus(rawValue: "blocked") == nil)
+    }
+
     private func decoder() -> JSONDecoder {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
