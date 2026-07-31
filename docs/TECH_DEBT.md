@@ -20,7 +20,9 @@ CLAUDE.md rule 15 (Figma-first) is suspended until the Figma Pro subscription la
 
 - Explorer "People" category: chip, browse prompt, search result rows (`ProfileRow`)
 - `PublicProfileView` — other-user profile (header + bio + follow button + shelf tabs + cover gallery)
-- Follow button states (Follow / Following) on the public profile
+- Follow button states (Follow / Requested / Following) on the public profile
+- Locked-content state on a private account's public profile (`PublicProfileView`'s `lockedContent`) — shown to non-followers instead of the shelves/overlap
+- `FollowRequestsView` — pending follow-request list with inline accept/reject, reached from a new icon on `ProfileView`'s top bar (private accounts only)
 - `FollowListView` — followers / following list (reuses `ProfileRow`)
 - Real cover art treatments: `MediaCoverTile` image state, `MediaCoverThumb` row thumbnails
 - "Your Venn" overlap section — **rebuilt in code 2026-06-24** (`VennOverlap`): proportional lobes + neon-blue lens via `Canvas` (replacing the invisible `.plusLighter` version), a Jaccard "NN% match" headline, and a shared-count chip. Light/dark verified. Remaining for a Figma pass: a more modern visual treatment of the diagram (depth, motion, typography) when Figma returns.

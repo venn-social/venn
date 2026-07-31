@@ -80,20 +80,45 @@ struct PublicProfileView: View {
                         .foregroundStyle(Theme.Color.textSecondary)
                 }
                 followButton
-                overlapSection
-                ShelfTabs(selection: $shelf)
-                ProfileShelfGallery(
-                    items: shelf == .collection ? snapshot.collection : snapshot.watchlist,
-                    emptyMessage: shelf == .collection
-                        ? "Nothing logged yet."
-                        : "Nothing saved yet."
-                )
+                if isLocked(snapshot) {
+                    lockedContent
+                } else {
+                    overlapSection
+                    ShelfTabs(selection: $shelf)
+                    ProfileShelfGallery(
+                        items: shelf == .collection ? snapshot.collection : snapshot.watchlist,
+                        emptyMessage: shelf == .collection
+                            ? "Nothing logged yet."
+                            : "Nothing saved yet."
+                    )
+                }
             }
             .padding(.top, Theme.Spacing.sm)
             .padding(.bottom, Theme.Spacing.xxxl)
         }
         .scrollContentBackground(.hidden)
         .tracksGlassSkyParallax()
+    }
+
+    /// True when RLS is actually hiding this person's posts from the
+    /// viewer: a private account, and not (yet) an accepted follower. A
+    /// `nil` followViewModel (no signed-in viewer) defaults to locked —
+    /// matches what an unauthenticated request would actually see.
+    private func isLocked(_ snapshot: ProfileSnapshot) -> Bool {
+        guard snapshot.profile.isPrivate else { return false }
+        return followViewModel?.state != .following
+    }
+
+    /// Shown instead of the overlap section and shelves when the account
+    /// is private and the viewer isn't an accepted follower yet — the
+    /// shelves would otherwise just render as empty and read as "this
+    /// person hasn't logged anything," which is misleading.
+    private var lockedContent: some View {
+        EmptyStateView(
+            systemImage: "lock.fill",
+            title: "This account is private",
+            message: "Follow @\(profile.username) to see their posts and your taste overlap."
+        )
     }
 
     /// Follow / Requested / Following toggle. Hidden when nobody is signed
