@@ -17,6 +17,7 @@ struct ProfileView: View {
     @State private var libraryDestination: LibraryDestination?
     @State private var followListDestination: FollowListDestination?
     @State private var showYearInReview = false
+    @State private var showFollowRequests = false
 
     var body: some View {
         NavigationStack {
@@ -78,6 +79,14 @@ struct ProfileView: View {
                 .navigationDestination(isPresented: $showYearInReview) {
                     YearInReviewView()
                 }
+                .navigationDestination(isPresented: $showFollowRequests) {
+                    if case let .loaded(snapshot) = viewModel?.state {
+                        FollowRequestsView(viewModel: FollowRequestsViewModel(
+                            userID: snapshot.profile.id,
+                            service: FollowService(client: clientProvider.client)
+                        ))
+                    }
+                }
         }
         .task { await ensureLoaded() }
     }
@@ -104,7 +113,7 @@ struct ProfileView: View {
         return Screen {
             ScrollView {
                 VStack(alignment: .leading, spacing: Theme.Spacing.lg) {
-                    topBar
+                    topBar(isPrivate: profile.isPrivate)
                     ProfileHeaderView(
                         name: profile.displayName ?? profile.username,
                         handle: profile.username,
@@ -130,10 +139,17 @@ struct ProfileView: View {
         }
     }
 
-    private var topBar: some View {
+    /// The requests icon only appears for a private account — a public one
+    /// can never have pending requests (`request_follow` auto-accepts).
+    private func topBar(isPrivate: Bool) -> some View {
         HStack {
             iconButton("square.and.arrow.up", label: "Share") {}
             Spacer()
+            if isPrivate {
+                iconButton("person.crop.circle.badge.questionmark", label: "Follow Requests") {
+                    showFollowRequests = true
+                }
+            }
             iconButton("chart.bar.xaxis", label: "Year in Review") { showYearInReview = true }
             iconButton("gearshape", label: "Settings") { presentSettingsSheet() }
         }
