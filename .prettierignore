@@ -8,6 +8,9 @@ DerivedData/
 node_modules/
 coverage/
 *.xcresult/
+web/.next/
+web/test-results/
+web/playwright-report/
 
 # Generated configs
 ios/Venn/Resources/GeneratedConfig.xcconfig

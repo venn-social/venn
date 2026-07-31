@@ -1,0 +1,82 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens — mirrors ios/Venn/Components/Theme.swift. Per CLAUDE.md
+ * rule 17 (cross-platform parity), these two token sets are one conceptual
+ * source of truth, kept in lockstep by hand. If you add/change a token
+ * here, check whether Theme.swift needs the same change, and vice versa.
+ */
+:root {
+  /* Brand accent — the single deliberate spot of color in an otherwise
+     monochrome UI. Same hex as Theme.Color.accent (light). */
+  --color-accent: #0070f3;
+  --color-on-accent: #ffffff;
+
+  /* Monochrome base, matching Theme.Color.graphite (light) / ink. */
+  --color-graphite: #1c1c1c;
+
+  /* Surfaces — matching UIKit's systemBackground family (light). */
+  --color-background: #ffffff;
+  --color-surface: #f2f2f7;
+  --color-surface-strong: #e5e5ea;
+
+  /* Text — matching UIKit's label / secondaryLabel (light). */
+  --color-text-primary: #000000;
+  --color-text-secondary: #3c3c4399;
+
+  /* 1pt separator hairline, matching UIKit's separator (light). */
+  --color-separator: #3c3c4329;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-accent: #4da3ff;
+    --color-on-accent: #000000;
+    --color-graphite: #f5f5f0;
+    --color-background: #000000;
+    --color-surface: #1c1c1e;
+    --color-surface-strong: #2c2c2e;
+    --color-text-primary: #ffffff;
+    --color-text-secondary: #ebebf599;
+    --color-separator: #54545899;
+  }
+}
+
+@theme inline {
+  --color-accent: var(--color-accent);
+  --color-on-accent: var(--color-on-accent);
+  --color-graphite: var(--color-graphite);
+  --color-background: var(--color-background);
+  --color-surface: var(--color-surface);
+  --color-surface-strong: var(--color-surface-strong);
+  --color-text-primary: var(--color-text-primary);
+  --color-text-secondary: var(--color-text-secondary);
+  --color-separator: var(--color-separator);
+
+  /* No custom named spacing scale here (unlike Theme.Spacing's xxs...xxxl):
+     Tailwind v4 resolves *named* max-width/height/etc. utilities by
+     checking --spacing-<key> before --container-<key> (see tailwindcss's
+     own utilities source), so any custom --spacing-sm/-lg/etc. would
+     silently hijack max-w-sm/max-w-lg/etc. too. Use Tailwind's numeric
+     scale directly instead — it's already the same 4px base unit as
+     Theme.Spacing, just spelled as a multiplier: xxs=0.5, xs=1, sm=2,
+     md=3, lg=4, xl=6, xxl=8, xxxl=12 (e.g. `gap-4` = Theme.Spacing.lg). */
+
+  /* Corner radius scale, matching Theme.Radius. Safe to customize by name
+     (unlike spacing above) — rounded-* only resolves against --radius-*,
+     no cross-namespace fallback. */
+  --radius-sm: 0.5rem; /* 8 */
+  --radius-md: 0.75rem; /* 12 */
+  --radius-lg: 1rem; /* 16 */
+  --radius-xl: 1.5rem; /* 24 */
+  --radius-pill: 999px;
+
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--color-background);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
