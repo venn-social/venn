@@ -1197,19 +1197,25 @@ git commit -m "feat(web): add follow-requests screen, ported from FollowRequests
 
 ---
 
-### Task 10: Playwright E2E coverage
+### Task 10: Playwright auth-gate coverage + FollowButton unit tests
 
 **Files:**
 
 - Create: `web/e2e/profile.spec.ts`
+- Create: `web/components/__tests__/FollowButton.test.tsx`
 
 **Interfaces:**
 
-- Consumes: the `/[username]` and `/requests` routes (Tasks 8-9). No new production code.
+- Consumes: the `/[username]` and `/requests` routes (Tasks 8-9); `FollowButton` (Task 7), which itself consumes `requestFollow`/`unfollow` from `@/lib/follow` (Task 3) and `createClient` from `@/lib/supabase/client`.
+- Produces: no new production code — test coverage only.
 
-Mocks the follow RPC network calls (`request_follow`, `follows` DELETE) the same way `e2e/auth.spec.ts` mocks the OTP call — an automated suite must not write real follow edges into the shared Supabase project. Viewing a real public profile (read-only fetches) is safe to hit for real, since it doesn't mutate anything; use a username that's known to exist in the project (the same `@venn` official account the iOS UI tests anchor on, or another seeded account if that one is private).
+**Correction vs. the original Task 10 draft:** `/[username]` (Task 8) and `/requests` (Task 9) both `redirect("/login")` for a signed-out visitor before doing anything else — confirmed by reading the shipped `app/[username]/page.tsx` and `app/requests/page.tsx`, and independently by curling a running build while signed out (both return `307` → `/login`, for a real username and a nonexistent one alike). This project has no authenticated Playwright fixture — no test Supabase user, no `storageState`, no admin/service-role key wired into test config — and `e2e/auth.spec.ts` (Phase 1) never completes a real sign-in either, only the OTP-send request. Building one now (a dedicated test user + a service-role-key-backed session-minting step) is real new infrastructure with its own security surface (a service role key would need to exist somewhere in CI), out of proportion to this task — flagged as a follow-up, not built here.
 
-- [ ] **Step 1: Write the tests**
+Given that, this task covers what's genuinely real and automatable without a session: (a) Playwright E2E for the auth gate itself on both routes — a real, valuable security-boundary check, and (b) a component-level Vitest + React Testing Library test for `FollowButton`'s click behavior (Follow/Following/Requested state transitions, and the optimism asymmetry from `FollowViewModel.swift` — unfollow flips immediately, follow waits for the server) by rendering the component directly and mocking `@/lib/follow` and `@/lib/supabase/client`. This needs no server, no session, and no network — and it is strictly better coverage of the follow/unfollow interaction than the original page-level E2E draft would have been, since it asserts the mid-flight (pre-resolve) button state directly, which a page-level test cannot easily observe.
+
+`@testing-library/react` and `jsdom` are already dependencies (used by no test yet) — no new package needed. `@testing-library/jest-dom`'s matchers (e.g. `toBeInTheDocument`) are NOT wired into `vitest.config.ts` (no `setupFiles` entry exists) — do not use them and do not add the wiring for this one file (YAGNI); use `getByRole`/`findByRole` directly, which throw when a match isn't found, as the assertion.
+
+- [ ] **Step 1: Write the E2E auth-gate tests**
 
 Create `web/e2e/profile.spec.ts`:
 
@@ -1217,64 +1223,29 @@ Create `web/e2e/profile.spec.ts`:
 import { expect, test } from "@playwright/test";
 
 /**
- * Public-profile viewing and the follow lifecycle. Read fetches (viewing
- * a profile) hit the real project — they're read-only and cheap. The
- * follow/unfollow RPC calls are mocked, same reasoning as e2e/auth.spec.ts:
- * an automated suite must not write real follow edges into the shared
- * Supabase project.
+ * `/[username]` and `/requests` both require a signed-in session (see
+ * app/[username]/page.tsx and app/requests/page.tsx) — real interactive
+ * sign-in isn't automatable here (magic-link auth, no test-user fixture
+ * exists yet), so this suite covers the one thing that's genuinely real
+ * and testable without one: the auth gate itself. FollowButton's
+ * click behavior is covered instead by
+ * components/__tests__/FollowButton.test.tsx (Vitest + RTL, mocks
+ * lib/follow directly — no server or session needed).
  */
-test.describe("public profile", () => {
-  test("viewing a public profile renders the header and follow button", async ({ page }) => {
+test.describe("auth gate", () => {
+  test("visiting a public profile while signed out redirects to /login", async ({ page }) => {
     await page.goto("/venn");
-
-    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-    await expect(page.getByText("@venn")).toBeVisible();
-    await expect(page.getByRole("button", { name: /Follow|Following|Requested/ })).toBeVisible();
+    await expect(page).toHaveURL("/login");
   });
 
-  test("visiting a nonexistent username shows 404", async ({ page }) => {
-    const response = await page.goto("/this-username-should-not-exist-anywhere-12345");
-    expect(response?.status()).toBe(404);
+  test("visiting a nonexistent username while signed out redirects to /login", async ({ page }) => {
+    await page.goto("/this-username-should-not-exist-anywhere-12345");
+    await expect(page).toHaveURL("/login");
   });
 
-  test("following a public account flips the button to Following", async ({ page }) => {
-    await page.route("**/rpc/request_follow*", async (route) => {
-      await route.fulfill({ status: 200, contentType: "application/json", body: '"accepted"' });
-    });
-
-    await page.goto("/venn");
-    const followButton = page.getByRole("button", { name: "Follow" });
-    // If already following from a prior run's real state, this test is
-    // not meaningful — skip rather than false-fail.
-    test.skip(!(await followButton.isVisible()), "not in a followable state");
-
-    await followButton.click();
-    await expect(page.getByRole("button", { name: "Following" })).toBeVisible();
-  });
-
-  test("unfollowing flips the button back to Follow", async ({ page }) => {
-    await page.route("**/rest/v1/follows*", async (route) => {
-      if (route.request().method() === "DELETE") {
-        await route.fulfill({ status: 200, contentType: "application/json", body: "[]" });
-        return;
-      }
-      await route.continue();
-    });
-
-    await page.goto("/venn");
-    const followingButton = page.getByRole("button", { name: "Following" });
-    test.skip(!(await followingButton.isVisible()), "not in a following state");
-
-    await followingButton.click();
-    await expect(page.getByRole("button", { name: "Follow" })).toBeVisible();
-  });
-});
-
-test.describe("follow requests", () => {
-  test("the requests page loads without error", async ({ page }) => {
+  test("visiting /requests while signed out redirects to /login", async ({ page }) => {
     await page.goto("/requests");
-    // Either the empty-state copy or at least one request row/heading.
-    await expect(page.getByRole("heading", { name: "Follow Requests" })).toBeVisible();
+    await expect(page).toHaveURL("/login");
   });
 });
 ```
@@ -1282,14 +1253,134 @@ test.describe("follow requests", () => {
 - [ ] **Step 2: Run the E2E suite**
 
 Run: `cd web && npm run test:e2e`
-Expected: PASS. (The "not in a followable/following state" `test.skip` calls are a pragmatic guard against real, already-existing follow-graph state in the shared dev project during local runs — not a substitute for the mocked-network assertions, which are the actual behavior under test.)
+Expected: PASS (3/3).
 
-- [ ] **Step 3: Commit**
+- [ ] **Step 3: Write the FollowButton unit tests**
+
+Create `web/components/__tests__/FollowButton.test.tsx`:
+
+```tsx
+import { fireEvent, render, screen } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { FollowButton } from "@/components/FollowButton";
+
+vi.mock("@/lib/supabase/client", () => ({
+  createClient: () => ({})
+}));
+
+const { requestFollow, unfollow } = vi.hoisted(() => ({
+  requestFollow: vi.fn(),
+  unfollow: vi.fn()
+}));
+
+vi.mock("@/lib/follow", () => ({
+  requestFollow,
+  unfollow
+}));
+
+describe("FollowButton", () => {
+  beforeEach(() => {
+    requestFollow.mockReset();
+    unfollow.mockReset();
+  });
+
+  it("starts on Follow when there is no existing status", () => {
+    render(<FollowButton followerId="me" followeeId="them" initialStatus={null} />);
+    expect(screen.getByRole("button", { name: "Follow" })).toBeDefined();
+  });
+
+  it("starts on Following when the initial status is accepted", () => {
+    render(<FollowButton followerId="me" followeeId="them" initialStatus="accepted" />);
+    expect(screen.getByRole("button", { name: "Following" })).toBeDefined();
+  });
+
+  it("starts on Requested when the initial status is pending", () => {
+    render(<FollowButton followerId="me" followeeId="them" initialStatus="pending" />);
+    expect(screen.getByRole("button", { name: "Requested" })).toBeDefined();
+  });
+
+  it("waits for the server before flipping Follow to Following (no optimism on follow)", async () => {
+    let resolveRequest: (status: "accepted" | "pending") => void = () => {};
+    requestFollow.mockReturnValue(
+      new Promise((resolve) => {
+        resolveRequest = resolve;
+      })
+    );
+
+    render(<FollowButton followerId="me" followeeId="them" initialStatus={null} />);
+    fireEvent.click(screen.getByRole("button", { name: "Follow" }));
+
+    // Still "Follow" immediately after the click — the button doesn't
+    // guess the outcome, since a private target resolves to "pending"
+    // instead of "accepted".
+    expect(screen.getByRole("button", { name: "Follow" })).toBeDefined();
+
+    resolveRequest("accepted");
+    await screen.findByRole("button", { name: "Following" });
+  });
+
+  it("requesting a private account lands on Requested, not Following", async () => {
+    requestFollow.mockResolvedValue("pending");
+
+    render(<FollowButton followerId="me" followeeId="them" initialStatus={null} />);
+    fireEvent.click(screen.getByRole("button", { name: "Follow" }));
+
+    await screen.findByRole("button", { name: "Requested" });
+  });
+
+  it("reverts to Follow if the follow request fails", async () => {
+    requestFollow.mockRejectedValue(new Error("network"));
+
+    render(<FollowButton followerId="me" followeeId="them" initialStatus={null} />);
+    fireEvent.click(screen.getByRole("button", { name: "Follow" }));
+
+    await screen.findByRole("button", { name: "Follow" });
+  });
+
+  it("flips Following to Follow immediately on unfollow (optimistic)", async () => {
+    let resolveUnfollow: () => void = () => {};
+    unfollow.mockReturnValue(
+      new Promise<void>((resolve) => {
+        resolveUnfollow = resolve;
+      })
+    );
+
+    render(<FollowButton followerId="me" followeeId="them" initialStatus="accepted" />);
+    fireEvent.click(screen.getByRole("button", { name: "Following" }));
+
+    // Flips immediately, before the server call resolves — the optimism
+    // asymmetry from FollowViewModel.swift: unfollow's outcome is never
+    // in doubt, so the UI doesn't wait for it.
+    expect(screen.getByRole("button", { name: "Follow" })).toBeDefined();
+
+    resolveUnfollow();
+    await vi.waitFor(() => {
+      expect(unfollow).toHaveBeenCalledWith({}, "me", "them");
+    });
+  });
+
+  it("reverts to Following if the unfollow call fails", async () => {
+    unfollow.mockRejectedValue(new Error("network"));
+
+    render(<FollowButton followerId="me" followeeId="them" initialStatus="accepted" />);
+    fireEvent.click(screen.getByRole("button", { name: "Following" }));
+
+    await screen.findByRole("button", { name: "Following" });
+  });
+});
+```
+
+- [ ] **Step 4: Run the unit tests**
+
+Run: `cd web && npm run test`
+Expected: PASS — the existing 16 tests plus these 8 new ones (24 total).
+
+- [ ] **Step 5: Commit**
 
 ```bash
 cd web
-git add e2e/profile.spec.ts
-git commit -m "test(web): add E2E coverage for public profiles and the follow lifecycle"
+git add e2e/profile.spec.ts components/__tests__/FollowButton.test.tsx
+git commit -m "test(web): add auth-gate E2E coverage and FollowButton unit tests"
 ```
 
 ---

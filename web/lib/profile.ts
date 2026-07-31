@@ -59,6 +59,20 @@ export async function fetchProfile(
   return toUserProfile(data as ProfileRow);
 }
 
+/** Looks up a profile by username — how public-profile URLs are addressed (/[username], not a UUID). */
+export async function fetchProfileByUsername(
+  client: SupabaseClient,
+  username: string
+): Promise<UserProfile | null> {
+  const { data, error } = await client.from("profiles").select().eq("username", username).single();
+
+  if (error) {
+    if (error.code === "PGRST116") return null; // no matching row
+    throw error;
+  }
+  return toUserProfile(data as ProfileRow);
+}
+
 /** Mirrors `ProfileService.followCounts(for:)` — same `follow_counts` RPC. */
 export async function fetchFollowCounts(
   client: SupabaseClient,

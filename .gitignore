@@ -93,3 +93,7 @@ desktop.ini
 # (emails, names) and is meaningless to other machines. Keep it local.
 .claude/local/
 memory/
+
+# .superpowers/ is subagent-driven-development's scratch state (task briefs,
+# review packages, the progress ledger) — per-worktree, meaningless to commit.
+.superpowers/
