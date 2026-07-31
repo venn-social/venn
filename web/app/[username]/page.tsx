@@ -30,13 +30,29 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
     redirect("/profile");
   }
 
-  const [counts, followStatus] = await Promise.all([
+  const [countsResult, followStatusResult] = await Promise.allSettled([
     fetchFollowCounts(supabase, profile.id),
     fetchFollowStatus(supabase, user.id, profile.id)
   ]);
 
+  const counts: Awaited<ReturnType<typeof fetchFollowCounts>> | null =
+    countsResult.status === "fulfilled" ? countsResult.value : null;
+  // Fail closed: a failed lookup must never be treated as "accepted", or a
+  // private profile's gated content could leak because a query errored.
+  const followStatus = followStatusResult.status === "fulfilled" ? followStatusResult.value : null;
+
   const isLocked = profile.isPrivate && followStatus !== "accepted";
-  const overlap = isLocked ? null : await fetchOverlap(supabase, profile.id);
+
+  let overlap = null;
+  let overlapFailed = false;
+  if (!isLocked) {
+    try {
+      overlap = await fetchOverlap(supabase, profile.id);
+    } catch {
+      overlapFailed = true;
+    }
+  }
+
   const initial = (profile.displayName ?? profile.username).charAt(0).toUpperCase();
 
   return (
@@ -52,10 +68,10 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
           <p className="text-(--color-text-secondary)">@{profile.username}</p>
           <div className="mt-1 flex gap-4 text-sm text-(--color-text-secondary)">
             <span>
-              <strong className="font-medium">{counts.followers}</strong> Followers
+              <strong className="font-medium">{counts?.followers ?? "—"}</strong> Followers
             </span>
             <span>
-              <strong className="font-medium">{counts.following}</strong> Following
+              <strong className="font-medium">{counts?.following ?? "—"}</strong> Following
             </span>
           </div>
         </div>
@@ -73,6 +89,8 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
           otherLabel={`Only @${profile.username}`}
           summary={overlap}
         />
+      ) : overlapFailed ? (
+        <p className="text-(--color-text-secondary)">Couldn&apos;t load your Venn right now.</p>
       ) : null}
     </main>
   );
