@@ -1,0 +1,87 @@
+# =============================================================================
+# Web CI — runs only when something under web/ changes.
+# =============================================================================
+# Separate from the iOS `CI` workflow (ci.yml) on purpose: keeps iOS-only
+# PRs from paying for Node/Next.js setup, and vice versa. See CLAUDE.md
+# rule 17 and docs/superpowers/specs/2026-07-30-web-app-phase1-foundation-design.md.
+#
+# Jobs:
+#   - lint  : ESLint (next lint config).
+#   - test  : Vitest unit tests.
+#   - e2e   : Playwright, against a production build (`next build && next start`).
+# =============================================================================
+
+name: Web CI
+
+on:
+  pull_request:
+    branches: [main]
+    paths: ["web/**", ".github/workflows/web-ci.yml"]
+  push:
+    branches: [main]
+    paths: ["web/**", ".github/workflows/web-ci.yml"]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: web
+
+# Same publishable anon key + project URL already shipped in the iOS app
+# binary (see ci.yml's own note on this) — not a secret-exposure concern.
+# NEXT_PUBLIC_* vars are baked into the client bundle at build time, same
+# as the iOS build's Info.plist injection.
+env:
+  NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: web/.nvmrc
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: web/.nvmrc
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - run: npm run test
+
+  e2e:
+    name: E2E (Playwright)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: web/.nvmrc
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - run: npx playwright install chromium --with-deps
+      - run: npm run test:e2e
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report-${{ github.sha }}
+          path: web/playwright-report/
+          retention-days: 14
+          if-no-files-found: ignore
