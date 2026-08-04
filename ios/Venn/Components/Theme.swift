@@ -147,18 +147,28 @@ enum Theme {
         static let pill: CGFloat = 999
     }
 
-    /// Typography. All entries lean on SwiftUI's text styles so Dynamic Type
-    /// scales user-set font sizes correctly. Don't bypass this with
-    /// `.system(size:)` — accessibility breaks the moment you do.
+    /// Typography — Manrope (Resources/Fonts/Manrope-Variable.ttf, registered
+    /// via Info.plist's UIAppFonts), matching web's app/layout.tsx. Every
+    /// entry still uses `.custom(_:size:relativeTo:)`'s `relativeTo:` so
+    /// Dynamic Type keeps scaling user-set font sizes correctly — don't
+    /// bypass this with `.system(size:)` or a bare `.custom(_:size:)`
+    /// (no `relativeTo:`) — accessibility breaks the moment you do.
+    ///
+    /// Base sizes match Apple's default (unscaled) point size per text
+    /// style, so swapping the family here doesn't change layout. Named
+    /// instances (`Manrope-Regular`, `Manrope-SemiBold`, ...) are the
+    /// font's own weight variants — call sites layering `.weight(.medium)`
+    /// etc. on top of these resolve to the matching Manrope instance via
+    /// the same family-trait matching system fonts use.
     enum Font {
-        static let largeTitle = SwiftUI.Font.largeTitle.weight(.semibold)
-        static let title = SwiftUI.Font.title.weight(.semibold)
-        static let title2 = SwiftUI.Font.title2.weight(.semibold)
-        static let title3 = SwiftUI.Font.title3.weight(.semibold)
-        static let headline = SwiftUI.Font.headline
-        static let body = SwiftUI.Font.body
-        static let callout = SwiftUI.Font.callout
-        static let caption = SwiftUI.Font.caption
-        static let footnote = SwiftUI.Font.footnote
+        static let largeTitle = SwiftUI.Font.custom("Manrope-SemiBold", size: 34, relativeTo: .largeTitle)
+        static let title = SwiftUI.Font.custom("Manrope-SemiBold", size: 28, relativeTo: .title)
+        static let title2 = SwiftUI.Font.custom("Manrope-SemiBold", size: 22, relativeTo: .title2)
+        static let title3 = SwiftUI.Font.custom("Manrope-SemiBold", size: 20, relativeTo: .title3)
+        static let headline = SwiftUI.Font.custom("Manrope-SemiBold", size: 17, relativeTo: .headline)
+        static let body = SwiftUI.Font.custom("Manrope-Regular", size: 17, relativeTo: .body)
+        static let callout = SwiftUI.Font.custom("Manrope-Regular", size: 16, relativeTo: .callout)
+        static let caption = SwiftUI.Font.custom("Manrope-Regular", size: 12, relativeTo: .caption)
+        static let footnote = SwiftUI.Font.custom("Manrope-Regular", size: 13, relativeTo: .footnote)
     }
 }

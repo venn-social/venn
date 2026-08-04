@@ -71,8 +71,6 @@
   --radius-xl: 1.5rem; /* 24 */
   --radius-pill: 999px;
 
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
 }
 
 body {

@@ -68,6 +68,7 @@ targets:
       - path: Venn/Resources/Assets.xcassets
       - path: Venn/Resources/Videos
       - path: Venn/Resources/Localizable.xcstrings
+      - path: Venn/Resources/Fonts
     dependencies:
       - package: Supabase
         product: Supabase

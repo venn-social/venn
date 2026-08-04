@@ -7,10 +7,21 @@ import { createClient } from "@/lib/supabase/client";
  * Magic-link sign-in — mirrors ios/Venn/Features/Auth/AuthView.swift's
  * copy and states (idle/sending/error/sent) per CLAUDE.md rule 17. Simpler
  * than iOS for Phase 1: no resend cooldown, no guest bypass yet.
+ *
+ * Also accepts the numeric code the same email includes alongside the
+ * link (web-only fallback — the link's redirect depends on the exact
+ * origin being allow-listed in Supabase, which local dev ports make
+ * fragile; the code sidesteps that entirely since it's verified directly
+ * against Supabase, no redirect involved). iOS doesn't have this since
+ * its deep-link scheme doesn't have the same local-dev redirect problem;
+ * tracked in docs/TECH_DEBT.md if iOS ever wants it too.
  */
 export default function LoginPage() {
   const [email, setEmail] = useState("");
-  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [code, setCode] = useState("");
+  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "verifying" | "error">(
+    "idle"
+  );
   const [errorMessage, setErrorMessage] = useState("");
 
   async function handleSubmit(event: React.FormEvent) {
@@ -34,6 +45,26 @@ export default function LoginPage() {
     setStatus("sent");
   }
 
+  async function handleVerifyCode(event: React.FormEvent) {
+    event.preventDefault();
+    setStatus("verifying");
+    setErrorMessage("");
+
+    const supabase = createClient();
+    const { error } = await supabase.auth.verifyOtp({
+      email,
+      token: code,
+      type: "email",
+    });
+
+    if (error) {
+      setStatus("sent");
+      setErrorMessage("That code didn't work — check it and try again.");
+      return;
+    }
+    window.location.href = "/profile";
+  }
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-center gap-6 px-4">
       <div className="flex flex-col items-center gap-4 text-center">
@@ -41,16 +72,42 @@ export default function LoginPage() {
         <p className="text-(--color-text-secondary)">Where your tastes meet your friends&apos;.</p>
       </div>
 
-      {status === "sent" ? (
+      {status === "sent" || status === "verifying" ? (
         <div className="flex w-full max-w-sm flex-col items-center gap-3 rounded-lg border border-(--color-separator) p-4 text-center">
           <h2 className="text-lg font-semibold text-(--color-text-primary)">Check your inbox</h2>
           <p className="text-(--color-text-secondary)">
             We emailed a sign-in link to <strong>{email}</strong>. Tapping it verifies your email
-            and signs you in.
+            and signs you in — or enter the code from that same email below.
           </p>
+          <form onSubmit={handleVerifyCode} className="flex w-full flex-col gap-3">
+            <input
+              type="text"
+              inputMode="numeric"
+              required
+              value={code}
+              onChange={(event) => setCode(event.target.value)}
+              placeholder="Code from email"
+              autoComplete="one-time-code"
+              className="rounded-sm border border-(--color-separator) bg-(--color-surface-strong) px-3 py-2 text-center text-(--color-text-primary) outline-none"
+            />
+            {errorMessage && status === "sent" && (
+              <p className="text-sm text-red-500">{errorMessage}</p>
+            )}
+            <button
+              type="submit"
+              disabled={status === "verifying" || code.length === 0}
+              className="rounded-pill bg-(--color-accent) px-4 py-2 font-semibold text-(--color-on-accent) disabled:opacity-50"
+            >
+              {status === "verifying" ? "Verifying…" : "Verify code"}
+            </button>
+          </form>
           <button
             type="button"
-            onClick={() => setStatus("idle")}
+            onClick={() => {
+              setStatus("idle");
+              setCode("");
+              setErrorMessage("");
+            }}
             className="text-sm font-semibold text-(--color-accent)"
           >
             Use a different email
