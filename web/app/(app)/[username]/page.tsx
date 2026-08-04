@@ -2,8 +2,10 @@ import { notFound, redirect } from "next/navigation";
 import { Avatar } from "@/components/Avatar";
 import { FollowButton } from "@/components/FollowButton";
 import { LockedProfile } from "@/components/LockedProfile";
+import { ProfileShelves } from "@/components/ProfileShelves";
 import { VennOverlap } from "@/components/VennOverlap";
 import { fetchFollowStatus } from "@/lib/follow";
+import { fetchCollection, fetchWatchlist, type LibraryItem } from "@/lib/library";
 import { fetchOverlap } from "@/lib/overlap";
 import { fetchFollowCounts, fetchProfileByUsername } from "@/lib/profile";
 import { createClient } from "@/lib/supabase/server";
@@ -46,12 +48,20 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
 
   let overlap = null;
   let overlapFailed = false;
+  let collection: LibraryItem[] = [];
+  let watchlist: LibraryItem[] = [];
+  // Gated server-side: a locked profile's shelves are never fetched, so
+  // they never reach the browser at all. RLS is still the real boundary.
   if (!isLocked) {
     try {
       overlap = await fetchOverlap(supabase, profile.id);
     } catch {
       overlapFailed = true;
     }
+    [collection, watchlist] = await Promise.all([
+      fetchCollection(supabase, profile.id).catch(() => []),
+      fetchWatchlist(supabase, profile.id).catch(() => []),
+    ]);
   }
 
   return (
@@ -80,15 +90,26 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
 
       {isLocked ? (
         <LockedProfile username={profile.username} />
-      ) : overlap ? (
-        <VennOverlap
-          viewerLabel="Only you"
-          otherLabel={`Only @${profile.username}`}
-          summary={overlap}
-        />
-      ) : overlapFailed ? (
-        <p className="text-(--color-text-secondary)">Couldn&apos;t load your Venn right now.</p>
-      ) : null}
+      ) : (
+        <>
+          {overlap ? (
+            <VennOverlap
+              viewerLabel="Only you"
+              otherLabel={`Only @${profile.username}`}
+              summary={overlap}
+            />
+          ) : overlapFailed ? (
+            <p className="text-(--color-text-secondary)">Couldn&apos;t load your Venn right now.</p>
+          ) : null}
+
+          <ProfileShelves
+            collection={collection}
+            watchlist={watchlist}
+            emptyCollection="Nothing logged yet."
+            emptyWatchlist="Nothing saved yet."
+          />
+        </>
+      )}
     </main>
   );
 }

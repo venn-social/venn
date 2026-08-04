@@ -1,24 +1,13 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { toMedia, type Media, type MediaRow } from "@/lib/media";
 import { toUserProfile, type ProfileRow, type UserProfile } from "@/lib/profile";
 
-/** Mirrors `public.media_kind` and ios/Venn/Models/Media.swift's MediaKind. */
-export type MediaKind = "movie" | "show" | "book" | "album";
 /** Mirrors `public.post_action` and ios/Venn/Models/Post.swift's PostAction. */
 export type PostAction = "logged" | "rated" | "saved";
 
-const MEDIA_KINDS: readonly string[] = ["movie", "show", "book", "album"];
-const POST_ACTIONS: readonly string[] = ["logged", "rated", "saved"];
+export const POST_ACTIONS: readonly string[] = ["logged", "rated", "saved"];
 
 export const FEED_PAGE_SIZE = 20;
-
-export interface FeedMedia {
-  id: string;
-  kind: MediaKind;
-  title: string;
-  year: number | null;
-  primaryCreator: string | null;
-  coverUrl: string | null;
-}
 
 export interface FeedPost {
   id: string;
@@ -26,17 +15,8 @@ export interface FeedPost {
   rating: number | null;
   caption: string | null;
   createdAt: Date;
-  media: FeedMedia;
+  media: Media;
   author: UserProfile;
-}
-
-export interface FeedMediaRow {
-  id: string;
-  kind: MediaKind;
-  title: string;
-  year: number | null;
-  primary_creator: string | null;
-  cover_url: string | null;
 }
 
 export interface FeedPostRow {
@@ -47,7 +27,7 @@ export interface FeedPostRow {
   rating: number | null;
   caption: string | null;
   created_at: string;
-  media: FeedMediaRow;
+  media: MediaRow;
   author: ProfileRow;
 }
 
@@ -61,7 +41,9 @@ export interface FeedPostRow {
  */
 export function toFeedPost(row: FeedPostRow): FeedPost | null {
   if (!POST_ACTIONS.includes(row.action)) return null;
-  if (!row.media || !MEDIA_KINDS.includes(row.media.kind)) return null;
+
+  const media = toMedia(row.media);
+  if (!media) return null;
 
   return {
     id: row.id,
@@ -69,14 +51,7 @@ export function toFeedPost(row: FeedPostRow): FeedPost | null {
     rating: row.rating,
     caption: row.caption,
     createdAt: new Date(row.created_at),
-    media: {
-      id: row.media.id,
-      kind: row.media.kind,
-      title: row.media.title,
-      year: row.media.year,
-      primaryCreator: row.media.primary_creator,
-      coverUrl: row.media.cover_url,
-    },
+    media,
     author: toUserProfile(row.author),
   };
 }

@@ -1,5 +1,7 @@
 import { redirect } from "next/navigation";
 import { Avatar } from "@/components/Avatar";
+import { ProfileShelves } from "@/components/ProfileShelves";
+import { fetchCollection, fetchWatchlist } from "@/lib/library";
 import { createClient } from "@/lib/supabase/server";
 import { fetchFollowCounts, fetchProfile } from "@/lib/profile";
 
@@ -30,7 +32,13 @@ export default async function ProfilePage() {
     );
   }
 
-  const counts = await fetchFollowCounts(supabase, user.id);
+  // Shelves are non-critical: a failed library query should thin the page
+  // out, not replace the whole profile with an error.
+  const [counts, collectionResult, watchlistResult] = await Promise.all([
+    fetchFollowCounts(supabase, user.id),
+    fetchCollection(supabase, user.id).catch(() => []),
+    fetchWatchlist(supabase, user.id).catch(() => []),
+  ]);
 
   return (
     <main className="mx-auto flex min-h-screen max-w-lg flex-col gap-4 px-4 py-8">
@@ -53,6 +61,13 @@ export default async function ProfilePage() {
       </div>
 
       {profile.bio && <p className="text-(--color-text-primary)">{profile.bio}</p>}
+
+      <ProfileShelves
+        collection={collectionResult}
+        watchlist={watchlistResult}
+        emptyCollection="Nothing in your collection yet."
+        emptyWatchlist="Your watchlist is empty."
+      />
     </main>
   );
 }
