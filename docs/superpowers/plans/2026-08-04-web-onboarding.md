@@ -308,11 +308,7 @@ export class UsernameTakenError extends Error {
 
 /** Mirrors OnboardingGate's hasProfile check. */
 export async function hasProfile(client: SupabaseClient, userId: string): Promise<boolean> {
-  const { data, error } = await client
-    .from("profiles")
-    .select("id")
-    .eq("id", userId)
-    .maybeSingle();
+  const { data, error } = await client.from("profiles").select("id").eq("id", userId).maybeSingle();
   if (error) throw error;
   return data !== null;
 }
@@ -432,11 +428,7 @@ Create `web/lib/avatarImage.ts`:
  * render size with margin; photos straight off a camera/phone are far
  * bigger than any avatar actually needs.
  */
-export async function resizeToJPEG(
-  file: File,
-  maxDimension = 512,
-  quality = 0.8
-): Promise<Blob> {
+export async function resizeToJPEG(file: File, maxDimension = 512, quality = 0.8): Promise<Blob> {
   const bitmap = await createImageBitmap(file);
   const largest = Math.max(bitmap.width, bitmap.height);
   const scale = largest > maxDimension ? maxDimension / largest : 1;
@@ -522,8 +514,8 @@ export async function updateSession(request: NextRequest) {
           cookiesToSet.forEach(({ name, value, options }) =>
             response.cookies.set(name, value, options)
           );
-        },
-      },
+        }
+      }
     }
   );
 
@@ -580,8 +572,8 @@ export async function updateSession(request: NextRequest) {
           cookiesToSet.forEach(({ name, value, options }) =>
             response.cookies.set(name, value, options)
           );
-        },
-      },
+        }
+      }
     }
   );
 
@@ -713,9 +705,8 @@ describe("OnboardingUsernameStep", () => {
   });
 
   it("shows an inline error and does not call onComplete when the username is taken at submit", async () => {
-    const { UsernameTakenError } = await vi.importActual<typeof import("@/lib/onboarding")>(
-      "@/lib/onboarding"
-    );
+    const { UsernameTakenError } =
+      await vi.importActual<typeof import("@/lib/onboarding")>("@/lib/onboarding");
     createProfile.mockRejectedValue(new UsernameTakenError("ada"));
     const onComplete = vi.fn();
     render(<OnboardingUsernameStep userId="user-1" onComplete={onComplete} />);
@@ -1178,6 +1169,7 @@ Expected: PASS — the existing 24 tests plus this plan's 26 new ones (15 in `sa
 - [ ] **Step 5: Manual check**
 
 Run: `cd web && npm run dev`. Sign in as a user with no `profiles` row (or manually delete your own row in Supabase Studio first). Confirm:
+
 - Visiting `/profile` (or any authenticated route) redirects to `/onboarding`.
 - The username step's live ✓/✗ indicator works, submitting creates the profile and advances to the photo step.
 - The photo step's picker preview renders, "Skip for now" and a real upload both land on `/profile` with the profile now visible.
