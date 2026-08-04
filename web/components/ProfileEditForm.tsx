@@ -1,7 +1,10 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { Avatar } from "@/components/Avatar";
+import { resizeToJPEG } from "@/lib/avatarImage";
+import { uploadAvatar } from "@/lib/onboarding";
 import { sanitizeBio, sanitizeDisplayName } from "@/lib/sanitize";
 import { updateProfile } from "@/lib/profile";
 import { createClient } from "@/lib/supabase/client";
@@ -12,6 +15,7 @@ interface ProfileEditFormProps {
   userId: string;
   initialDisplayName: string;
   initialBio: string;
+  initialAvatarUrl: string | null;
 }
 
 /**
@@ -23,14 +27,37 @@ export function ProfileEditForm({
   userId,
   initialDisplayName,
   initialBio,
+  initialAvatarUrl
 }: ProfileEditFormProps) {
   const router = useRouter();
   const [displayName, setDisplayName] = useState(initialDisplayName);
   const [bio, setBio] = useState(initialBio);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [pickedPhoto, setPickedPhoto] = useState<Blob | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const overLimit = bio.length > BIO_LIMIT;
+
+  async function handlePhotoChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setError("");
+
+    try {
+      // Decoding is where an unsupported or corrupt file gives out.
+      const jpeg = await resizeToJPEG(file);
+      setPickedPhoto(jpeg);
+      setPreviewUrl((previous) => {
+        if (previous) URL.revokeObjectURL(previous);
+        return URL.createObjectURL(jpeg);
+      });
+    } catch {
+      setPickedPhoto(null);
+      setError("Couldn't read that photo. Try another one.");
+    }
+  }
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -55,7 +82,14 @@ export function ProfileEditForm({
 
     setSaving(true);
     try {
-      await updateProfile(createClient(), userId, name, bioResult.value || null);
+      const supabase = createClient();
+      // Photo first: if the upload fails the text edits aren't saved
+      // either, so the user isn't left with a half-applied change and no
+      // idea which half landed.
+      if (pickedPhoto) {
+        await uploadAvatar(supabase, userId, pickedPhoto);
+      }
+      await updateProfile(supabase, userId, name, bioResult.value || null);
       router.push("/profile");
       // Server Components cache the old profile until this invalidates it.
       router.refresh();
@@ -69,6 +103,24 @@ export function ProfileEditForm({
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <h1 className="text-xl font-semibold text-(--color-text-primary)">Edit profile</h1>
+
+      <div className="flex items-center gap-3">
+        <Avatar name={displayName} avatarUrl={previewUrl ?? initialAvatarUrl} size={72} />
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          className="font-semibold text-(--color-accent)"
+        >
+          Change photo
+        </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handlePhotoChange}
+          className="hidden"
+        />
+      </div>
 
       <label className="flex flex-col gap-1">
         <span className="text-sm font-medium text-(--color-text-secondary)">Name</span>

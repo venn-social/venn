@@ -24,6 +24,7 @@ export default async function ProfileEditPage() {
         userId={user.id}
         initialDisplayName={profile.displayName ?? ""}
         initialBio={profile.bio ?? ""}
+        initialAvatarUrl={profile.avatarUrl}
       />
     </main>
   );
