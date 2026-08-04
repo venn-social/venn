@@ -130,8 +130,7 @@ Create `web/lib/sanitize.ts`:
 export type SanitizeReason = "empty" | "tooShort" | "tooLong" | "invalidCharacters";
 
 export type SanitizeResult =
-  | { valid: true; value: string }
-  | { valid: false; reason: SanitizeReason };
+  { valid: true; value: string } | { valid: false; reason: SanitizeReason };
 
 const HANDLE_PATTERN = /^[a-z0-9_-]+$/;
 
