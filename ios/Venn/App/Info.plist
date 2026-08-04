@@ -42,6 +42,14 @@
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
 	</array>
+	<!-- App typeface (Theme.Font). Manrope-Variable.ttf is a variable font
+	     with named instances (Regular/Medium/SemiBold/Bold/etc, each its
+	     own PostScript name, e.g. "Manrope-SemiBold") — SIL Open Font
+	     License 1.1, github.com/google/fonts/tree/main/ofl/manrope. -->
+	<key>UIAppFonts</key>
+	<array>
+		<string>Manrope-Variable.ttf</string>
+	</array>
 	<!-- URL scheme used for the auth magic-link callback. The scheme matches
 	     the bundle identifier so it's guaranteed unique across iOS apps. -->
 	<key>CFBundleURLTypes</key>
