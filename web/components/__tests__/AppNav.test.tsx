@@ -27,7 +27,7 @@ describe("AppNav", () => {
       .getAllByRole("listitem")
       .map((item) => item.textContent)
       .filter((text) => text !== "venn");
-    expect(labels).toEqual(["Feed", "Explorer", "Profile"]);
+    expect(labels).toEqual(["Feed", "Explorer", "Profile", "Log"]);
   });
 
   it("marks the active route for assistive tech", () => {
