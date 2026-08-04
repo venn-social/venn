@@ -65,6 +65,17 @@ export function sanitizeBio(input: string): SanitizeResult {
   return { valid: true, value: normalised };
 }
 
+/**
+ * Post caption. Required, 1-500 chars after normalise. Mirrors
+ * Sanitize.caption and the posts_caption_length constraint.
+ */
+export function sanitizeCaption(input: string): SanitizeResult {
+  const normalised = normalise(input);
+  if (normalised.length === 0) return { valid: false, reason: "empty" };
+  if (normalised.length > 500) return { valid: false, reason: "tooLong" };
+  return { valid: true, value: normalised };
+}
+
 /** 1-40 chars after normalise, empty is invalid. Mirrors profiles_display_name_length. */
 export function sanitizeDisplayName(input: string): SanitizeResult {
   const normalised = normalise(input);
