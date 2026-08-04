@@ -19,9 +19,9 @@ interface ProfileEditFormProps {
 }
 
 /**
- * Edit the signed-in user's display name and bio, porting
+ * Edit the signed-in user's photo, display name, and bio, porting
  * ProfileEditView.swift — same fields, same 160-character bio counter,
- * same "Edit profile" / "Save" / "Cancel" copy.
+ * same "Edit profile" / "Change photo" / "Save" / "Cancel" copy.
  */
 export function ProfileEditForm({
   userId,

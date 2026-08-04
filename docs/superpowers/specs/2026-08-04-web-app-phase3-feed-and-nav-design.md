@@ -23,14 +23,17 @@ Shelves (Collection/Watchlist), profile editing, and settings were initially cut
 Phase 3's tasks finished with time left in the session, so the work originally deferred to "Phase 4" was folded into the same branch and PR at the founder's direction. That added:
 
 - **Profile shelves** — Collection and Watchlist on both `/profile` and `/[username]`. The Phase 2 spec listed these in scope but they were never built. Ports `ProfileShelf.swift`, `ShelfTabs.swift`, and `ProfileShelfGallery.swift`, including the different empty-state copy iOS uses for your own profile ("Nothing in your collection yet.") versus someone else's ("Nothing logged yet."). On a private profile the shelves are gated server-side, so a non-follower's browser never receives them.
-- **Profile editing** — `/profile/edit`, porting `ProfileEditView.swift` with the same 160-character bio limit and counter.
+- **Profile editing** — `/profile/edit`, porting `ProfileEditView.swift`: photo, display name, and bio, with the same 160-character bio limit and counter. The avatar upload runs before the text update so a failure leaves nothing partially applied.
 - **Account settings** — `/settings`, porting `SettingsView.swift`'s private-account toggle and its explanatory copy.
+- **Follower / following lists** — `/[username]/followers` and `/[username]/following`, porting `FollowListView.swift`. The counts on both profile pages were previously rendered but inert. Both lists are gated for private accounts, so a non-follower sees a locked message rather than a misleadingly empty list.
 
 Media decoding moved into `lib/media.ts` as part of this, so the feed and the shelves share one decoder. On iOS the equivalent pair are near-duplicates tracked as tech-debt row 3 ("if a third copy appears, extract a shared row DTO"); web extracted it before the second copy landed.
 
 ### Still out of scope
 
-Composer (logging/rating/saving), Explorer and people search, and Year in Review — each a later phase. Avatar _editing_ is also still absent: onboarding can set a photo, and every surface now displays one, but there is no way to change it after onboarding.
+Composer (logging/rating/saving), Explorer and people search, and Year in Review — each a later phase.
+
+With this phase, the only iOS surfaces web still lacks are those three. Everything in the profile and follow story now exists on both platforms.
 
 ## Architecture
 
