@@ -1,12 +1,29 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 /**
- * The four static routes under web/app/ (see #133's
- * profiles_username_not_reserved migration) — checked client-side too so
- * the live availability indicator doesn't show "available" for a name
- * that the DB constraint would reject at submit.
+ * Usernames that would shadow a static route under web/app/ (see
+ * supabase/migrations/20260804120000_reserve_route_usernames.sql) — checked
+ * client-side too so the live availability indicator doesn't show
+ * "available" for a name that the DB constraint would reject at submit.
+ * Includes routes not built yet: reserving a name is cheap, reclaiming one
+ * after a user has taken it is not. This list and the CHECK constraint must
+ * be changed together.
  */
-const RESERVED_USERNAMES = new Set(["auth", "login", "profile", "requests"]);
+const RESERVED_USERNAMES = new Set([
+  "auth",
+  "login",
+  "profile",
+  "requests",
+  "feed",
+  "explorer",
+  "search",
+  "settings",
+  "composer",
+  "notifications",
+  "about",
+  "terms",
+  "privacy",
+]);
 
 /** Thrown by createProfile when the username is taken or reserved. */
 export class UsernameTakenError extends Error {

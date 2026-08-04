@@ -29,6 +29,16 @@ describe("isUsernameAvailable", () => {
     const available = await isUsernameAvailable(client, "ada");
     expect(available).toBe(true);
   });
+
+  it("reports every route-shadowing username as unavailable without a query", async () => {
+    // These shadow real or planned static routes under web/app/. Kept in
+    // lockstep with the profiles_username_not_reserved CHECK constraint.
+    const client = makeClientStub();
+    for (const reserved of ["feed", "explorer", "settings", "composer"]) {
+      expect(await isUsernameAvailable(client, reserved)).toBe(false);
+    }
+    expect(client.from).not.toHaveBeenCalled();
+  });
 });
 
 describe("createProfile", () => {
