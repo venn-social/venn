@@ -31,7 +31,7 @@ export function toBookCandidates(json: unknown): MediaCandidate[] {
       const externalId = doc.key.replace(/^\/works\//, "");
 
       return {
-        id: candidateId("openlibrary", externalId),
+        id: candidateId("openlibrary", "book", externalId),
         title: doc.title,
         primaryCreator: doc.author_name?.[0] ?? null,
         year: doc.first_publish_year ?? null,

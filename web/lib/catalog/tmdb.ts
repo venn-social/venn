@@ -27,7 +27,7 @@ function toCandidate(result: TMDBResult, kind: "movie" | "show"): MediaCandidate
 
   const externalId = String(result.id);
   return {
-    id: candidateId("tmdb", externalId),
+    id: candidateId("tmdb", kind, externalId),
     title,
     primaryCreator: null,
     year: yearFrom(date),

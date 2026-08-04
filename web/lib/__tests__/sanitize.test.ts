@@ -4,7 +4,8 @@ import {
   sanitizeBio,
   sanitizeCaption,
   sanitizeDisplayName,
-  sanitizeHandle
+  sanitizeHandle,
+  sanitizeSearchQuery
 } from "@/lib/sanitize";
 
 describe("sanitizeHandle", () => {
@@ -86,6 +87,24 @@ describe("sanitizeCaption", () => {
 
   it("rejects a caption over 500 characters", () => {
     expect(sanitizeCaption("a".repeat(501))).toEqual({ valid: false, reason: "tooLong" });
+  });
+});
+
+describe("sanitizeSearchQuery", () => {
+  it("accepts a normal query", () => {
+    expect(sanitizeSearchQuery("ada")).toEqual({ valid: true, value: "ada" });
+  });
+
+  it("accepts an empty query — an empty search box isn't an error", () => {
+    expect(sanitizeSearchQuery("")).toEqual({ valid: true, value: "" });
+  });
+
+  it("accepts a query at exactly 100 characters", () => {
+    expect(sanitizeSearchQuery("a".repeat(100))).toEqual({ valid: true, value: "a".repeat(100) });
+  });
+
+  it("rejects a query over 100 characters", () => {
+    expect(sanitizeSearchQuery("a".repeat(101))).toEqual({ valid: false, reason: "tooLong" });
   });
 });
 

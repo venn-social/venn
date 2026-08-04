@@ -85,6 +85,15 @@ describe("Composer", () => {
     });
   });
 
+  it("starts from the kind and query it was given", async () => {
+    render(<Composer userId="u1" initialKind="book" initialQuery="piranesi" />);
+
+    expect(screen.getByDisplayValue("piranesi")).toBeDefined();
+    expect(screen.getByRole("button", { name: "Books" }).getAttribute("aria-pressed")).toBe("true");
+    // The prefilled query searches immediately, without retyping.
+    expect(await screen.findByRole("button", { name: /Past Lives/ })).toBeDefined();
+  });
+
   it("surfaces the rate-limit message distinctly from a generic failure", async () => {
     // The posts trigger raises P0429; waiting actually helps, so the copy
     // should say so rather than "try again".

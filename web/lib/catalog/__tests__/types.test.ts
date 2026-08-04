@@ -31,8 +31,14 @@ describe("yearFrom", () => {
 
 describe("candidateId", () => {
   it("namespaces the external id by its source", () => {
-    // Two providers can hand back the same raw id; the pair is what's unique.
-    expect(candidateId("tmdb", "123")).toBe("tmdb:123");
-    expect(candidateId("openlibrary", "123")).toBe("openlibrary:123");
+    // Two providers can hand back the same raw id; the triple is unique.
+    expect(candidateId("tmdb", "movie", "123")).toBe("tmdb:movie:123");
+    expect(candidateId("openlibrary", "book", "123")).toBe("openlibrary:book:123");
+  });
+
+  it("distinguishes a movie from a show with the same TMDB id", () => {
+    // TMDB numbers film and television independently, so this collision is
+    // real — and visible in the All category, which searches both.
+    expect(candidateId("tmdb", "movie", "123")).not.toBe(candidateId("tmdb", "show", "123"));
   });
 });

@@ -76,6 +76,16 @@ export function sanitizeCaption(input: string): SanitizeResult {
   return { valid: true, value: normalised };
 }
 
+/**
+ * Search query. Optional (empty is valid — an empty box isn't an error),
+ * max 100 chars after normalise. Mirrors Sanitize.searchQuery.
+ */
+export function sanitizeSearchQuery(input: string): SanitizeResult {
+  const normalised = normalise(input);
+  if (normalised.length > 100) return { valid: false, reason: "tooLong" };
+  return { valid: true, value: normalised };
+}
+
 /** 1-40 chars after normalise, empty is invalid. Mirrors profiles_display_name_length. */
 export function sanitizeDisplayName(input: string): SanitizeResult {
   const normalised = normalise(input);
