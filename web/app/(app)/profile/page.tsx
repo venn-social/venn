@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { Avatar } from "@/components/Avatar";
 import { createClient } from "@/lib/supabase/server";
 import { fetchFollowCounts, fetchProfile } from "@/lib/profile";
 
@@ -30,14 +31,11 @@ export default async function ProfilePage() {
   }
 
   const counts = await fetchFollowCounts(supabase, user.id);
-  const initial = (profile.displayName ?? profile.username).charAt(0).toUpperCase();
 
   return (
     <main className="mx-auto flex min-h-screen max-w-lg flex-col gap-4 px-4 py-8">
       <div className="flex items-start gap-3">
-        <div className="flex h-[72px] w-[72px] shrink-0 items-center justify-center rounded-full bg-(--color-graphite) text-xl font-semibold text-(--color-on-accent)">
-          {initial}
-        </div>
+        <Avatar name={profile.displayName ?? profile.username} avatarUrl={profile.avatarUrl} />
         <div className="flex flex-col gap-0.5">
           <h1 className="text-xl font-semibold text-(--color-text-primary)">
             {profile.displayName ?? profile.username}
