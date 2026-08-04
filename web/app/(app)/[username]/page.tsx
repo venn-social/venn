@@ -92,15 +92,24 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
         <LockedProfile username={profile.username} />
       ) : (
         <>
-          {overlap ? (
-            <VennOverlap
-              viewerLabel="Only you"
-              otherLabel={`Only @${profile.username}`}
-              summary={overlap}
-            />
-          ) : overlapFailed ? (
-            <p className="text-(--color-text-secondary)">Couldn&apos;t load your Venn right now.</p>
-          ) : null}
+          <section className="flex flex-col gap-3">
+            <h2 className="font-semibold text-(--color-text-primary)">Your Venn</h2>
+            {overlapFailed ? (
+              <p className="text-(--color-text-secondary)">Couldn&apos;t load your Venn.</p>
+            ) : overlap && (overlap.viewerTotal > 0 || overlap.otherTotal > 0) ? (
+              <VennOverlap
+                viewerLabel="Only you"
+                otherLabel={`Only @${profile.username}`}
+                summary={overlap}
+              />
+            ) : (
+              // Both sides empty: a 0/0 diagram reads as broken rather than
+              // as "nothing logged yet". Same copy as PublicProfileView.
+              <p className="text-(--color-text-secondary)">
+                Log a few things and your shared taste shows up here.
+              </p>
+            )}
+          </section>
 
           <ProfileShelves
             collection={collection}

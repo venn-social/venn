@@ -9,7 +9,7 @@ Exploring the current web app before writing this surfaced two gaps that were as
 - **There is no navigation.** No `<nav>`, no `<header>`, not one `<Link>` anywhere under `web/app/`. Every page is reachable only by typing its URL. The Phase 1 spec promised "a minimal nav/header shell to hang later phases off of"; it was never implemented. A feed nobody can navigate to is not a shipped feature.
 - **Avatars are never rendered.** `lib/profile.ts` fetches `avatarUrl`, and onboarding now uploads one to the `avatars` bucket, but no page displays it — both profile pages show a letter in a grey circle. We currently ask new users for a photo and then never show it to them.
 
-Shelves (Collection/Watchlist), profile editing, and settings were considered for this phase and deliberately cut — see "Out of scope" below.
+Shelves (Collection/Watchlist), profile editing, and settings were initially cut from this phase to keep it to one coherent story. They were folded back in mid-session once the original scope finished early — see "Scope extension" below.
 
 ## Scope
 
@@ -18,9 +18,19 @@ Shelves (Collection/Watchlist), profile editing, and settings were considered fo
 - **Avatars**: a shared `Avatar` component used in feed rows and both profile pages.
 - **Reserved usernames**: a migration extending `profiles_username_not_reserved` to cover the new route and the routes we already know are coming.
 
-### Explicitly out of scope
+### Scope extension (2026-08-04, mid-execution)
 
-Composer (logging/rating/saving), Explorer and people search, profile editing, settings, Year in Review, and profile shelves. Shelves are worth a specific note: the Phase 2 spec listed "their collection/watchlist" in scope, but they were never built — neither `/profile` nor `/[username]` renders one. That gap is real and now belongs to Phase 4 alongside profile editing and settings, not here. Folding it in would roughly double this phase.
+Phase 3's tasks finished with time left in the session, so the work originally deferred to "Phase 4" was folded into the same branch and PR at the founder's direction. That added:
+
+- **Profile shelves** — Collection and Watchlist on both `/profile` and `/[username]`. The Phase 2 spec listed these in scope but they were never built. Ports `ProfileShelf.swift`, `ShelfTabs.swift`, and `ProfileShelfGallery.swift`, including the different empty-state copy iOS uses for your own profile ("Nothing in your collection yet.") versus someone else's ("Nothing logged yet."). On a private profile the shelves are gated server-side, so a non-follower's browser never receives them.
+- **Profile editing** — `/profile/edit`, porting `ProfileEditView.swift` with the same 160-character bio limit and counter.
+- **Account settings** — `/settings`, porting `SettingsView.swift`'s private-account toggle and its explanatory copy.
+
+Media decoding moved into `lib/media.ts` as part of this, so the feed and the shelves share one decoder. On iOS the equivalent pair are near-duplicates tracked as tech-debt row 3 ("if a third copy appears, extract a shared row DTO"); web extracted it before the second copy landed.
+
+### Still out of scope
+
+Composer (logging/rating/saving), Explorer and people search, and Year in Review — each a later phase. Avatar _editing_ is also still absent: onboarding can set a photo, and every surface now displays one, but there is no way to change it after onboarding.
 
 ## Architecture
 
