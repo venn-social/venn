@@ -1,4 +1,8 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
+import { Avatar } from "@/components/Avatar";
+import { ProfileShelves } from "@/components/ProfileShelves";
+import { fetchCollection, fetchWatchlist } from "@/lib/library";
 import { createClient } from "@/lib/supabase/server";
 import { fetchFollowCounts, fetchProfile } from "@/lib/profile";
 
@@ -29,32 +33,57 @@ export default async function ProfilePage() {
     );
   }
 
-  const counts = await fetchFollowCounts(supabase, user.id);
-  const initial = (profile.displayName ?? profile.username).charAt(0).toUpperCase();
+  // Shelves are non-critical: a failed library query should thin the page
+  // out, not replace the whole profile with an error.
+  const [counts, collectionResult, watchlistResult] = await Promise.all([
+    fetchFollowCounts(supabase, user.id),
+    fetchCollection(supabase, user.id).catch(() => []),
+    fetchWatchlist(supabase, user.id).catch(() => []),
+  ]);
 
   return (
     <main className="mx-auto flex min-h-screen max-w-lg flex-col gap-4 px-4 py-8">
       <div className="flex items-start gap-3">
-        <div className="flex h-[72px] w-[72px] shrink-0 items-center justify-center rounded-full bg-(--color-graphite) text-xl font-semibold text-(--color-on-accent)">
-          {initial}
-        </div>
+        <Avatar name={profile.displayName ?? profile.username} avatarUrl={profile.avatarUrl} />
         <div className="flex flex-col gap-0.5">
           <h1 className="text-xl font-semibold text-(--color-text-primary)">
             {profile.displayName ?? profile.username}
           </h1>
           <p className="text-(--color-text-secondary)">@{profile.username}</p>
           <div className="mt-1 flex gap-4 text-sm text-(--color-text-secondary)">
-            <span>
+            <Link href={`/${profile.username}/followers`}>
               <strong className="font-medium">{counts.followers}</strong> Followers
-            </span>
-            <span>
+            </Link>
+            <Link href={`/${profile.username}/following`}>
               <strong className="font-medium">{counts.following}</strong> Following
-            </span>
+            </Link>
           </div>
         </div>
       </div>
 
       {profile.bio && <p className="text-(--color-text-primary)">{profile.bio}</p>}
+
+      <div className="flex gap-3">
+        <Link
+          href="/profile/edit"
+          className="rounded-pill border border-(--color-separator) px-4 py-1.5 text-sm font-semibold text-(--color-text-primary)"
+        >
+          Edit profile
+        </Link>
+        <Link
+          href="/settings"
+          className="rounded-pill border border-(--color-separator) px-4 py-1.5 text-sm font-semibold text-(--color-text-primary)"
+        >
+          Settings
+        </Link>
+      </div>
+
+      <ProfileShelves
+        collection={collectionResult}
+        watchlist={watchlistResult}
+        emptyCollection="Nothing in your collection yet."
+        emptyWatchlist="Your watchlist is empty."
+      />
     </main>
   );
 }

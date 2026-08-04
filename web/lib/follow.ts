@@ -94,6 +94,56 @@ export function mapFollowerRows(rows: FollowerRow[]): UserProfile[] {
   return rows.map((row) => toUserProfile(row.follower));
 }
 
+/** One `follows` row with the followee profile embedded (internal for tests). */
+export interface FollowingRow {
+  followee: ProfileRow;
+}
+
+/** Pure row mapping — mirrors FollowingRow.followee in FollowService.swift. */
+export function mapFollowingRows(rows: FollowingRow[]): UserProfile[] {
+  return rows.map((row) => toUserProfile(row.followee));
+}
+
+/**
+ * Accepted followers of `userId`, newest first. Mirrors
+ * FollowService.followers(of:limit:). Only accepted edges — a pending
+ * request is not a follower yet.
+ */
+export async function fetchFollowers(
+  client: SupabaseClient,
+  userId: string,
+  limit = 50
+): Promise<UserProfile[]> {
+  const { data, error } = await client
+    .from("follows")
+    .select("created_at, follower:profiles!follows_follower_id_fkey(*)")
+    .eq("followee_id", userId)
+    .eq("status", "accepted")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error) throw error;
+  return mapFollowerRows(data as unknown as FollowerRow[]);
+}
+
+/** Accounts `userId` follows, newest first. Mirrors FollowService.following(of:limit:). */
+export async function fetchFollowing(
+  client: SupabaseClient,
+  userId: string,
+  limit = 50
+): Promise<UserProfile[]> {
+  const { data, error } = await client
+    .from("follows")
+    .select("created_at, followee:profiles!follows_followee_id_fkey(*)")
+    .eq("follower_id", userId)
+    .eq("status", "accepted")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error) throw error;
+  return mapFollowingRows(data as unknown as FollowingRow[]);
+}
+
 /** Mirrors FollowService.pendingRequests(for:limit:). */
 export async function fetchPendingRequests(
   client: SupabaseClient,

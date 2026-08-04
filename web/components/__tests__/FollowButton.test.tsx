@@ -6,6 +6,14 @@ vi.mock("@/lib/supabase/client", () => ({
   createClient: () => ({})
 }));
 
+// The button calls router.refresh() so the server-rendered follower counts
+// and gated content re-fetch after a successful follow/unfollow.
+const { refresh } = vi.hoisted(() => ({ refresh: vi.fn() }));
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ refresh })
+}));
+
 const { requestFollow, unfollow } = vi.hoisted(() => ({
   requestFollow: vi.fn(),
   unfollow: vi.fn()

@@ -73,6 +73,42 @@ export async function fetchProfileByUsername(
   return toUserProfile(data as ProfileRow);
 }
 
+/**
+ * Update the editable fields on the caller's own profile row. Mirrors
+ * `ProfileService.updateProfile(userID:displayName:bio:)` — both columns
+ * are nullable, so pass null to clear. RLS (`profiles_update_own`)
+ * guarantees a user can only update their own row.
+ */
+export async function updateProfile(
+  client: SupabaseClient,
+  userId: string,
+  displayName: string | null,
+  bio: string | null
+): Promise<void> {
+  const { error } = await client
+    .from("profiles")
+    .update({ display_name: displayName, bio })
+    .eq("id", userId);
+  if (error) throw error;
+}
+
+/**
+ * Flip the account between public and private. Mirrors
+ * `ProfileService.updatePrivacy(userID:isPrivate:)` — a direct update,
+ * since RLS already restricts it to the caller's own row.
+ */
+export async function updatePrivacy(
+  client: SupabaseClient,
+  userId: string,
+  isPrivate: boolean
+): Promise<void> {
+  const { error } = await client
+    .from("profiles")
+    .update({ is_private: isPrivate })
+    .eq("id", userId);
+  if (error) throw error;
+}
+
 /** Mirrors `ProfileService.followCounts(for:)` — same `follow_counts` RPC. */
 export async function fetchFollowCounts(
   client: SupabaseClient,

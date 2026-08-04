@@ -1,8 +1,12 @@
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { Avatar } from "@/components/Avatar";
 import { FollowButton } from "@/components/FollowButton";
 import { LockedProfile } from "@/components/LockedProfile";
+import { ProfileShelves } from "@/components/ProfileShelves";
 import { VennOverlap } from "@/components/VennOverlap";
 import { fetchFollowStatus } from "@/lib/follow";
+import { fetchCollection, fetchWatchlist, type LibraryItem } from "@/lib/library";
 import { fetchOverlap } from "@/lib/overlap";
 import { fetchFollowCounts, fetchProfileByUsername } from "@/lib/profile";
 import { createClient } from "@/lib/supabase/server";
@@ -45,34 +49,38 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
 
   let overlap = null;
   let overlapFailed = false;
+  let collection: LibraryItem[] = [];
+  let watchlist: LibraryItem[] = [];
+  // Gated server-side: a locked profile's shelves are never fetched, so
+  // they never reach the browser at all. RLS is still the real boundary.
   if (!isLocked) {
     try {
       overlap = await fetchOverlap(supabase, profile.id);
     } catch {
       overlapFailed = true;
     }
+    [collection, watchlist] = await Promise.all([
+      fetchCollection(supabase, profile.id).catch(() => []),
+      fetchWatchlist(supabase, profile.id).catch(() => []),
+    ]);
   }
-
-  const initial = (profile.displayName ?? profile.username).charAt(0).toUpperCase();
 
   return (
     <main className="mx-auto flex min-h-screen max-w-lg flex-col gap-4 px-4 py-8">
       <div className="flex items-start gap-3">
-        <div className="flex h-[72px] w-[72px] shrink-0 items-center justify-center rounded-full bg-(--color-graphite) text-xl font-semibold text-(--color-on-accent)">
-          {initial}
-        </div>
+        <Avatar name={profile.displayName ?? profile.username} avatarUrl={profile.avatarUrl} />
         <div className="flex flex-col gap-0.5">
           <h1 className="text-xl font-semibold text-(--color-text-primary)">
             {profile.displayName ?? profile.username}
           </h1>
           <p className="text-(--color-text-secondary)">@{profile.username}</p>
           <div className="mt-1 flex gap-4 text-sm text-(--color-text-secondary)">
-            <span>
+            <Link href={`/${profile.username}/followers`}>
               <strong className="font-medium">{counts?.followers ?? "—"}</strong> Followers
-            </span>
-            <span>
+            </Link>
+            <Link href={`/${profile.username}/following`}>
               <strong className="font-medium">{counts?.following ?? "—"}</strong> Following
-            </span>
+            </Link>
           </div>
         </div>
       </div>
@@ -83,15 +91,35 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
 
       {isLocked ? (
         <LockedProfile username={profile.username} />
-      ) : overlap ? (
-        <VennOverlap
-          viewerLabel="Only you"
-          otherLabel={`Only @${profile.username}`}
-          summary={overlap}
-        />
-      ) : overlapFailed ? (
-        <p className="text-(--color-text-secondary)">Couldn&apos;t load your Venn right now.</p>
-      ) : null}
+      ) : (
+        <>
+          <section className="flex flex-col gap-3">
+            <h2 className="font-semibold text-(--color-text-primary)">Your Venn</h2>
+            {overlapFailed ? (
+              <p className="text-(--color-text-secondary)">Couldn&apos;t load your Venn.</p>
+            ) : overlap && (overlap.viewerTotal > 0 || overlap.otherTotal > 0) ? (
+              <VennOverlap
+                viewerLabel="Only you"
+                otherLabel={`Only @${profile.username}`}
+                summary={overlap}
+              />
+            ) : (
+              // Both sides empty: a 0/0 diagram reads as broken rather than
+              // as "nothing logged yet". Same copy as PublicProfileView.
+              <p className="text-(--color-text-secondary)">
+                Log a few things and your shared taste shows up here.
+              </p>
+            )}
+          </section>
+
+          <ProfileShelves
+            collection={collection}
+            watchlist={watchlist}
+            emptyCollection="Nothing logged yet."
+            emptyWatchlist="Nothing saved yet."
+          />
+        </>
+      )}
     </main>
   );
 }

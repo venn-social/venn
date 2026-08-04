@@ -55,6 +55,16 @@ export function normalise(input: string): string {
   return collapsedBlankLines.trim();
 }
 
+/**
+ * Bio. Optional (empty is allowed and means "no bio"), max 160 chars after
+ * normalise. Mirrors Sanitize.bio and the profiles_bio_length constraint.
+ */
+export function sanitizeBio(input: string): SanitizeResult {
+  const normalised = normalise(input);
+  if (normalised.length > 160) return { valid: false, reason: "tooLong" };
+  return { valid: true, value: normalised };
+}
+
 /** 1-40 chars after normalise, empty is invalid. Mirrors profiles_display_name_length. */
 export function sanitizeDisplayName(input: string): SanitizeResult {
   const normalised = normalise(input);

@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { requestFollow, unfollow, type FollowStatus } from "@/lib/follow";
@@ -19,6 +20,7 @@ interface FollowButtonProps {
 }
 
 export function FollowButton({ followerId, followeeId, initialStatus }: FollowButtonProps) {
+  const router = useRouter();
   const [state, setState] = useState<ButtonState>(toButtonState(initialStatus));
   const [isPending, startTransition] = useTransition();
 
@@ -31,6 +33,10 @@ export function FollowButton({ followerId, followeeId, initialStatus }: FollowBu
       startTransition(async () => {
         try {
           await unfollow(supabase, followerId, followeeId);
+          // The header's follower count and the shelves/overlap gating are
+          // server-rendered, so they'd otherwise show pre-unfollow numbers
+          // until a manual reload. Mirrors iOS's refreshFollowCounts().
+          router.refresh();
         } catch {
           setState(previous);
         }
@@ -42,6 +48,7 @@ export function FollowButton({ followerId, followeeId, initialStatus }: FollowBu
       try {
         const status = await requestFollow(supabase, followeeId);
         setState(toButtonState(status));
+        if (status === "accepted") router.refresh();
       } catch {
         setState("notFollowing");
       }
