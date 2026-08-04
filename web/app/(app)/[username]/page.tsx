@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Avatar } from "@/components/Avatar";
 import { FollowButton } from "@/components/FollowButton";
@@ -74,12 +75,12 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
           </h1>
           <p className="text-(--color-text-secondary)">@{profile.username}</p>
           <div className="mt-1 flex gap-4 text-sm text-(--color-text-secondary)">
-            <span>
+            <Link href={`/${profile.username}/followers`}>
               <strong className="font-medium">{counts?.followers ?? "—"}</strong> Followers
-            </span>
-            <span>
+            </Link>
+            <Link href={`/${profile.username}/following`}>
               <strong className="font-medium">{counts?.following ?? "—"}</strong> Following
-            </span>
+            </Link>
           </div>
         </div>
       </div>
