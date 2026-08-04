@@ -58,7 +58,9 @@ Separately, `sanitizeSearchQuery` (normalise + 100-char cap) mirrors `Sanitize.s
 ### What a result does
 
 - A **person** links to `/[username]` — their profile, where the follow button and Venn overlap already live. That is the path out of the dead end.
-- A **media item** links to `/composer?kind=<kind>&q=<title>`, which prefills the composer's category and query so the user picks it there and logs it. Prefilling by query rather than serializing the whole candidate keeps the URL short and shareable, and leaves exactly one way for a candidate to enter the composer — through its own search. The cost is one extra click versus iOS.
+- A **media item** navigates to `/composer?kind=<kind>&q=<title>`, which prefills the composer's category and query so the user picks it there and logs it. Prefilling by query rather than serializing the whole candidate keeps the URL short and shareable, and leaves exactly one way for a candidate to enter the composer — through its own search. The cost is one extra click versus iOS.
+
+  Mechanically this reuses `CandidateList` unchanged: its existing `onPick` callback receives the candidate, and Explorer's handler calls `router.push` with the prefill URL rather than opening a rating step. No change to that component is needed — search results are `MediaCandidate[]` from the same endpoint the composer calls, so the shapes already line up. Browse results are `Media` rows from the database rather than candidates, so those render through `MediaCover`, which already takes exactly that type.
 
 This requires a small change to `Composer.tsx`: read `kind` and `q` from search params as initial state. Reading them once as initial state (not syncing on every change) keeps the composer's existing state machine intact.
 
