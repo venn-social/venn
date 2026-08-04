@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { normalise, sanitizeBio, sanitizeDisplayName, sanitizeHandle } from "@/lib/sanitize";
+import {
+  normalise,
+  sanitizeBio,
+  sanitizeCaption,
+  sanitizeDisplayName,
+  sanitizeHandle
+} from "@/lib/sanitize";
 
 describe("sanitizeHandle", () => {
   it("accepts a valid lowercase handle", () => {
@@ -61,6 +67,25 @@ describe("sanitizeBio", () => {
   it("normalises before measuring, so collapsed whitespace can bring it under", () => {
     const spaced = `${"a".repeat(158)}${" ".repeat(10)}b`;
     expect(sanitizeBio(spaced)).toEqual({ valid: true, value: `${"a".repeat(158)} b` });
+  });
+});
+
+describe("sanitizeCaption", () => {
+  it("accepts a normal caption", () => {
+    expect(sanitizeCaption("Devastating.")).toEqual({ valid: true, value: "Devastating." });
+  });
+
+  it("rejects an empty or whitespace-only caption", () => {
+    expect(sanitizeCaption("")).toEqual({ valid: false, reason: "empty" });
+    expect(sanitizeCaption("   ")).toEqual({ valid: false, reason: "empty" });
+  });
+
+  it("accepts a caption at exactly 500 characters", () => {
+    expect(sanitizeCaption("a".repeat(500))).toEqual({ valid: true, value: "a".repeat(500) });
+  });
+
+  it("rejects a caption over 500 characters", () => {
+    expect(sanitizeCaption("a".repeat(501))).toEqual({ valid: false, reason: "tooLong" });
   });
 });
 

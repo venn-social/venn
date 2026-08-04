@@ -58,6 +58,14 @@ export function AppNav() {
             </li>
           );
         })}
+        <li>
+          <Link
+            href="/composer"
+            className="rounded-pill bg-(--color-accent) px-3 py-1.5 text-sm font-semibold text-(--color-on-accent)"
+          >
+            Log
+          </Link>
+        </li>
       </ul>
     </nav>
   );
