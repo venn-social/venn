@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Avatar } from "@/components/Avatar";
 import { ProfileShelves } from "@/components/ProfileShelves";
@@ -61,6 +62,21 @@ export default async function ProfilePage() {
       </div>
 
       {profile.bio && <p className="text-(--color-text-primary)">{profile.bio}</p>}
+
+      <div className="flex gap-3">
+        <Link
+          href="/profile/edit"
+          className="rounded-pill border border-(--color-separator) px-4 py-1.5 text-sm font-semibold text-(--color-text-primary)"
+        >
+          Edit profile
+        </Link>
+        <Link
+          href="/settings"
+          className="rounded-pill border border-(--color-separator) px-4 py-1.5 text-sm font-semibold text-(--color-text-primary)"
+        >
+          Settings
+        </Link>
+      </div>
 
       <ProfileShelves
         collection={collectionResult}

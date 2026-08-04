@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normalise, sanitizeDisplayName, sanitizeHandle } from "@/lib/sanitize";
+import { normalise, sanitizeBio, sanitizeDisplayName, sanitizeHandle } from "@/lib/sanitize";
 
 describe("sanitizeHandle", () => {
   it("accepts a valid lowercase handle", () => {
@@ -42,6 +42,25 @@ describe("sanitizeDisplayName", () => {
 
   it("collapses runs of spaces into one", () => {
     expect(sanitizeDisplayName("Ada    Lovelace")).toEqual({ valid: true, value: "Ada Lovelace" });
+  });
+});
+
+describe("sanitizeBio", () => {
+  it("accepts an empty bio — the column is nullable and a bio is optional", () => {
+    expect(sanitizeBio("")).toEqual({ valid: true, value: "" });
+  });
+
+  it("accepts a bio at exactly the 160-character limit", () => {
+    expect(sanitizeBio("a".repeat(160))).toEqual({ valid: true, value: "a".repeat(160) });
+  });
+
+  it("rejects a bio over 160 characters", () => {
+    expect(sanitizeBio("a".repeat(161))).toEqual({ valid: false, reason: "tooLong" });
+  });
+
+  it("normalises before measuring, so collapsed whitespace can bring it under", () => {
+    const spaced = `${"a".repeat(158)}${" ".repeat(10)}b`;
+    expect(sanitizeBio(spaced)).toEqual({ valid: true, value: `${"a".repeat(158)} b` });
   });
 });
 
