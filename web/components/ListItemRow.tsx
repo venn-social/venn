@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { MediaCover } from "@/components/MediaCover";
@@ -34,12 +35,14 @@ export function ListItemRow({ listId, item, canEdit }: ListItemRowProps) {
 
   return (
     <div className="flex items-center gap-3">
-      <div className="w-[44px] shrink-0">
+      <Link href={`/media/${item.media.id}`} className="w-[44px] shrink-0">
         <MediaCover media={item.media} />
-      </div>
+      </Link>
 
       <div className="flex flex-col gap-0.5">
-        <span className="font-medium text-(--color-text-primary)">{item.media.title}</span>
+        <Link href={`/media/${item.media.id}`}>
+          <span className="font-medium text-(--color-text-primary)">{item.media.title}</span>
+        </Link>
         {metadata && <span className="text-sm text-(--color-text-secondary)">{metadata}</span>}
         {item.note && <span className="text-sm text-(--color-text-secondary)">{item.note}</span>}
       </div>

@@ -18,3 +18,8 @@ test.describe("social routes auth gate", () => {
     await expect(page).toHaveURL(/\/login/);
   });
 });
+
+test("a media detail page redirects to /login when signed out", async ({ page }) => {
+  await page.goto("/media/00000000-0000-0000-0000-000000000000");
+  await expect(page).toHaveURL(/\/login/);
+});

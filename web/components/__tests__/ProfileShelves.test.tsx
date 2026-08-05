@@ -16,6 +16,8 @@ function item(id: string, title: string): LibraryItem {
       year: 2020,
       primaryCreator: "Susanna Clarke",
       coverUrl: null,
+      externalSource: null,
+      externalId: null,
     },
   };
 }

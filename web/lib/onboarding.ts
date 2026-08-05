@@ -23,6 +23,8 @@ const RESERVED_USERNAMES = new Set([
   "about",
   "terms",
   "privacy",
+  "media",
+  "notification",
   "post",
   "posts",
   "list",

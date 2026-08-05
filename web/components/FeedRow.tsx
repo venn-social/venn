@@ -39,7 +39,10 @@ export function FeedRow({ post, actions }: FeedRowProps) {
         </span>
       </div>
 
-      <div className="flex h-[200px] items-center justify-center overflow-hidden rounded-md bg-(--color-surface-strong)">
+      <Link
+        href={`/media/${post.media.id}`}
+        className="flex h-[200px] items-center justify-center overflow-hidden rounded-md bg-(--color-surface-strong)"
+      >
         {post.media.coverUrl ? (
           // eslint-disable-next-line @next/next/no-img-element -- see the Phase 3 spec on next/image
           <img
@@ -51,11 +54,15 @@ export function FeedRow({ post, actions }: FeedRowProps) {
         ) : (
           <span className="px-4 text-center text-(--color-text-secondary)">{post.media.title}</span>
         )}
-      </div>
+      </Link>
 
       <div className="flex items-baseline gap-3">
         <div className="flex flex-col gap-0.5">
-          <h2 className="text-lg font-semibold text-(--color-text-primary)">{post.media.title}</h2>
+          <Link href={`/media/${post.media.id}`}>
+            <h2 className="text-lg font-semibold text-(--color-text-primary)">
+              {post.media.title}
+            </h2>
+          </Link>
           {metadata && <p className="text-sm text-(--color-text-secondary)">{metadata}</p>}
         </div>
         {post.rating !== null && (

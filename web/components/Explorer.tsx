@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { CandidateList } from "@/components/CandidateList";
@@ -136,7 +137,9 @@ export function Explorer() {
             <ul className="grid grid-cols-3 gap-2">
               {browse.map((media) => (
                 <li key={media.id}>
-                  <MediaCover media={media} />
+                  <Link href={`/media/${media.id}`}>
+                    <MediaCover media={media} />
+                  </Link>
                 </li>
               ))}
             </ul>

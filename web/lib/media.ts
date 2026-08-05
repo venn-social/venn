@@ -9,6 +9,15 @@
  */
 export type MediaKind = "movie" | "show" | "book" | "album";
 
+/** Mirrors ios/Venn/Models/Media.swift's ExternalSource. */
+export type ExternalSource = "tmdb" | "openlibrary" | "musicbrainz";
+
+const EXTERNAL_SOURCES: readonly string[] = ["tmdb", "openlibrary", "musicbrainz"];
+
+function isExternalSource(value: unknown): value is ExternalSource {
+  return typeof value === "string" && EXTERNAL_SOURCES.includes(value);
+}
+
 export const MEDIA_KINDS: readonly string[] = ["movie", "show", "book", "album"];
 
 export interface Media {
@@ -18,6 +27,13 @@ export interface Media {
   year: number | null;
   primaryCreator: string | null;
   coverUrl: string | null;
+  /**
+   * Which catalog this came from, and its id there. Null for rows a user
+   * typed by hand. Together they're what lets the detail page fetch
+   * description, cast, and availability from the right provider.
+   */
+  externalSource: ExternalSource | null;
+  externalId: string | null;
 }
 
 export interface MediaRow {
@@ -27,6 +43,8 @@ export interface MediaRow {
   year: number | null;
   primary_creator: string | null;
   cover_url: string | null;
+  external_source?: string | null;
+  external_id?: string | null;
 }
 
 /**
@@ -45,6 +63,8 @@ export function toMedia(row: MediaRow | null | undefined): Media | null {
     year: row.year,
     primaryCreator: row.primary_creator,
     coverUrl: row.cover_url,
+    externalSource: isExternalSource(row.external_source) ? row.external_source : null,
+    externalId: row.external_id ?? null,
   };
 }
 

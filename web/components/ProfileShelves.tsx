@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { MediaCover } from "@/components/MediaCover";
 import type { LibraryItem } from "@/lib/library";
@@ -69,7 +70,9 @@ export function ProfileShelves({
         <ul className="grid grid-cols-3 gap-2">
           {items.map((item) => (
             <li key={item.id}>
-              <MediaCover media={item.media} />
+              <Link href={`/media/${item.media.id}`}>
+                <MediaCover media={item.media} />
+              </Link>
             </li>
           ))}
         </ul>

@@ -11,6 +11,8 @@ function media(overrides: Partial<Media> = {}): Media {
     year: 2020,
     primaryCreator: "Susanna Clarke",
     coverUrl: "https://example.test/piranesi.jpg",
+    externalSource: "openlibrary" as const,
+    externalId: "OL1W",
     ...overrides
   };
 }
