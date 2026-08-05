@@ -29,12 +29,32 @@ test.describe("magic-link sign-in", () => {
     await expect(page.getByText("charles@example.com")).toBeVisible();
   });
 
-  test("shows an error message when the send fails", async ({ page }) => {
+  test("tells you to wait when the email sender is throttling", async ({ page }) => {
+    // Supabase's built-in sender allows ~3-4/hour. "Try again" is the one
+    // thing that doesn't work here — each attempt resets the cooldown.
     await page.route("**/auth/v1/otp*", async (route) => {
       await route.fulfill({
         status: 429,
         contentType: "application/json",
         body: JSON.stringify({ error: "over_email_send_rate_limit" }),
+      });
+    });
+
+    await page.goto("/login");
+    await page.getByPlaceholder("Email").fill("charles@example.com");
+    await page.getByRole("button", { name: "Continue" }).click();
+
+    await expect(
+      page.getByText("Too many sign-in emails just now. Wait a minute and try again.")
+    ).toBeVisible();
+  });
+
+  test("shows the generic message for a failure that isn't a throttle", async ({ page }) => {
+    await page.route("**/auth/v1/otp*", async (route) => {
+      await route.fulfill({
+        status: 500,
+        contentType: "application/json",
+        body: JSON.stringify({ error: "internal_error" }),
       });
     });
 

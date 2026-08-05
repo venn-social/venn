@@ -16,6 +16,23 @@ import { createClient } from "@/lib/supabase/client";
  * its deep-link scheme doesn't have the same local-dev redirect problem;
  * tracked in docs/TECH_DEBT.md if iOS ever wants it too.
  */
+/**
+ * Supabase's built-in email sender throttles at roughly 3-4 sends/hour and
+ * returns `over_email_send_rate_limit`. Reporting that as "try again" is
+ * actively misleading — trying again is exactly what doesn't work, and it
+ * makes a throttle indistinguishable from a bug. Say "wait" when the
+ * answer is "wait".
+ *
+ * This distinction stops mattering once custom SMTP is configured, which
+ * removes the limit (docs/TECH_DEBT.md row 20).
+ */
+function signInErrorMessage(error: { code?: string; status?: number }): string {
+  if (error.code === "over_email_send_rate_limit" || error.status === 429) {
+    return "Too many sign-in emails just now. Wait a minute and try again.";
+  }
+  return "Couldn't send the magic link. Please try again.";
+}
+
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
@@ -39,7 +56,7 @@ export default function LoginPage() {
 
     if (error) {
       setStatus("error");
-      setErrorMessage("Couldn't send the magic link. Please try again.");
+      setErrorMessage(signInErrorMessage(error));
       return;
     }
     setStatus("sent");
