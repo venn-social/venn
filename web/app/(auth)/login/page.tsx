@@ -69,7 +69,7 @@ export default function LoginPage() {
     <main className="flex min-h-screen flex-col items-center justify-center gap-6 px-4">
       <div className="flex flex-col items-center gap-4 text-center">
         <h1 className="text-2xl font-semibold text-(--color-text-primary)">venn</h1>
-        <p className="text-(--color-text-secondary)">Where your tastes meet your friends&apos;.</p>
+        <p className="text-(--color-text-secondary)">you have good taste. explore it.</p>
       </div>
 
       {status === "sent" || status === "verifying" ? (

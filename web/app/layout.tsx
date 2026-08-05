@@ -15,7 +15,7 @@ const manrope = Manrope({
 
 export const metadata: Metadata = {
   title: "venn",
-  description: "Where your tastes meet your friends'.",
+  description: "you have good taste. explore it.",
 };
 
 export default function RootLayout({
