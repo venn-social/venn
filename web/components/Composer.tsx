@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { AddToListPicker } from "@/components/AddToListPicker";
 import { CandidateList } from "@/components/CandidateList";
 import { RatingChips } from "@/components/RatingChips";
 import type { MediaCandidate } from "@/lib/catalog/types";
@@ -50,6 +51,11 @@ export function Composer({
   const [caption, setCaption] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  // Set once something is logged — the media row now exists, so it can go
+  // straight into a list without another catalog round trip.
+  const [logged, setLogged] = useState<{ mediaId: string; action: "log" | "watchlist" } | null>(
+    null
+  );
 
   const trimmedQuery = query.trim();
   // Derived, not stored: an empty query means "show nothing" regardless of
@@ -113,7 +119,10 @@ export function Composer({
         rating: numericRating,
         caption: captionValue
       });
-      router.push("/feed");
+      // Stay put and offer the list step rather than bouncing to the
+      // feed: logging and listing are the same thought, and sending the
+      // user away makes them navigate back to finish it.
+      setLogged({ mediaId, action });
       router.refresh();
     } catch (submitError) {
       setError(
@@ -124,6 +133,50 @@ export function Composer({
     } finally {
       setSubmitting(false);
     }
+  }
+
+  if (logged && picked) {
+    return (
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-1">
+          <h1 className="text-xl font-semibold text-(--color-text-primary)">
+            {logged.action === "watchlist" ? "Saved" : "Logged"}
+          </h1>
+          <p className="text-(--color-text-secondary)">
+            {picked.title}{" "}
+            {logged.action === "watchlist"
+              ? "is on your watchlist."
+              : "is in your collection."}
+          </p>
+        </div>
+
+        <AddToListPicker userId={userId} mediaId={logged.mediaId} />
+
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={() => router.push("/feed")}
+            className="rounded-pill bg-(--color-accent) px-4 py-2 font-semibold text-(--color-on-accent)"
+          >
+            Done
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              // Back to a clean search for the next thing.
+              setLogged(null);
+              setPicked(null);
+              setRating(null);
+              setCaption("");
+              setQuery("");
+            }}
+            className="px-4 py-2 font-semibold text-(--color-text-secondary)"
+          >
+            Log something else
+          </button>
+        </div>
+      </div>
+    );
   }
 
   if (picked) {

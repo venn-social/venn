@@ -105,4 +105,26 @@ describe("Composer", () => {
 
     expect(await screen.findByText(/logging very fast/)).toBeDefined();
   });
+  it("stays on the page after logging and offers a list", async () => {
+    // Bouncing to the feed made you navigate back to finish the thought;
+    // logging and listing are the same intent.
+    render(<Composer userId="u1" />);
+    await pickTheMovie();
+
+    fireEvent.click(screen.getByRole("button", { name: "Log it" }));
+
+    expect(await screen.findByText("Logged")).toBeDefined();
+    expect(screen.getByText(/is in your collection/)).toBeDefined();
+    expect(screen.getByRole("button", { name: "Also add to a list" })).toBeDefined();
+  });
+
+  it("says saved, not logged, for a watchlist item", async () => {
+    render(<Composer userId="u1" />);
+    await pickTheMovie();
+
+    fireEvent.click(screen.getByRole("button", { name: "Add to watchlist" }));
+
+    expect(await screen.findByText("Saved")).toBeDefined();
+    expect(screen.getByText(/is on your watchlist/)).toBeDefined();
+  });
 });
