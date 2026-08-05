@@ -1,0 +1,127 @@
+<!--
+  Magic-link sign-in email.
+
+  Lives in the repo rather than only in the Supabase dashboard so it is
+  reviewed like code — this is the first thing anyone ever sees from venn,
+  and a template pasted into a dashboard is invisible to everyone but the
+  person who pasted it.
+
+  Constraints that shape the markup:
+  - Email clients do not support modern CSS. Tables for layout, inline
+    styles only, no flexbox/grid, no external stylesheets, no web fonts.
+  - Dark mode is unreliable across clients, so this commits to a light
+    treatment that stays legible if a client force-inverts it.
+  - Manrope (the venn typeface) is not available in email, so the stack
+    degrades to the system UI font rather than shipping a webfont nobody
+    can load.
+
+  Supabase substitutes {{ .ConfirmationURL }} and {{ .Token }}. The code is
+  included because web's /login accepts it as a fallback when a magic-link
+  redirect misbehaves (see docs/TECH_DEBT.md row 14).
+-->
+<!doctype html>
+<html lang="en">
+  <body
+    style="
+      margin: 0;
+      padding: 0;
+      background-color: #f2f2f7;
+      font-family:
+        -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Helvetica, Arial,
+        sans-serif;
+    "
+  >
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border: 0">
+      <tr>
+        <td align="center" style="padding: 40px 16px">
+          <table
+            role="presentation"
+            width="100%"
+            cellpadding="0"
+            cellspacing="0"
+            style="max-width: 440px; background-color: #ffffff; border-radius: 16px; border: 0"
+          >
+            <tr>
+              <td style="padding: 40px 32px 32px 32px; text-align: center">
+                <p
+                  style="
+                    margin: 0 0 8px 0;
+                    font-size: 28px;
+                    font-weight: 600;
+                    letter-spacing: -0.5px;
+                    color: #000000;
+                  "
+                >
+                  venn
+                </p>
+                <p style="margin: 0 0 32px 0; font-size: 15px; color: #6b6b70">
+                  you have good taste. explore it.
+                </p>
+
+                <p
+                  style="
+                    margin: 0 0 24px 0;
+                    font-size: 16px;
+                    line-height: 24px;
+                    color: #000000;
+                    text-align: left;
+                  "
+                >
+                  Tap the button below to sign in. It works once, and expires in an hour.
+                </p>
+
+                <table role="presentation" cellpadding="0" cellspacing="0" style="border: 0">
+                  <tr>
+                    <td align="center" style="border-radius: 999px; background-color: #0070f3">
+                      <a
+                        href="{{ .ConfirmationURL }}"
+                        style="
+                          display: inline-block;
+                          padding: 14px 32px;
+                          font-size: 16px;
+                          font-weight: 600;
+                          color: #ffffff;
+                          text-decoration: none;
+                          border-radius: 999px;
+                        "
+                        >Sign in to venn</a
+                      >
+                    </td>
+                  </tr>
+                </table>
+
+                <p style="margin: 32px 0 8px 0; font-size: 13px; color: #6b6b70; text-align: left">
+                  Or enter this code:
+                </p>
+                <p
+                  style="
+                    margin: 0;
+                    font-size: 26px;
+                    font-weight: 600;
+                    letter-spacing: 6px;
+                    color: #000000;
+                    text-align: left;
+                    font-family: &quot;SF Mono&quot;, Menlo, Consolas, monospace;
+                  "
+                >
+                  {{ .Token }}
+                </p>
+              </td>
+            </tr>
+
+            <tr>
+              <td style="padding: 0 32px 32px 32px">
+                <div style="border-top: 1px solid #e5e5ea; padding-top: 20px">
+                  <p style="margin: 0; font-size: 13px; line-height: 20px; color: #6b6b70">
+                    If you didn't ask to sign in, you can ignore this email — nobody can get into
+                    your account without this link.
+                  </p>
+                </div>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

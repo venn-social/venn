@@ -2,7 +2,12 @@
 
 The iOS app ships through TestFlight (see [`RELEASE.md`](./RELEASE.md)). This doc covers the web app in [`web/`](../web).
 
-As of 2026-08-05 the web app **has never been deployed** — there is no URL. The Phase 1 spec planned Vercel's free tier and it was never set up. This is the runbook for doing it the first time.
+**Live since 2026-08-05** on Vercel's free tier:
+
+- **https://venn-social.vercel.app** — the one to share
+- **https://venn-theta.vercel.app** — the original auto-assigned alias, still resolving
+
+Both point at the same production deployment, built from `main`. This doc is both the record of how it was set up and the runbook for doing it again.
 
 ## Before you start
 
@@ -38,6 +43,19 @@ Without `TMDB_API_KEY`, movie and show search returns a clear error message; boo
 
 Push to `main` deploys production; every PR gets a preview URL. Nothing else to configure.
 
+> **`NEXT_PUBLIC_*` variables are baked in at build time, not read at runtime.** If you add or change one, the running deployment keeps the old value until you **rebuild** — Deployments → ⋯ → Redeploy, with "Use existing Build Cache" **unchecked**. This bit us on the first deploy: the variables were added after the initial build, so the shipped bundle had no Supabase URL in it and sign-in failed with no request ever leaving the browser.
+>
+> To check what actually shipped, search the client bundle for the Supabase project ref:
+>
+> ```bash
+> page=$(curl -s https://venn-social.vercel.app/login)
+> for f in $(echo "$page" | grep -oE '/_next/static/[a-zA-Z0-9._/-]+\.js' | sort -u); do
+>   curl -s "https://venn-social.vercel.app$f" | grep -q "<your-project-ref>" && echo "found in $f"
+> done
+> ```
+>
+> Note the path is `/_next/static/immutable/chunks/…`, not `/_next/static/chunks/…`. Searching the wrong one gives a false negative.
+
 ## 4. Add the deployed origin to Supabase — do not skip this
 
 **Supabase Auth only redirects magic links to allow-listed origins.** Until the Vercel URL is on that list, clicking a sign-in link on the deployed site fails, and it fails in a way that looks like the app is broken rather than misconfigured.
@@ -58,6 +76,28 @@ Sign in on the deployed URL, then:
 - Confirm the feed and your profile shelves show what you logged.
 
 If sign-in fails, revisit step 4 before anything else.
+
+## 6. Custom SMTP — required before launch, not yet done
+
+Supabase's built-in email sender is **rate-limited to roughly 3–4 sends per hour** and is explicitly not meant for production. Exceeding it returns:
+
+```json
+{ "code": 429, "error_code": "over_email_send_rate_limit" }
+```
+
+which the app reports as the generic "Couldn't send the magic link. Please try again." — so a throttle looks like a bug. This cost an hour on launch day.
+
+The consequence at launch is worse than the inconvenience: **three or four people signing up in the same hour locks everyone else out.**
+
+Fixing it needs a real domain first, because professional auth email means proving you own the sending domain via DNS. You cannot do that on `*.vercel.app` — Vercel controls that DNS, not you.
+
+The sequence, once a domain exists:
+
+1. **Buy the domain** and point it at the Vercel project.
+2. **Create a Resend account** (3,000 emails/month free; Postmark and SendGrid are equivalent). Add its DNS records to verify the domain — this gives you DKIM signing, which is what keeps magic links out of spam.
+3. **Supabase → Project Settings → Authentication → SMTP Settings**: enter the Resend host, port, user, and API key, and set the sender to something like `hello@yourdomain`. This removes the rate limit.
+4. **Paste [`supabase/templates/magic_link.html`](../supabase/templates/magic_link.html) into Authentication → Email Templates**, subject `Sign in to venn`. That file is the source of truth and is already wired into `supabase/config.toml` for the local stack — but the hosted project reads its templates from the dashboard, so the two drift unless you paste it.
+5. **Update the Site URL and redirect allow-list** to the new domain, keeping the `*.vercel.app` entries so existing links don't break.
 
 ## Known gaps
 
