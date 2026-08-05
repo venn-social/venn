@@ -23,6 +23,10 @@ const RESERVED_USERNAMES = new Set([
   "about",
   "terms",
   "privacy",
+  "post",
+  "posts",
+  "list",
+  "lists",
 ]);
 
 /** Thrown by createProfile when the username is taken or reserved. */

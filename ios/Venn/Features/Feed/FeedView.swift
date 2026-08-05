@@ -7,8 +7,19 @@ import SwiftUI
 struct FeedView: View {
     @Environment(SupabaseClientProvider.self)
     private var clientProvider
+    @Environment(AuthState.self)
+    private var authState
 
     @State private var viewModel: FeedViewModel?
+
+    /// The viewer, for likes and comments on the post detail screen.
+    private var signedInUserID: UUID? {
+        if case let .signedIn(session) = authState.status {
+            session.user.id
+        } else {
+            nil
+        }
+    }
 
     var body: some View {
         NavigationStack {
@@ -49,8 +60,25 @@ struct FeedView: View {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: Theme.Spacing.xxl) {
                     ForEach(posts) { feedPost in
-                        FeedRow(feedPost: feedPost)
+                        // Tapping through to the permalink is how likes and
+                        // comments are reached — the row itself stays a
+                        // presentation-only view.
+                        if let viewerID = signedInUserID {
+                            NavigationLink {
+                                PostDetailView(
+                                    feedPost: feedPost,
+                                    viewerID: viewerID,
+                                    service: SocialService(client: clientProvider.client)
+                                )
+                            } label: {
+                                FeedRow(feedPost: feedPost)
+                            }
+                            .buttonStyle(.plain)
                             .vennScrollDepth()
+                        } else {
+                            FeedRow(feedPost: feedPost)
+                                .vennScrollDepth()
+                        }
                     }
                     // Lazy footer: appears only when scrolled to, so its
                     // .task IS the infinite-scroll trigger. Hidden once the
@@ -95,4 +123,7 @@ struct FeedView: View {
 #Preview {
     FeedView()
         .environment(SupabaseClientProvider.preview)
+        .environment(
+            AuthState(service: AuthService(client: SupabaseClientProvider.preview.client))
+        )
 }

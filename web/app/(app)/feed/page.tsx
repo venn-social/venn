@@ -1,6 +1,9 @@
 import { redirect } from "next/navigation";
 import { FeedPagination } from "@/components/FeedPagination";
 import { FeedRow } from "@/components/FeedRow";
+import { PostActions } from "@/components/PostActions";
+import { fetchCommentCounts } from "@/lib/comments";
+import { fetchLikeInfo } from "@/lib/likes";
 import { FEED_PAGE_SIZE, fetchFeedPage } from "@/lib/feed";
 import { createClient } from "@/lib/supabase/server";
 
@@ -44,10 +47,33 @@ export default async function FeedPage() {
 
   const lastPost = posts[posts.length - 1];
 
+  // One call each for the whole page rather than per row — 20 posts would
+  // otherwise be 40 extra round trips. Social counts are non-critical, so a
+  // failure renders the feed without them instead of failing the page.
+  const postIds = posts.map((post) => post.id);
+  const [likeResult, commentResult] = await Promise.allSettled([
+    fetchLikeInfo(supabase, postIds),
+    fetchCommentCounts(supabase, postIds)
+  ]);
+  const likes = likeResult.status === "fulfilled" ? likeResult.value : {};
+  const commentCounts = commentResult.status === "fulfilled" ? commentResult.value : {};
+
   return (
     <main className="mx-auto flex max-w-lg flex-col gap-10 px-4 py-8">
       {posts.map((post) => (
-        <FeedRow key={post.id} post={post} />
+        <FeedRow
+          key={post.id}
+          post={post}
+          actions={
+            <PostActions
+              postId={post.id}
+              userId={user.id}
+              likeCount={likes[post.id]?.likeCount ?? 0}
+              likedByMe={likes[post.id]?.likedByMe ?? false}
+              commentCount={commentCounts[post.id] ?? 0}
+            />
+          }
+        />
       ))}
       <FeedPagination
         initialCursor={lastPost.createdAt.toISOString()}
