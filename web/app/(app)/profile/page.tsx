@@ -76,6 +76,12 @@ export default async function ProfilePage() {
         >
           Settings
         </Link>
+        <Link
+          href="/profile/year"
+          className="rounded-pill border border-(--color-separator) px-4 py-1.5 text-sm font-semibold text-(--color-text-primary)"
+        >
+          Year in Review
+        </Link>
       </div>
 
       <ProfileShelves

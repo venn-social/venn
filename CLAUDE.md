@@ -25,7 +25,7 @@ The founding team is small and non-technical. The codebase is being treated like
 - **Testing:** Swift Testing (`import Testing`, `@Test`) for units; XCUITest for UI flows. Services and pure utilities are unit-tested; views are not.
 - **Lint/format:** [SwiftLint](https://github.com/realm/SwiftLint) (strict mode) + [SwiftFormat](https://github.com/nicklockwood/SwiftFormat). Pre-commit hooks enforce both via Husky.
 - **CI:** GitHub Actions on `macos-latest`. Lint, format check, prettier check (for docs), and tests run on every PR.
-- **Web (new, Phase 1 in progress):** Next.js (App Router, TypeScript) in `web/`, against the _same_ Supabase project as iOS — no second backend. Tailwind, styled from tokens mirroring `Theme.swift`. Vitest + React Testing Library for units, Playwright for E2E. Full detail in the Phase 1 spec linked above; this section gets fleshed out once Phase 1 actually lands.
+- **Web:** Next.js (App Router, TypeScript) in `web/`, against the _same_ Supabase project as iOS — no second backend. Tailwind, styled from tokens mirroring `Theme.swift`. Vitest + React Testing Library for units, Playwright for E2E. **As of 2026-08-05 web has feature parity with iOS**: auth, onboarding, feed, navigation, profiles with shelves, editing, settings, follow lists, the Venn overlap, the composer, Explorer, and Year in Review. Phase specs live in `docs/superpowers/specs/`.
 
 ## Repo layout
 

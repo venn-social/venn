@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/venn-social/venn/actions/workflows/ci.yml/badge.svg)](https://github.com/venn-social/venn/actions/workflows/ci.yml)
 
-A social app where people log what they consume — movies, music, books, restaurants, games — in one place, and share their favorites with friends. Every profile shows a Venn diagram of where your tastes overlap with the person you're looking at. **iOS only**, TestFlight target December 2026. Built natively in **Swift 6 + SwiftUI** on **iOS 26+** to take advantage of Liquid Glass and other Apple-native APIs.
+A social app where people log what they consume — movies, music, books, restaurants, games — in one place, and share their favorites with friends. Every profile shows a Venn diagram of where your tastes overlap with the person you're looking at. **iOS + web**, both targeting December 2026. iOS is built natively in **Swift 6 + SwiftUI** on **iOS 26+** to take advantage of Liquid Glass and other Apple-native APIs; the web app is **Next.js** in [`web/`](./web), sharing one Supabase backend.
 
 See the [product vision](https://www.notion.so/product-vision-34bc60c854a28109939dd2d83bb135a4) in Notion for the what and the why. The rest of this README is about the how — if you're here to contribute.
 

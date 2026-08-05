@@ -25,6 +25,8 @@ Known, deliberate shortcuts — with the reason they exist and what unlocks fixi
 
 | 18 | iOS's Explorer labels its browse panel "Recommended for you", but `ExplorerService.recentMedia` returns the newest catalog rows with no scoring. Web says "Recently added" instead, so the two platforms' copy differs (rule 17). | Matching the copy would ship a claim the code doesn't support — there is no recommendation engine on either platform, and none can exist until there's a follow graph and interaction history to compute one from. | When real ranking lands, iOS's label becomes true and web's should change to match. `fetchRecentMedia`'s signature is already the shape a scored version would keep. |
 
+| 19 | Both platforms' "Year in Review" shows a **trailing twelve months**, not a calendar year — the name implies a retrospective the data doesn't produce. | `personal_stats_monthly()` returns the trailing twelve months, and iOS's screen was built on it. Nobody has needed a calendar-year view yet. | If a seasonal "your 2026 in review" moment is ever wanted, that's a different query and a different page — rename this one or add that one, don't overload it. |
+
 ## Figma backlog
 
 CLAUDE.md rule 15 (Figma-first) is suspended until the Figma Pro subscription lands. Every net-new UI surface shipped during the suspension is listed here so it gets recreated in Figma for completeness:
@@ -44,6 +46,7 @@ CLAUDE.md rule 15 (Figma-first) is suspended until the Figma Pro subscription la
 - `SettingsView` — account settings sheet (private-account toggle today; grows as more settings land)
 - `YearInReviewView` — personal stats screen (total-logged header, trailing-12-month activity bars, per-kind breakdown cards), reached from a new icon button in `ProfileView`'s top bar
 - Web `/login`'s numeric-code fallback form (code input + verify button, shown alongside the "check your inbox" state) — web-only, no iOS equivalent (see tech-debt row 14)
+- Web `/profile/year` — Year in Review: total-logged header, trailing-12-month bar chart, per-kind cards, and the empty state
 - Web `/explorer` — category chips, search field, people result rows, media result rows, and the "Recently added" browse grid with its empty state
 - Web `/composer` — the log flow (kind chips, search field, result rows with cover thumbs, the Love/Like/Dislike chips, caption field, and the Log it / Add to watchlist pair), plus the accent "Log" nav button
 - Web `/feed` — the feed stream (attribution row with avatar + relative time, cover, title/metadata, rating, caption) and its "Quiet for now" empty state
