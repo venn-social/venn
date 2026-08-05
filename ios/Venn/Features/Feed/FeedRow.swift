@@ -4,6 +4,10 @@ import SwiftUI
 /// a large cover, the entry's title and metadata, an optional rating, and an
 /// optional note. Renders a `FeedPost` (post + media + author) from real
 /// data.
+///
+/// The cover and the title open the title's detail screen, matching web.
+/// Every host therefore has to register `.navigationDestination(for:
+/// Media.self)`; the row pushes a value, not a view.
 struct FeedRow: View {
     let feedPost: FeedPost
 
@@ -22,12 +26,15 @@ struct FeedRow: View {
         VStack(alignment: .leading, spacing: Theme.Spacing.md) {
             attribution
 
-            MediaCoverTile(
-                title: feedPost.media.title,
-                kind: feedPost.media.kind,
-                coverURL: feedPost.media.coverURL,
-                height: 200
-            )
+            NavigationLink(value: feedPost.media) {
+                MediaCoverTile(
+                    title: feedPost.media.title,
+                    kind: feedPost.media.kind,
+                    coverURL: feedPost.media.coverURL,
+                    height: 200
+                )
+            }
+            .buttonStyle(.plain)
 
             titleAndRating
 
@@ -54,17 +61,20 @@ struct FeedRow: View {
 
     private var titleAndRating: some View {
         HStack(alignment: .firstTextBaseline) {
-            VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
-                Text(feedPost.media.title)
-                    .font(Theme.Font.title3)
-                    .foregroundStyle(Theme.Color.textPrimary)
-                    .fixedSize(horizontal: false, vertical: true)
-                if !metadata.isEmpty {
-                    Text(metadata)
-                        .font(Theme.Font.footnote)
-                        .foregroundStyle(Theme.Color.textSecondary)
+            NavigationLink(value: feedPost.media) {
+                VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
+                    Text(feedPost.media.title)
+                        .font(Theme.Font.title3)
+                        .foregroundStyle(Theme.Color.textPrimary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    if !metadata.isEmpty {
+                        Text(metadata)
+                            .font(Theme.Font.footnote)
+                            .foregroundStyle(Theme.Color.textSecondary)
+                    }
                 }
             }
+            .buttonStyle(.plain)
             Spacer(minLength: Theme.Spacing.md)
             if let rating = feedPost.post.rating {
                 RatingLabel(value: rating)

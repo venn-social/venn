@@ -13,6 +13,10 @@ struct PostActionsView: View {
     let userID: UUID
     let commentCount: Int
     let service: any SocialServicing
+    /// Set in the feed, where the comment count is the way through to the
+    /// conversation. Nil on the permalink itself — the thread is already
+    /// below, and a link back to the current screen is a dead end.
+    let postDestination: FeedPost?
 
     @State private var liked: Bool
     @State private var likeCount: Int
@@ -23,12 +27,14 @@ struct PostActionsView: View {
         userID: UUID,
         info: LikeInfo,
         commentCount: Int,
-        service: any SocialServicing
+        service: any SocialServicing,
+        postDestination: FeedPost? = nil
     ) {
         self.postID = postID
         self.userID = userID
         self.commentCount = commentCount
         self.service = service
+        self.postDestination = postDestination
         _liked = State(initialValue: info.likedByMe)
         _likeCount = State(initialValue: info.likeCount)
     }
@@ -51,20 +57,31 @@ struct PostActionsView: View {
             .disabled(working)
             .accessibilityLabel(liked ? "Unlike this post" : "Like this post")
 
-            HStack(spacing: Theme.Spacing.xs) {
-                Image(systemName: "bubble.right")
-                    .foregroundStyle(Theme.Color.textSecondary)
-                if commentCount > 0 {
-                    Text(verbatim: "\(commentCount)")
-                        .font(Theme.Font.footnote)
-                        .foregroundStyle(Theme.Color.textSecondary)
-                        .monospacedDigit()
+            if let postDestination {
+                NavigationLink(value: postDestination) {
+                    commentTally
                 }
+                .buttonStyle(.plain)
+            } else {
+                commentTally
             }
-            .accessibilityLabel(commentCount == 1 ? "1 comment" : "\(commentCount) comments")
 
             Spacer()
         }
+    }
+
+    private var commentTally: some View {
+        HStack(spacing: Theme.Spacing.xs) {
+            Image(systemName: "bubble.right")
+                .foregroundStyle(Theme.Color.textSecondary)
+            if commentCount > 0 {
+                Text(verbatim: "\(commentCount)")
+                    .font(Theme.Font.footnote)
+                    .foregroundStyle(Theme.Color.textSecondary)
+                    .monospacedDigit()
+            }
+        }
+        .accessibilityLabel(commentCount == 1 ? "1 comment" : "\(commentCount) comments")
     }
 
     private func toggleLike() {

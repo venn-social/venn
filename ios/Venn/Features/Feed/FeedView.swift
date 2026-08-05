@@ -28,6 +28,18 @@ struct FeedView: View {
                 .containerBackground(for: .navigation) {
                     GlassSkyBackground()
                 }
+                .navigationDestination(for: Media.self) { media in
+                    MediaDetailView(media: media)
+                }
+                .navigationDestination(for: FeedPost.self) { feedPost in
+                    if let viewerID = signedInUserID {
+                        PostDetailView(
+                            feedPost: feedPost,
+                            viewerID: viewerID,
+                            service: SocialService(client: clientProvider.client)
+                        )
+                    }
+                }
         }
         .task { await ensureLoaded() }
     }
@@ -60,25 +72,17 @@ struct FeedView: View {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: Theme.Spacing.xxl) {
                     ForEach(posts) { feedPost in
-                        // Tapping through to the permalink is how likes and
-                        // comments are reached — the row itself stays a
-                        // presentation-only view.
-                        if let viewerID = signedInUserID {
-                            NavigationLink {
-                                PostDetailView(
-                                    feedPost: feedPost,
-                                    viewerID: viewerID,
-                                    service: SocialService(client: clientProvider.client)
-                                )
-                            } label: {
-                                FeedRow(feedPost: feedPost)
-                            }
-                            .buttonStyle(.plain)
-                            .vennScrollDepth()
-                        } else {
+                        // The row is no longer one big link: the cover and
+                        // title open the title, and the comment tally opens
+                        // the conversation. Matches web, and means a like
+                        // no longer costs a screen transition.
+                        VStack(alignment: .leading, spacing: Theme.Spacing.md) {
                             FeedRow(feedPost: feedPost)
-                                .vennScrollDepth()
+                            if let viewerID = signedInUserID {
+                                actions(for: feedPost, viewerID: viewerID, viewModel: viewModel)
+                            }
                         }
+                        .vennScrollDepth()
                     }
                     // Lazy footer: appears only when scrolled to, so its
                     // .task IS the infinite-scroll trigger. Hidden once the
@@ -99,6 +103,26 @@ struct FeedView: View {
         }
     }
 
+    /// Like button and comment tally. `id` forces a fresh view once the
+    /// counts arrive — `PostActionsView` seeds `@State` from its initial
+    /// values, so without this the feed would show zeros forever.
+    private func actions(
+        for feedPost: FeedPost,
+        viewerID: UUID,
+        viewModel: FeedViewModel
+    ) -> some View {
+        let social = viewModel.social(for: feedPost.id)
+        return PostActionsView(
+            postID: feedPost.post.id,
+            userID: viewerID,
+            info: social.likes,
+            commentCount: social.commentCount,
+            service: SocialService(client: clientProvider.client),
+            postDestination: feedPost
+        )
+        .id(social)
+    }
+
     private var emptyView: some View {
         Screen {
             EmptyStateView(
@@ -112,7 +136,8 @@ struct FeedView: View {
     private func ensureLoaded() async {
         if viewModel == nil {
             let viewModel = FeedViewModel(
-                service: FeedService(client: clientProvider.client)
+                service: FeedService(client: clientProvider.client),
+                socialService: SocialService(client: clientProvider.client)
             )
             self.viewModel = viewModel
             await viewModel.load()

@@ -38,6 +38,10 @@ struct PublicProfileView: View {
                 service: FollowService(client: clientProvider.client)
             ))
         }
+        // No `.navigationDestination(for: Media.self)` here on purpose: both
+        // stacks this screen is pushed onto (Profile and Explorer) already
+        // register one, and a second declaration on the same stack is
+        // ignored with a runtime warning.
         .task { await ensureLoaded() }
     }
 
