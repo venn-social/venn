@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { MediaCover } from "@/components/MediaCover";
-import { fetchList, fetchListItems } from "@/lib/lists";
+import { AddToList } from "@/components/AddToList";
+import { ListItemRow } from "@/components/ListItemRow";
+import { fetchList, fetchListItems, nextPosition } from "@/lib/lists";
 import { fetchProfile } from "@/lib/profile";
 import { createClient } from "@/lib/supabase/server";
 
@@ -36,6 +37,8 @@ export default async function ListPage({ params }: ListPageProps) {
     fetchProfile(supabase, list.ownerId).catch(() => null)
   ]);
 
+  const isOwner = list.ownerId === user.id;
+
   return (
     <main className="mx-auto flex min-h-screen max-w-lg flex-col gap-6 px-4 py-8">
       <div className="flex flex-col gap-2">
@@ -63,21 +66,23 @@ export default async function ListPage({ params }: ListPageProps) {
       </div>
 
       {items.length === 0 ? (
-        <p className="text-(--color-text-secondary)">
-          Nothing in this list yet.{" "}
-          {list.ownerId === user.id && "Add things from a title's page as you log them."}
-        </p>
+        <p className="text-(--color-text-secondary)">Nothing in this list yet.</p>
       ) : (
-        <ul className="grid grid-cols-3 gap-2">
+        <ul className="flex flex-col gap-3">
           {items.map((item) => (
-            <li key={item.media.id} className="flex flex-col gap-1">
-              <MediaCover media={item.media} />
-              {item.note && (
-                <p className="text-xs text-(--color-text-secondary)">{item.note}</p>
-              )}
+            <li key={item.media.id}>
+              <ListItemRow listId={list.id} item={item} canEdit={isOwner} />
             </li>
           ))}
         </ul>
+      )}
+
+      {isOwner && (
+        <div className="border-t border-(--color-separator) pt-6">
+          {/* Appending to the end — position is explicit so the maker's
+              order survives, and drag-to-reorder can land later. */}
+          <AddToList listId={list.id} nextPosition={nextPosition(items)} />
+        </div>
       )}
     </main>
   );

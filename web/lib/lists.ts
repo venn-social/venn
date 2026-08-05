@@ -109,6 +109,17 @@ export async function fetchListItems(
   return toListItems(data);
 }
 
+/**
+ * Where the next appended item goes.
+ *
+ * Derived from the highest existing position rather than the item count:
+ * removing an item from the middle leaves a gap, and counting would then
+ * hand out a position that's already taken.
+ */
+export function nextPosition(items: ListItem[]): number {
+  return items.reduce((max, item) => Math.max(max, item.position), -1) + 1;
+}
+
 export async function createList(
   client: SupabaseClient,
   ownerId: string,
