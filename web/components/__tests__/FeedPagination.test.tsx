@@ -55,7 +55,9 @@ function post(id: string, createdAt: string): FeedPost {
       // With a cover, the title renders once (the heading). Without one,
       // FeedRow also prints it inside the cover placeholder, so a plain
       // getByText would match twice.
-      coverUrl: `https://example.test/${id}.jpg`
+      coverUrl: `https://example.test/${id}.jpg`,
+      externalSource: "tmdb" as const,
+      externalId: id
     },
     author: {
       id: "u1",

@@ -1,3 +1,4 @@
+import { EMPTY_DETAIL, type MediaDetail } from "@/lib/catalog/detail";
 import { candidateId, yearFrom, type MediaCandidate } from "@/lib/catalog/types";
 
 const API_BASE = "https://musicbrainz.org/ws/2";
@@ -53,4 +54,46 @@ export async function searchMusicBrainz(query: string): Promise<MediaCandidate[]
   const response = await fetch(url, { headers: { "User-Agent": USER_AGENT } });
   if (!response.ok) throw new Error(`MusicBrainz search failed (${response.status})`);
   return toAlbumCandidates(await response.json());
+}
+
+// ---------------------------------------------------------------------------
+// Detail
+// ---------------------------------------------------------------------------
+
+interface MBDetailResponse {
+  "artist-credit"?: { name?: string; artist?: { name?: string; disambiguation?: string } }[];
+  "first-release-date"?: string;
+  tags?: { name?: string; count?: number }[];
+}
+
+export function toAlbumDetail(json: unknown): MediaDetail {
+  const detail = (json ?? {}) as MBDetailResponse;
+
+  return {
+    ...EMPTY_DETAIL,
+    // MusicBrainz holds no editorial description — it's a structured
+    // database, not a review site. Leaving this null is honest; inventing
+    // a summary from tags would not be.
+    overview: null,
+    creators: (detail["artist-credit"] ?? [])
+      .map((credit) => credit.artist?.name ?? credit.name)
+      .filter((name): name is string => Boolean(name))
+      .map((name) => ({ name, role: "Artist" })),
+    // Community tags are the closest thing to genre here. Ordered by how
+    // many people applied them, so the top few are the consensus.
+    genres: (detail.tags ?? [])
+      .slice()
+      .sort((a, b) => (b.count ?? 0) - (a.count ?? 0))
+      .map((tag) => tag.name)
+      .filter((name): name is string => Boolean(name))
+      .slice(0, 6),
+    releaseDate: detail["first-release-date"] || null
+  };
+}
+
+export async function fetchMusicBrainzDetail(externalId: string): Promise<MediaDetail> {
+  const url = `${API_BASE}/release-group/${encodeURIComponent(externalId)}?inc=artists+tags&fmt=json`;
+  const response = await fetch(url, { headers: { "User-Agent": USER_AGENT } });
+  if (!response.ok) throw new Error(`MusicBrainz detail failed (${response.status})`);
+  return toAlbumDetail(await response.json());
 }

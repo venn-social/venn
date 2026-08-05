@@ -17,6 +17,8 @@ function post(overrides: Partial<FeedPost> = {}): FeedPost {
       year: 2023,
       primaryCreator: "Celine Song",
       coverUrl: "https://example.test/cover.jpg",
+      externalSource: "tmdb" as const,
+      externalId: "1",
     },
     author: {
       id: "u1",

@@ -1,5 +1,6 @@
 // No yearFrom here: OpenLibrary returns first_publish_year already numeric,
 // unlike TMDB's and MusicBrainz's date strings.
+import { EMPTY_DETAIL, type MediaDetail } from "@/lib/catalog/detail";
 import { candidateId, type MediaCandidate } from "@/lib/catalog/types";
 
 const API_BASE = "https://openlibrary.org";
@@ -50,4 +51,69 @@ export async function searchOpenLibrary(query: string): Promise<MediaCandidate[]
   const response = await fetch(url);
   if (!response.ok) throw new Error(`OpenLibrary search failed (${response.status})`);
   return toBookCandidates(await response.json());
+}
+
+// ---------------------------------------------------------------------------
+// Detail
+// ---------------------------------------------------------------------------
+
+interface OLWork {
+  // OpenLibrary returns description as either a bare string or {value},
+  // depending on how old the record is.
+  description?: { value?: string } | string;
+  subjects?: string[];
+  first_publish_date?: string;
+  authors?: { author?: { key?: string } }[];
+}
+
+function workDescription(work: OLWork): string | null {
+  if (typeof work.description === "string") return work.description || null;
+  return work.description?.value || null;
+}
+
+export function toBookDetail(work: unknown, authorNames: string[]): MediaDetail {
+  const parsed = (work ?? {}) as OLWork;
+
+  return {
+    ...EMPTY_DETAIL,
+    overview: workDescription(parsed),
+    // Books have authors, not a cast — they go in creators, and credits
+    // stays empty rather than duplicating them.
+    creators: authorNames.map((name) => ({ name, role: "Author" })),
+    // Subjects are OpenLibrary's genres, and there are often dozens; the
+    // first handful are the useful ones.
+    genres: (parsed.subjects ?? []).slice(0, 8),
+    releaseDate: parsed.first_publish_date || null
+  };
+}
+
+/**
+ * A work plus its authors. OpenLibrary stores authors by reference, so
+ * their names need a second round of lookups — done in parallel, and a
+ * failed one is skipped rather than failing the page.
+ */
+export async function fetchOpenLibraryDetail(externalId: string): Promise<MediaDetail> {
+  const response = await fetch(`${API_BASE}/works/${encodeURIComponent(externalId)}.json`);
+  if (!response.ok) throw new Error(`OpenLibrary detail failed (${response.status})`);
+
+  const work = (await response.json()) as OLWork;
+  const keys = (work.authors ?? [])
+    .map((entry) => entry.author?.key)
+    .filter((key): key is string => Boolean(key))
+    .slice(0, 5);
+
+  const names = await Promise.all(
+    keys.map(async (key) => {
+      try {
+        const authorResponse = await fetch(`${API_BASE}${key}.json`);
+        if (!authorResponse.ok) return null;
+        const author = (await authorResponse.json()) as { name?: string };
+        return author.name ?? null;
+      } catch {
+        return null;
+      }
+    })
+  );
+
+  return toBookDetail(work, names.filter((name): name is string => Boolean(name)));
 }
