@@ -76,6 +76,9 @@ struct ProfileView: View {
                 .navigationDestination(for: UserProfile.self) { profile in
                     PublicProfileView(profile: profile)
                 }
+                .navigationDestination(for: Media.self) { media in
+                    MediaDetailView(media: media)
+                }
                 .navigationDestination(isPresented: $showYearInReview) {
                     YearInReviewView()
                 }
@@ -128,7 +131,11 @@ struct ProfileView: View {
                         }
                     )
                     actionButtons
-                    ShelfTabs(selection: $shelf)
+                    HStack {
+                        ShelfTabs(selection: $shelf)
+                        Spacer(minLength: Theme.Spacing.md)
+                        seeAllButton(snapshot)
+                    }
                     shelfGallery(snapshot)
                 }
                 .padding(.top, Theme.Spacing.sm)
@@ -181,12 +188,24 @@ struct ProfileView: View {
             emptyMessage: shelf == .collection
                 ? "Nothing in your collection yet."
                 : "Your watchlist is empty."
-        ) {
-            libraryDestination = LibraryDestination(
-                userID: snapshot.profile.id,
-                kind: nil,
-                shelf: shelf
-            )
+        )
+    }
+
+    /// Covers themselves now open the title, so the editable list needs its
+    /// own way in. Only shown when the shelf has something on it.
+    @ViewBuilder
+    private func seeAllButton(_ snapshot: ProfileSnapshot) -> some View {
+        let items = shelf == .collection ? snapshot.collection : snapshot.watchlist
+        if !items.isEmpty {
+            Button("See all") {
+                libraryDestination = LibraryDestination(
+                    userID: snapshot.profile.id,
+                    kind: nil,
+                    shelf: shelf
+                )
+            }
+            .font(Theme.Font.footnote.weight(.semibold))
+            .foregroundStyle(Theme.Color.accent)
         }
     }
 

@@ -4,12 +4,13 @@ import SwiftUI
 /// empty-state copy. Shared by the signed-in `ProfileView` and the
 /// read-only `PublicProfileView`.
 ///
-/// `onTap` fires when any cover is tapped — pass nil for a non-interactive
-/// gallery (public profiles get tap-through with the follow system).
+/// Tapping a cover opens that title's detail screen, the same as on web.
+/// Both hosts must therefore register `.navigationDestination(for:
+/// Media.self)` — the grid pushes a value, not a view, so it holds no
+/// opinion about what the destination looks like.
 struct ProfileShelfGallery: View {
     let items: [LibraryItem]
     let emptyMessage: LocalizedStringKey
-    var onTap: (() -> Void)?
 
     var body: some View {
         if items.isEmpty {
@@ -24,14 +25,10 @@ struct ProfileShelfGallery: View {
                 spacing: Theme.Spacing.sm
             ) {
                 ForEach(items) { item in
-                    if let onTap {
-                        Button(action: onTap) {
-                            cover(for: item)
-                        }
-                        .buttonStyle(.plain)
-                    } else {
+                    NavigationLink(value: item.media) {
                         cover(for: item)
                     }
+                    .buttonStyle(.plain)
                 }
             }
         }

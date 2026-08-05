@@ -63,6 +63,9 @@ struct ExplorerView: View {
             .navigationDestination(for: UserProfile.self) { profile in
                 PublicProfileView(profile: profile)
             }
+            .navigationDestination(for: Media.self) { media in
+                MediaDetailView(media: media)
+            }
         }
         .task { await ensureLoaded() }
         .onChange(of: selectedCategory) { _, newCategory in
@@ -137,8 +140,11 @@ struct ExplorerView: View {
             spacing: Theme.Spacing.lg
         ) {
             ForEach(media) { item in
-                ExplorerMediaCell(media: item)
-                    .vennScrollDepth()
+                NavigationLink(value: item) {
+                    ExplorerMediaCell(media: item)
+                }
+                .buttonStyle(.plain)
+                .vennScrollDepth()
             }
         }
     }

@@ -22,12 +22,26 @@ final class FeedViewModel {
     private(set) var isLoadingMore = false
     private(set) var hasMore = false
 
+    /// Likes and comment counts, keyed by post id. Missing entries render
+    /// as zero rather than blocking the row — see `loadSocial`.
+    private(set) var social: [UUID: PostSocial] = [:]
+
     private let service: any FeedServicing
+    private let socialService: (any SocialServicing)?
     private let pageSize: Int
 
-    init(service: any FeedServicing, pageSize: Int = 20) {
+    init(
+        service: any FeedServicing,
+        socialService: (any SocialServicing)? = nil,
+        pageSize: Int = 20
+    ) {
         self.service = service
+        self.socialService = socialService
         self.pageSize = pageSize
+    }
+
+    func social(for postID: UUID) -> PostSocial {
+        social[postID] ?? .none
     }
 
     /// Full reload through the `.loading` state. Safe to call on retry.
@@ -45,6 +59,7 @@ final class FeedViewModel {
             let posts = try await service.recentPosts(limit: pageSize, before: nil)
             hasMore = posts.count == pageSize
             state = .loaded(posts)
+            await loadSocial(for: posts)
         } catch let error as AppError {
             if case .loaded = state {
                 return
@@ -73,11 +88,46 @@ final class FeedViewModel {
             // Keyset paging shouldn't overlap, but a post created in the
             // same instant as the cursor could; never show a row twice.
             let seen = Set(current.map(\.id))
-            state = .loaded(current + next.filter { !seen.contains($0.id) })
+            let appended = next.filter { !seen.contains($0.id) }
+            state = .loaded(current + appended)
+            await loadSocial(for: appended)
         } catch {
             // Stop paging rather than let the footer retrigger an error
             // loop; pull-to-refresh restarts pagination from the top.
             hasMore = false
         }
     }
+
+    /// Likes and comment counts for a page of posts — two calls for the
+    /// whole page rather than two per row, which for 20 posts would be 40
+    /// extra round trips.
+    ///
+    /// Failures are swallowed on purpose. These counts are decoration; the
+    /// feed is the content. A row with no heart beside it is a far better
+    /// outcome than an error screen where the feed used to be.
+    private func loadSocial(for posts: [FeedPost]) async {
+        guard let socialService, !posts.isEmpty else { return }
+        let postIDs = posts.map(\.id)
+
+        async let likes = try? socialService.likeInfo(postIDs: postIDs)
+        async let counts = try? socialService.commentCounts(postIDs: postIDs)
+        let (loadedLikes, loadedCounts) = await (likes, counts)
+
+        for postID in postIDs {
+            social[postID] = PostSocial(
+                likes: loadedLikes?[postID] ?? .none,
+                commentCount: loadedCounts?[postID] ?? 0
+            )
+        }
+    }
+}
+
+/// The social footer's numbers for one post, bundled so the feed carries
+/// one dictionary rather than two that can disagree about which posts they
+/// cover.
+struct PostSocial: Equatable, Hashable, Sendable {
+    let likes: LikeInfo
+    let commentCount: Int
+
+    static let none = PostSocial(likes: .none, commentCount: 0)
 }

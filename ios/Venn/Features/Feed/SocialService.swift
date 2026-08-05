@@ -2,7 +2,7 @@ import Foundation
 import Supabase
 
 /// Like count for one post, plus whether the signed-in viewer liked it.
-struct LikeInfo: Equatable, Sendable {
+struct LikeInfo: Equatable, Hashable, Sendable {
     let likeCount: Int
     let likedByMe: Bool
 

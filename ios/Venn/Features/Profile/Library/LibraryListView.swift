@@ -18,14 +18,17 @@ struct LibraryListView: View {
                     ScrollView {
                         LazyVStack(spacing: Theme.Spacing.sm) {
                             ForEach(items) { item in
-                                LibraryItemRow(item: item)
-                                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                                        Button(role: .destructive) {
-                                            Task { await viewModel.remove(item: item) }
-                                        } label: {
-                                            Label("Remove", systemImage: "trash")
-                                        }
+                                NavigationLink(value: item.media) {
+                                    LibraryItemRow(item: item)
+                                }
+                                .buttonStyle(.plain)
+                                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                    Button(role: .destructive) {
+                                        Task { await viewModel.remove(item: item) }
+                                    } label: {
+                                        Label("Remove", systemImage: "trash")
                                     }
+                                }
                             }
                         }
                         .padding(.vertical, Theme.Spacing.lg)
@@ -44,6 +47,8 @@ struct LibraryListView: View {
         .containerBackground(for: .navigation) {
             GlassSkyBackground()
         }
+        // The Profile stack this is pushed onto already registers a
+        // `Media` destination; declaring a second one is ignored.
         .task { await viewModel.load() }
     }
 

@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Sheet wrapper for the log-it composer flow.
 ///
-/// Hosts a NavigationStack that starts at `MediaDetailView` and pushes
+/// Hosts a NavigationStack that starts at `ComposerCandidateView` and pushes
 /// `RatingView` when the user taps "Log it". Dismisses automatically
 /// when the submit completes or the user cancels.
 struct ComposerSheetView: View {
@@ -13,7 +13,7 @@ struct ComposerSheetView: View {
     var body: some View {
         NavigationStack {
             if let candidate = viewModel.selectedCandidate {
-                MediaDetailView(candidate: candidate, viewModel: viewModel)
+                ComposerCandidateView(candidate: candidate, viewModel: viewModel)
                     .toolbar {
                         ToolbarItem(placement: .cancellationAction) {
                             Button("Cancel") {
@@ -32,9 +32,12 @@ struct ComposerSheetView: View {
     }
 }
 
-// MARK: - Media detail page
+// MARK: - Candidate page
 
-private struct MediaDetailView: View {
+/// Step one of the composer: confirm the thing you picked, then rate it.
+/// Distinct from `MediaDetailView`, which is the catalog record for an
+/// item already in our database.
+private struct ComposerCandidateView: View {
     let candidate: MediaCandidate
     @Bindable var viewModel: ComposerViewModel
     @Environment(AuthState.self)

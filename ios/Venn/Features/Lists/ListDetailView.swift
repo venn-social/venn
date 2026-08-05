@@ -28,6 +28,9 @@ struct ListDetailView: View {
         }
         .navigationTitle(list.title)
         .navigationBarTitleDisplayMode(.inline)
+        .navigationDestination(for: Media.self) { media in
+            MediaDetailView(media: media)
+        }
         .task { await ensureLoaded() }
     }
 
@@ -86,18 +89,25 @@ struct ListDetailView: View {
 
     private func itemRow(_ item: ListItem, viewModel: ListDetailViewModel) -> some View {
         HStack(spacing: Theme.Spacing.md) {
-            MediaCoverThumb(kind: item.media.kind, coverURL: item.media.coverURL)
+            // Cover and title open the title; "Remove" stays outside the
+            // link so the row has exactly one tap target per action.
+            NavigationLink(value: item.media) {
+                HStack(spacing: Theme.Spacing.md) {
+                    MediaCoverThumb(kind: item.media.kind, coverURL: item.media.coverURL)
 
-            VStack(alignment: .leading, spacing: Theme.Spacing.xxs) {
-                Text(item.media.title)
-                    .font(Theme.Font.callout.weight(.medium))
-                    .foregroundStyle(Theme.Color.textPrimary)
-                if let note = item.note, !note.isEmpty {
-                    Text(note)
-                        .font(Theme.Font.footnote)
-                        .foregroundStyle(Theme.Color.textSecondary)
+                    VStack(alignment: .leading, spacing: Theme.Spacing.xxs) {
+                        Text(item.media.title)
+                            .font(Theme.Font.callout.weight(.medium))
+                            .foregroundStyle(Theme.Color.textPrimary)
+                        if let note = item.note, !note.isEmpty {
+                            Text(note)
+                                .font(Theme.Font.footnote)
+                                .foregroundStyle(Theme.Color.textSecondary)
+                        }
+                    }
                 }
             }
+            .buttonStyle(.plain)
 
             Spacer(minLength: Theme.Spacing.sm)
 
