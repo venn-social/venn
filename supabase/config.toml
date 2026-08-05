@@ -157,9 +157,17 @@ max_indexes = 5
 enabled = true
 # The base URL of your website. Used as an allow-list for redirects and for constructing URLs used
 # in emails.
+#
+# This file configures the LOCAL stack, so this stays localhost. The hosted
+# project's Site URL and redirect allow-list are set in the dashboard
+# (Authentication → URL Configuration) and currently point at
+# https://venn-social.vercel.app — see docs/DEPLOY.md. Getting the hosted
+# allow-list wrong is the single most common way sign-in breaks after a
+# deploy: Supabase silently refuses to send magic links to origins that
+# aren't on it.
 site_url = "http://127.0.0.1:3000"
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
-additional_redirect_urls = ["https://127.0.0.1:3000"]
+additional_redirect_urls = ["https://127.0.0.1:3000", "http://localhost:3000"]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600
 # JWT issuer URL. If not set, defaults to the local API URL (http://127.0.0.1:<port>/auth/v1).
@@ -241,6 +249,17 @@ otp_expiry = 3600
 # pass = "env(SENDGRID_API_KEY)"
 # admin_email = "admin@email.com"
 # sender_name = "Admin"
+
+# The magic-link sign-in email — the first thing anyone ever sees from venn.
+# Kept in the repo so it's reviewed like code rather than living only in the
+# dashboard. See supabase/templates/magic_link.html.
+#
+# NOTE: this applies to the LOCAL stack. The hosted project's templates are
+# set in the dashboard (Authentication → Email Templates) — paste the same
+# file there, or they will drift. docs/DEPLOY.md covers the whole setup.
+[auth.email.template.magic_link]
+subject = "Sign in to venn"
+content_path = "./supabase/templates/magic_link.html"
 
 # Uncomment to customize email template
 # [auth.email.template.invite]
