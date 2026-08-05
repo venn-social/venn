@@ -3,7 +3,8 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { MediaCover } from "@/components/MediaCover";
 import { WatchLinks } from "@/components/WatchLinks";
-import { fetchMediaById, fetchMediaDetail, formatRuntime } from "@/lib/mediaDetail";
+import { regionFrom } from "@/lib/catalog/detail";
+import { fetchMediaById, formatRuntime, loadMediaDetail } from "@/lib/mediaDetail";
 import { mediaMetadata } from "@/lib/media";
 import { createClient } from "@/lib/supabase/server";
 
@@ -34,16 +35,12 @@ export default async function MediaPage({ params }: MediaPageProps) {
     notFound();
   }
 
-  const requestHeaders = await headers();
-  const host = requestHeaders.get("host") ?? "localhost:3000";
-  const protocol = host.startsWith("localhost") ? "http" : "https";
-
-  const detail = await fetchMediaDetail(media, `${protocol}://${host}`, {
-    // Forwarded so the endpoint can resolve the region and the session.
-    cookie: requestHeaders.get("cookie") ?? "",
-    "accept-language": requestHeaders.get("accept-language") ?? "",
-    "x-vercel-ip-country": requestHeaders.get("x-vercel-ip-country") ?? ""
-  });
+  // The provider is called in-process rather than over HTTP to our own
+  // API. Building an outbound URL from the request's Host header and
+  // forwarding the session cookie to it would let a spoofed Host ship that
+  // cookie to an attacker; there's no reason for a Server Component to
+  // round-trip through its own origin at all.
+  const detail = await loadMediaDetail(media, regionFrom(await headers()));
 
   const metadata = mediaMetadata(media);
   const runtime = formatRuntime(detail.runtime);

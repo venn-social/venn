@@ -1,5 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { EMPTY_DETAIL, type MediaDetail } from "@/lib/catalog/detail";
+import { EMPTY_DETAIL, sourceUrlFor, type MediaDetail } from "@/lib/catalog/detail";
+import { fetchMusicBrainzDetail } from "@/lib/catalog/musicBrainz";
+import { fetchOpenLibraryDetail } from "@/lib/catalog/openLibrary";
+import { fetchTMDBDetail } from "@/lib/catalog/tmdb";
 import { toMedia, type Media, type MediaRow } from "@/lib/media";
 
 /** One catalog row by id. Null when it doesn't exist — the page 404s. */
@@ -7,11 +10,7 @@ export async function fetchMediaById(
   client: SupabaseClient,
   mediaId: string
 ): Promise<Media | null> {
-  const { data, error } = await client
-    .from("media")
-    .select("*")
-    .eq("id", mediaId)
-    .maybeSingle();
+  const { data, error } = await client.from("media").select("*").eq("id", mediaId).maybeSingle();
 
   if (error) {
     if (error.code === "22P02") return null; // junk uuid in the URL
@@ -23,38 +22,49 @@ export async function fetchMediaById(
 /**
  * Enriched detail from whichever catalog this row came from.
  *
- * Returns the empty shape rather than throwing when the item has no
- * external source (someone typed it by hand) or the provider is down. The
- * page still has the title, cover, year, and creator from our own row —
- * a degraded detail section beats a broken page.
+ * Called **directly** from the Server Component rather than over HTTP to
+ * our own API. An earlier version derived the outbound origin from the
+ * request's Host header and forwarded the user's cookie to it — a spoofed
+ * Host would then have shipped the session to an attacker. Calling the
+ * provider functions in-process removes the hop, the header trust, and the
+ * cookie forwarding all at once, and is faster besides. The TMDB key stays
+ * server-only either way, because this only ever runs on the server.
+ *
+ * Returns the empty shape rather than throwing when the row has no
+ * external source (someone typed it by hand) or the provider is down: the
+ * page still has title, cover, year, and creator from our own row, and a
+ * thin detail section beats a broken page.
  */
-export async function fetchMediaDetail(
-  media: Media,
-  origin: string,
-  headers: HeadersInit
-): Promise<MediaDetail> {
+export async function loadMediaDetail(media: Media, region: string): Promise<MediaDetail> {
   if (!media.externalSource || !media.externalId) return EMPTY_DETAIL;
 
-  const params = new URLSearchParams({
-    source: media.externalSource,
-    externalId: media.externalId,
-    kind: media.kind
-  });
+  const sourceUrl = sourceUrlFor(media.externalSource, media.kind, media.externalId);
 
   try {
-    const response = await fetch(`${origin}/api/catalog/detail?${params.toString()}`, {
-      headers,
-      // Detail changes rarely — an hour of caching spares the provider and
-      // makes a second visit instant.
-      next: { revalidate: 3600 }
-    });
-    if (!response.ok) return EMPTY_DETAIL;
-
-    const json = await response.json();
-    return (json.detail as MediaDetail) ?? EMPTY_DETAIL;
+    const detail = await fetchFromProvider(media, region);
+    return { ...detail, sourceUrl };
   } catch {
-    return EMPTY_DETAIL;
+    // Still give them the link out, even if we couldn't enrich.
+    return { ...EMPTY_DETAIL, sourceUrl };
   }
+}
+
+function fetchFromProvider(media: Media, region: string): Promise<MediaDetail> {
+  if (media.externalSource === "openlibrary") {
+    return fetchOpenLibraryDetail(media.externalId!);
+  }
+  if (media.externalSource === "musicbrainz") {
+    return fetchMusicBrainzDetail(media.externalId!);
+  }
+
+  const apiKey = process.env.TMDB_API_KEY;
+  if (!apiKey) throw new Error("Movie and show details need a TMDB API key.");
+  return fetchTMDBDetail(
+    media.kind === "movie" ? "movie" : "show",
+    media.externalId!,
+    apiKey,
+    region
+  );
 }
 
 /** "2h 17m" from a minute count. Null passes through so callers can skip it. */
