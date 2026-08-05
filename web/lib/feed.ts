@@ -103,7 +103,12 @@ export async function fetchFeedPage(
 
   let query = client
     .from("posts")
-    .select("*, media(*), author:profiles(*)")
+  // The FK is named explicitly, and must stay that way: post_likes has
+  // foreign keys to both posts and profiles, so PostgREST also sees it as a
+  // many-to-many join between them. A bare `author:profiles(*)` is then
+  // ambiguous — "the author" or "everyone who liked it"? — and fails with
+  // PGRST201. This broke the feed on both platforms when likes shipped.
+    .select("*, media(*), author:profiles!posts_author_id_fkey(*)")
     .in("author_id", authorIds);
 
   if (options.before) {

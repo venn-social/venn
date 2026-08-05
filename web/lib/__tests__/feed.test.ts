@@ -1,3 +1,4 @@
+import { readFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
 import { feedCursor, toFeedPost, type FeedPostRow } from "@/lib/feed";
 
@@ -80,5 +81,22 @@ describe("feedCursor", () => {
     // Without milliseconds, every post created in the same second as the
     // cursor is skipped on the next page.
     expect(feedCursor(new Date("2026-08-01T10:00:00.123Z"))).toBe("2026-08-01T10:00:00.123Z");
+  });
+});
+
+describe("the posts→profiles embed", () => {
+  it("names the foreign key explicitly", async () => {
+    // Regression guard for PGRST201. post_likes references both posts and
+    // profiles, so PostgREST sees it as a many-to-many join between them
+    // and an unqualified profiles embed becomes ambiguous — which took the
+    // feed down on both platforms the day likes shipped. Any future join
+    // table touching posts and profiles would do it again.
+    //
+    // Vitest runs from web/, so this path resolves against that.
+    const source = await readFile("lib/feed.ts", "utf8");
+    const selects = source.match(/\.select\("[^"]*"\)/g) ?? [];
+    const postsSelect = selects.find((call) => call.includes("media(*)")) ?? "";
+
+    expect(postsSelect).toContain("author:profiles!posts_author_id_fkey(*)");
   });
 });

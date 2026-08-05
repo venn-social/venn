@@ -44,7 +44,12 @@ struct FeedService: FeedServicing {
             let authorIDs = followees.map(\.followeeId) + [viewerID]
             var query = client
                 .from("posts")
-                .select("*, media(*), author:profiles(*)")
+                // The FK is named explicitly, and must stay that way:
+                // post_likes references both posts and profiles, so
+                // PostgREST also sees it as a many-to-many join between
+                // them. A bare `author:profiles(*)` is ambiguous and fails
+                // with PGRST201 — this broke the feed when likes shipped.
+                .select("*, media(*), author:profiles!posts_author_id_fkey(*)")
                 .in("author_id", values: authorIDs)
             if let before {
                 query = query.lt("created_at", value: Self.cursor(before))
@@ -63,7 +68,7 @@ struct FeedService: FeedServicing {
     private func globalPosts(limit: Int, before: Date?) async throws -> [FeedPost] {
         var query = client
             .from("posts")
-            .select("*, media(*), author:profiles(*)")
+            .select("*, media(*), author:profiles!posts_author_id_fkey(*)")
         if let before {
             query = query.lt("created_at", value: Self.cursor(before))
         }
