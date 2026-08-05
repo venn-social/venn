@@ -31,7 +31,6 @@ Known, deliberate shortcuts — with the reason they exist and what unlocks fixi
 | 21 | Comments are **flat** — no replies-to-replies on either platform. A `parent_id`, a depth cap, and a recursive read are all needed for threading. | Not worth building before anyone has commented once; the flat shape is what Instagram ships and what Letterboxd's activity comments do. | Add `parent_id uuid references post_comments(id)` when threads are actually wanted. The current schema doesn't have to change, only extend. |
 | 22 | Comments **can't be edited**, only deleted and reposted. There is deliberately no UPDATE policy on `post_comments`. | Editing a comment somebody already replied to silently rewrites the conversation. Delete-and-repost is honest about it. | Revisit only with an "edited" marker and an edit history, or don't. |
 
-
 ## Figma backlog
 
 CLAUDE.md rule 15 (Figma-first) is suspended until the Figma Pro subscription lands. Every net-new UI surface shipped during the suspension is listed here so it gets recreated in Figma for completeness:
