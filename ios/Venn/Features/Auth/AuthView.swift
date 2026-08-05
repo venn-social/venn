@@ -89,7 +89,7 @@ struct AuthView: View {
                 .font(Theme.Font.largeTitle)
                 .foregroundStyle(Theme.Color.textPrimary)
 
-            Text("Where your tastes meet your friends'.")
+            Text("you have good taste. explore it.")
                 .font(Theme.Font.callout)
                 .foregroundStyle(Theme.Color.textSecondary)
                 .multilineTextAlignment(.center)
