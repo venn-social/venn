@@ -77,6 +77,12 @@ jobs:
       - run: npm ci
       - run: npx playwright install chromium --with-deps
       - run: npm run test:e2e
+        env:
+          # Mints a session for the dedicated E2E user so the authenticated
+          # suite can run. Unset on forks (they can't read secrets), where
+          # e2e/auth.setup.ts writes an empty cookie jar and those specs
+          # skip themselves rather than failing.
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       - name: Upload Playwright report on failure
         if: failure()
         uses: actions/upload-artifact@v7

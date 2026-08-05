@@ -99,8 +99,26 @@ The sequence, once a domain exists:
 4. **Paste [`supabase/templates/magic_link.html`](../supabase/templates/magic_link.html) into Authentication → Email Templates**, subject `Sign in to venn`. That file is the source of truth and is already wired into `supabase/config.toml` for the local stack — but the hosted project reads its templates from the dashboard, so the two drift unless you paste it.
 5. **Update the Site URL and redirect allow-list** to the new domain, keeping the `*.vercel.app` entries so existing links don't break.
 
+## 7. The CI secret that lets E2E sign in
+
+`Web CI`'s Playwright job runs two suites: a signed-out one that needs nothing, and an authenticated one that needs a real session. The session is minted by `web/e2e/auth.setup.ts` through Supabase's admin API, which needs the project's **service-role key**.
+
+Add it once, in GitHub -> **Settings -> Secrets and variables -> Actions -> New repository secret**:
+
+| Secret                      | Where to find it                                                    |
+| --------------------------- | ------------------------------------------------------------------- |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase dashboard -> Project Settings -> API -> `service_role` key |
+
+Three things to know about that key:
+
+1. **It bypasses RLS completely.** It is not the anon key and is not safe in a browser, a client bundle, or a `NEXT_PUBLIC_*` variable. It should exist in exactly two places: the Supabase dashboard and this GitHub secret.
+2. **Forks never see it.** GitHub withholds secrets from pull requests opened from forks. That is deliberate here: the setup step writes an empty cookie jar and the authenticated specs skip themselves, so an outside contributor still gets a green signed-out run instead of a wall of failures they cannot fix.
+3. **The suite never sends email.** Sign-in codes come from `admin.generateLink`, which mints a token without delivering anything. The built-in sender's ~3-4/hour budget is shared with real development (tech-debt row 20), and a test suite would exhaust it immediately.
+
+The suite signs in as a fixed account, `e2e@venn.test` / `@e2etester`, created on the first run. `venn.test` is not a deliverable domain, so nothing can reach that address even by accident.
+
 ## Known gaps
 
 - **No custom domain.** `*.vercel.app` for now; pointing a real domain at it is DNS work, not a code change.
 - **No CI gate on the deployment.** Vercel builds independently of GitHub Actions, so a deploy can succeed while `Web CI` fails. Watch both.
-- **The E2E suite can't sign in** (tech-debt row 13), so no automated check exercises the deployed site's authenticated surface. Step 5 is manual for now.
+- **CI tests the build, not the deployment.** Playwright runs against `next build && next start` inside the runner, so the authenticated suite proves the code works, not that the live Vercel site does. Step 5 stays manual.
