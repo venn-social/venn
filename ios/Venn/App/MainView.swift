@@ -6,6 +6,7 @@ import SwiftUI
 enum MainTab: Hashable, CaseIterable {
     case feed
     case explorer
+    case lists
     case profile
 
     /// Tab to the right of this one (or nil at the trailing edge).
@@ -76,6 +77,12 @@ struct MainView: View {
                     .toolbarBackground(.hidden, for: .tabBar)
             } label: {
                 Image(systemName: "magnifyingglass").accessibilityLabel("Search")
+            }
+            Tab(value: MainTab.lists) {
+                ListsView()
+                    .toolbarBackground(.hidden, for: .tabBar)
+            } label: {
+                Image(systemName: "list.bullet").accessibilityLabel("Lists")
             }
             Tab(value: MainTab.profile) {
                 ProfileView()
