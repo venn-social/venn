@@ -120,6 +120,90 @@ struct FeedViewModelTests {
         #expect(viewModel.state == .error(.offline))
     }
 
+    // MARK: - Likes and comment counts
+
+    @Test
+    func loadsLikesAndCommentCountsForThePageInOneCallEach() async {
+        // Two calls per page, not two per row: 20 posts would otherwise be
+        // 40 extra round trips.
+        let social = FakeFeedSocialService()
+        let posts = Self.posts(0..<3)
+        social.likes = [posts[0].id: LikeInfo(likeCount: 2, likedByMe: true)]
+        social.counts = [posts[0].id: 5]
+        let viewModel = FeedViewModel(
+            service: FakeFeedService(pages: [posts]),
+            socialService: social,
+            pageSize: 3
+        )
+
+        await viewModel.load()
+
+        #expect(viewModel.social(for: posts[0].id).likes.likeCount == 2)
+        #expect(viewModel.social(for: posts[0].id).commentCount == 5)
+        #expect(social.likeCalls.count == 1)
+        #expect(social.countCalls.count == 1)
+        #expect(social.likeCalls.first?.count == 3)
+    }
+
+    @Test
+    func aPostWithNoLikesOrCommentsReadsAsZero() async {
+        let posts = Self.posts(0..<2)
+        let viewModel = FeedViewModel(
+            service: FakeFeedService(pages: [posts]),
+            socialService: FakeFeedSocialService(),
+            pageSize: 2
+        )
+
+        await viewModel.load()
+
+        #expect(viewModel.social(for: posts[1].id) == .none)
+    }
+
+    @Test
+    func socialFailureLeavesTheFeedOnScreen() async {
+        // These counts are decoration; the feed is the content. A row with
+        // no heart beside it beats an error screen where the feed was.
+        let social = FakeFeedSocialService()
+        social.error = AppError.network
+        let viewModel = FeedViewModel(
+            service: FakeFeedService(pages: [Self.posts(0..<3)]),
+            socialService: social,
+            pageSize: 3
+        )
+
+        await viewModel.load()
+
+        #expect(viewModel.state == .loaded(Self.posts(0..<3)))
+        #expect(viewModel.social(for: Self.posts(0..<1)[0].id) == .none)
+    }
+
+    @Test
+    func loadMoreFetchesCountsForTheNewPageOnly() async {
+        let social = FakeFeedSocialService()
+        let viewModel = FeedViewModel(
+            service: FakeFeedService(pages: [Self.posts(0..<3), Self.posts(3..<6)]),
+            socialService: social,
+            pageSize: 3
+        )
+
+        await viewModel.load()
+        await viewModel.loadMore()
+
+        #expect(social.likeCalls.count == 2)
+        #expect(social.likeCalls[1] == Self.posts(3..<6).map(\.id))
+    }
+
+    @Test
+    func worksWithoutASocialServiceAtAll() async {
+        // The DEBUG design-preview boot has no signed-in viewer.
+        let viewModel = FeedViewModel(service: FakeFeedService(pages: [Self.posts(0..<2)]))
+
+        await viewModel.load()
+
+        #expect(viewModel.state == .loaded(Self.posts(0..<2)))
+        #expect(viewModel.social(for: Self.posts(0..<1)[0].id) == .none)
+    }
+
     // MARK: - Fixtures
 
     /// Deterministic posts: post `i` is `i` minutes older than the base
@@ -192,4 +276,39 @@ final class FakeFeedService: FeedServicing, @unchecked Sendable {
         guard !pages.isEmpty else { throw AppError.network }
         return pages.removeFirst()
     }
+}
+
+/// Records which post ids each batch call asked for, so tests can assert
+/// the feed batches per page rather than per row.
+final class FakeFeedSocialService: SocialServicing, @unchecked Sendable {
+    var likes: [UUID: LikeInfo] = [:]
+    var counts: [UUID: Int] = [:]
+    var error: AppError?
+    private(set) var likeCalls: [[UUID]] = []
+    private(set) var countCalls: [[UUID]] = []
+
+    func likeInfo(postIDs: [UUID]) async throws -> [UUID: LikeInfo] {
+        likeCalls.append(postIDs)
+        if let error {
+            throw error
+        }
+        return likes
+    }
+
+    func commentCounts(postIDs: [UUID]) async throws -> [UUID: Int] {
+        countCalls.append(postIDs)
+        if let error {
+            throw error
+        }
+        return counts
+    }
+
+    func like(postID _: UUID, userID _: UUID) async throws {}
+    func unlike(postID _: UUID, userID _: UUID) async throws {}
+    func comments(postID _: UUID, limit _: Int) async throws -> [PostComment] {
+        []
+    }
+
+    func addComment(postID _: UUID, authorID _: UUID, body _: String) async throws {}
+    func deleteComment(commentID _: UUID) async throws {}
 }
