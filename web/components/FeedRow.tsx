@@ -5,6 +5,12 @@ import { shortRelativeTime } from "@/lib/relativeTime";
 
 interface FeedRowProps {
   post: FeedPost;
+  /**
+   * The social footer — like button and comment link. Optional so the post
+   * detail page can render the row without duplicating the controls it
+   * already shows below.
+   */
+  actions?: React.ReactNode;
 }
 
 /**
@@ -12,7 +18,7 @@ interface FeedRowProps {
  * a large cover, the title and its metadata, an optional rating, and an
  * optional note.
  */
-export function FeedRow({ post }: FeedRowProps) {
+export function FeedRow({ post, actions }: FeedRowProps) {
   const authorName = post.author.displayName ?? post.author.username;
   // "2023 · Celine Song" — whichever of year / creator is present.
   const metadata = [post.media.year?.toString(), post.media.primaryCreator]
@@ -60,6 +66,8 @@ export function FeedRow({ post }: FeedRowProps) {
       </div>
 
       {post.caption && <p className="text-(--color-text-secondary)">{post.caption}</p>}
+
+      {actions}
     </article>
   );
 }
