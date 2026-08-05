@@ -34,7 +34,7 @@ export function toAlbumCandidates(json: unknown): MediaCandidate[] {
       if (!group.id || !group.title) return null;
 
       return {
-        id: candidateId("musicbrainz", group.id),
+        id: candidateId("musicbrainz", "album", group.id),
         title: group.title,
         primaryCreator: group["artist-credit"]?.[0]?.name ?? null,
         year: yearFrom(group["first-release-date"]),

@@ -29,10 +29,20 @@ const SEARCH_DEBOUNCE_MS = 350;
  * The log flow, porting ComposerViewModel: search a catalog, pick something,
  * then either save it for later or rate and caption it.
  */
-export function Composer({ userId }: { userId: string }) {
+export function Composer({
+  userId,
+  initialKind = "movie",
+  initialQuery = ""
+}: {
+  userId: string;
+  initialKind?: MediaKind;
+  initialQuery?: string;
+}) {
   const router = useRouter();
-  const [kind, setKind] = useState<MediaKind>("movie");
-  const [query, setQuery] = useState("");
+  // Read once as initial state rather than synced: Explorer links here with
+  // a prefill, but after that the composer owns its own state.
+  const [kind, setKind] = useState<MediaKind>(initialKind);
+  const [query, setQuery] = useState(initialQuery);
   const [candidates, setCandidates] = useState<MediaCandidate[]>([]);
   const [searching, setSearching] = useState(false);
   const [picked, setPicked] = useState<MediaCandidate | null>(null);

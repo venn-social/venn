@@ -8,7 +8,7 @@ export type ExternalSource = "tmdb" | "openlibrary" | "musicbrainz";
  * public.media. Mirrors ios/Venn/Models/MediaCandidate.swift.
  */
 export interface MediaCandidate {
-  /** "<source>:<externalId>" — stable and unique across providers. */
+  /** "<source>:<kind>:<externalId>" — stable and unique across providers. */
   id: string;
   title: string;
   primaryCreator: string | null;
@@ -21,8 +21,18 @@ export interface MediaCandidate {
   kind: MediaKind;
 }
 
-export function candidateId(source: ExternalSource, externalId: string): string {
-  return `${source}:${externalId}`;
+/**
+ * Kind is part of the key, not just source and id: TMDB numbers movies and
+ * TV independently, so movie 123 and show 123 are different things that
+ * would otherwise collide — visibly so in the "All" category, which
+ * searches both at once.
+ */
+export function candidateId(
+  source: ExternalSource,
+  kind: MediaKind,
+  externalId: string
+): string {
+  return `${source}:${kind}:${externalId}`;
 }
 
 /**

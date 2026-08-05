@@ -13,10 +13,9 @@ describe("AppNav", () => {
     expect(screen.getByRole("link", { name: "Profile" }).getAttribute("href")).toBe("/profile");
   });
 
-  it("shows Explorer as disabled rather than as a dead link", () => {
+  it("links Explorer now that the route exists", () => {
     render(<AppNav />);
-    expect(screen.queryByRole("link", { name: /Explorer/ })).toBeNull();
-    expect(screen.getByText("Explorer").getAttribute("aria-disabled")).toBe("true");
+    expect(screen.getByRole("link", { name: "Explorer" }).getAttribute("href")).toBe("/explorer");
   });
 
   it("orders the tabs Feed, Explorer, Profile like the iOS tab bar", () => {
