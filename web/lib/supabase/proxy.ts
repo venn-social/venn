@@ -1,14 +1,12 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { hasProfile } from "@/lib/onboarding";
-
-/**
- * Paths a signed-in user is never redirected away from by the onboarding
- * check below — /onboarding itself (it IS the destination), /login and
- * /auth/callback (auth is still in flight, no user to check yet in
- * practice, but excluded defensively).
- */
-const ONBOARDING_EXEMPT_PATHS = ["/onboarding", "/login", "/auth/callback"];
+import {
+  hasCompletionCookie,
+  isExemptPath,
+  PROFILE_COOKIE,
+  PROFILE_COOKIE_MAX_AGE
+} from "@/lib/onboardingGate";
 
 /**
  * Refreshes the Supabase session cookie on every request, and gates a
@@ -19,6 +17,11 @@ const ONBOARDING_EXEMPT_PATHS = ["/onboarding", "/login", "/auth/callback"];
  * Called from the root `proxy.ts` (Next.js 16 renamed `middleware.ts` to
  * `proxy.ts`), which runs on every request its matcher covers — so this
  * can't be bypassed by deep-linking directly to /[username] or /requests.
+ *
+ * The profile lookup is skipped once a cookie vouches for the current user
+ * (see lib/onboardingGate.ts). Without that, this ran a Postgres query on
+ * every single request from every signed-in user, to answer a question that
+ * changes once per account and never changes back.
  */
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -37,8 +40,8 @@ export async function updateSession(request: NextRequest) {
           cookiesToSet.forEach(({ name, value, options }) =>
             response.cookies.set(name, value, options)
           );
-        },
-      },
+        }
+      }
     }
   );
 
@@ -46,16 +49,32 @@ export async function updateSession(request: NextRequest) {
     data: { user }
   } = await supabase.auth.getUser();
 
-  const isExempt = ONBOARDING_EXEMPT_PATHS.some((path) =>
-    request.nextUrl.pathname.startsWith(path)
-  );
-
-  if (user && !isExempt) {
-    const complete = await hasProfile(supabase, user.id);
-    if (!complete) {
-      return NextResponse.redirect(new URL("/onboarding", request.url));
-    }
+  if (!user || isExemptPath(request.nextUrl.pathname)) {
+    return response;
   }
+
+  // The cheap path: this user already has a profile, established once.
+  if (hasCompletionCookie(request.cookies.get(PROFILE_COOKIE)?.value, user.id)) {
+    return response;
+  }
+
+  const complete = await hasProfile(supabase, user.id);
+
+  if (!complete) {
+    const redirect = NextResponse.redirect(new URL("/onboarding", request.url));
+    // Clear any cookie left by a previous account on this browser.
+    redirect.cookies.delete(PROFILE_COOKIE);
+    return redirect;
+  }
+
+  // Remember it, so this is the last lookup for this user on this browser.
+  response.cookies.set(PROFILE_COOKIE, user.id, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    maxAge: PROFILE_COOKIE_MAX_AGE,
+    path: "/"
+  });
 
   return response;
 }
