@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { toList, toListItems, toLists } from "@/lib/lists";
+import { nextPosition, toList, toListItems, toLists } from "@/lib/lists";
 
 const listRow = {
   id: "l1",
@@ -67,5 +67,30 @@ describe("toListItems", () => {
 
   it("returns an empty array for null", () => {
     expect(toListItems(null)).toEqual([]);
+  });
+});
+
+describe("nextPosition", () => {
+  it("starts at zero for an empty list", () => {
+    expect(nextPosition([])).toBe(0);
+  });
+
+  it("appends after the highest position", () => {
+    expect(
+      nextPosition([
+        { position: 0 },
+        { position: 1 }
+      ] as never)
+    ).toBe(2);
+  });
+
+  it("does not collide after an item is removed from the middle", () => {
+    // Counting items would return 2 here — which position 2 already holds.
+    expect(
+      nextPosition([
+        { position: 0 },
+        { position: 2 }
+      ] as never)
+    ).toBe(3);
   });
 });
