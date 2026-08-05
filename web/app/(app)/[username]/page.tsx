@@ -7,6 +7,7 @@ import { ProfileShelves } from "@/components/ProfileShelves";
 import { VennOverlap } from "@/components/VennOverlap";
 import { fetchFollowStatus } from "@/lib/follow";
 import { fetchCollection, fetchWatchlist, type LibraryItem } from "@/lib/library";
+import { fetchListsFor, type UserList } from "@/lib/lists";
 import { fetchOverlap } from "@/lib/overlap";
 import { fetchFollowCounts, fetchProfileByUsername } from "@/lib/profile";
 import { createClient } from "@/lib/supabase/server";
@@ -51,6 +52,7 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
   let overlapFailed = false;
   let collection: LibraryItem[] = [];
   let watchlist: LibraryItem[] = [];
+  let lists: UserList[] = [];
   // Gated server-side: a locked profile's shelves are never fetched, so
   // they never reach the browser at all. RLS is still the real boundary.
   if (!isLocked) {
@@ -59,9 +61,10 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
     } catch {
       overlapFailed = true;
     }
-    [collection, watchlist] = await Promise.all([
+    [collection, watchlist, lists] = await Promise.all([
       fetchCollection(supabase, profile.id).catch(() => []),
       fetchWatchlist(supabase, profile.id).catch(() => []),
+      fetchListsFor(supabase, profile.id).catch(() => []),
     ]);
   }
 
@@ -118,6 +121,31 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
             emptyCollection="Nothing logged yet."
             emptyWatchlist="Nothing saved yet."
           />
+
+          {/* Only their public lists come back — RLS filters private ones
+              out for anyone but the owner, so there's no is_public check
+              here to drift from the policy. */}
+          {lists.length > 0 && (
+            <section className="flex flex-col gap-3">
+              <h2 className="font-semibold text-(--color-text-primary)">Lists</h2>
+              <ul className="flex flex-col divide-y divide-(--color-separator)">
+                {lists.map((list) => (
+                  <li key={list.id}>
+                    <Link href={`/lists/${list.id}`} className="flex flex-col gap-0.5 py-3">
+                      <span className="font-medium text-(--color-text-primary)">
+                        {list.title}
+                      </span>
+                      {list.description && (
+                        <span className="text-sm text-(--color-text-secondary)">
+                          {list.description}
+                        </span>
+                      )}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
         </>
       )}
     </main>
