@@ -7,6 +7,7 @@ enum MainTab: Hashable, CaseIterable {
     case feed
     case explorer
     case lists
+    case activity
     case profile
 
     /// Tab to the right of this one (or nil at the trailing edge).
@@ -55,11 +56,17 @@ extension View {
     }
 }
 
-/// Signed-in app shell. Three tabs: Feed (default), Explorer, Profile. Each
-/// tab is its own feature; routing into nested views happens inside the
-/// tab via `NavigationStack`. Sign-out lives on the Profile tab.
+/// Signed-in app shell. Five tabs: Feed (default), Explorer, Lists,
+/// Activity, Profile. Each tab is its own feature; routing into nested
+/// views happens inside the tab via `NavigationStack`.
 struct MainView: View {
+    @Environment(SupabaseClientProvider.self)
+    private var clientProvider
+
     @State private var selection: MainTab = .feed
+    /// Owned here, not by `NotificationsView`, so the badge is right before
+    /// the tab has ever been opened — which is the entire point of a badge.
+    @State private var notifications: NotificationsViewModel?
 
     var body: some View {
         TabView(selection: $selection) {
@@ -84,6 +91,13 @@ struct MainView: View {
             } label: {
                 Image(systemName: "list.bullet").accessibilityLabel("Lists")
             }
+            Tab(value: MainTab.activity) {
+                activityTab
+                    .toolbarBackground(.hidden, for: .tabBar)
+            } label: {
+                Image(systemName: "bell").accessibilityLabel("Activity")
+            }
+            .badge(notifications?.unreadCount ?? 0)
             Tab(value: MainTab.profile) {
                 ProfileView()
                     .toolbarBackground(.hidden, for: .tabBar)
@@ -95,6 +109,26 @@ struct MainView: View {
         .vennTabFeedback(trigger: selection)
         .swipeBetweenTabs(selection: $selection)
         .accessibilityIdentifier("main_tab_view")
+        .task { await ensureNotificationsLoaded() }
+    }
+
+    @ViewBuilder private var activityTab: some View {
+        if let notifications {
+            NotificationsView(viewModel: notifications)
+        } else {
+            DeferredLoadingView()
+        }
+    }
+
+    /// Fetches the badge count, not the list. The list loads when the tab
+    /// is opened; the count has to be right before that.
+    private func ensureNotificationsLoaded() async {
+        if notifications == nil {
+            notifications = NotificationsViewModel(
+                service: NotificationService(client: clientProvider.client)
+            )
+        }
+        await notifications?.refreshBadge()
     }
 }
 

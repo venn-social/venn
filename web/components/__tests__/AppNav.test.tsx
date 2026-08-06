@@ -18,20 +18,43 @@ describe("AppNav", () => {
     expect(screen.getByRole("link", { name: "Explorer" }).getAttribute("href")).toBe("/explorer");
   });
 
-  it("orders the tabs Feed, Explorer, Profile like the iOS tab bar", () => {
-    // Explorer sits in the middle even though it isn't a link yet —
-    // appending it last silently changed the running order once already.
+  it("orders the tabs like the iOS tab bar", () => {
+    // Order is load-bearing: appending a tab last silently changed the
+    // running order once already.
     render(<AppNav />);
     const labels = screen
       .getAllByRole("listitem")
       .map((item) => item.textContent)
       .filter((text) => text !== "venn");
-    expect(labels).toEqual(["Feed", "Explorer", "Lists", "Profile", "Log"]);
+    expect(labels).toEqual(["Feed", "Explorer", "Lists", "Activity", "Profile", "Log"]);
   });
 
   it("marks the active route for assistive tech", () => {
     render(<AppNav />);
     expect(screen.getByRole("link", { name: "Feed" }).getAttribute("aria-current")).toBe("page");
     expect(screen.getByRole("link", { name: "Profile" }).getAttribute("aria-current")).toBeNull();
+  });
+
+  it("shows no badge when there is nothing unread", () => {
+    render(<AppNav />);
+    expect(screen.getByRole("link", { name: "Activity" }).textContent).toBe("Activity");
+  });
+
+  it("badges Activity with the unread count", () => {
+    render(<AppNav unreadCount={3} />);
+    // The link is labelled with the real number, because the visible
+    // badge caps at "9+" and would otherwise under-report it.
+    expect(screen.getByRole("link", { name: "Activity, 3 unread" })).toBeTruthy();
+  });
+
+  it("caps the badge rather than letting it stretch the nav", () => {
+    render(<AppNav unreadCount={42} />);
+    const activity = screen.getByRole("link", { name: /Activity/ });
+    expect(activity.textContent).toContain("9+");
+  });
+
+  it("announces the exact count even when the badge is capped", () => {
+    render(<AppNav unreadCount={42} />);
+    expect(screen.getByRole("link", { name: "Activity, 42 unread" })).toBeTruthy();
   });
 });
