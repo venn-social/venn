@@ -7,7 +7,13 @@ struct ListDetailView: View {
     let viewerID: UUID
     let service: any ListServicing
 
+    @Environment(AppConfig.self)
+    private var config
+    @Environment(SupabaseClientProvider.self)
+    private var clientProvider
+
     @State private var viewModel: ListDetailViewModel?
+    @State private var addViewModel: ListAddViewModel?
 
     private var isOwner: Bool {
         list.ownerID == viewerID
@@ -30,6 +36,29 @@ struct ListDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .navigationDestination(for: Media.self) { media in
             MediaDetailView(media: media)
+        }
+        .toolbar {
+            if isOwner {
+                ToolbarItem(placement: .primaryAction) {
+                    Button("Add", systemImage: "plus") { presentAdd() }
+                }
+            }
+        }
+        .sheet(
+            isPresented: Binding(
+                get: { addViewModel != nil },
+                set: {
+                    if !$0 {
+                        addViewModel = nil
+                    }
+                }
+            )
+        ) {
+            if let addViewModel {
+                ListAddView(viewModel: addViewModel) {
+                    Task { await viewModel?.load() }
+                }
+            }
         }
         .task { await ensureLoaded() }
     }
@@ -119,6 +148,17 @@ struct ListDetailView: View {
                 .foregroundStyle(Theme.Color.textSecondary)
             }
         }
+    }
+
+    private func presentAdd() {
+        addViewModel = ListAddViewModel(
+            listID: list.id,
+            catalog: ComposerService(
+                tmdb: config.tmdbAPIKey.map { TMDBService(apiKey: $0) },
+                client: clientProvider.client
+            ),
+            lists: service
+        )
     }
 
     private func ensureLoaded() async {

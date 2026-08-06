@@ -68,6 +68,10 @@ import SwiftUI
             []
         }
 
+        func upsertMedia(candidate _: MediaCandidate) async throws -> UUID {
+            UUID()
+        }
+
         func log(
             candidate: MediaCandidate,
             authorID: UUID,
