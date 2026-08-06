@@ -1,10 +1,15 @@
 import SwiftUI
 
 /// Account-settings sheet, opened from the gear icon on `ProfileView`.
-/// One row today: the private-account toggle.
+/// The private-account toggle, and the way out.
 struct SettingsView: View {
     @Bindable var viewModel: SettingsViewModel
     var onDismiss: () -> Void
+
+    @Environment(AuthState.self)
+    private var authState
+
+    @State private var confirmingSignOut = false
 
     var body: some View {
         NavigationStack {
@@ -21,6 +26,8 @@ struct SettingsView: View {
                     }
 
                     Spacer(minLength: 0)
+
+                    signOutRow
                 }
                 .padding(Theme.Spacing.lg)
             }
@@ -34,6 +41,36 @@ struct SettingsView: View {
                     .accessibilityIdentifier("settings_done")
                 }
             }
+        }
+    }
+
+    /// Last, and visually separated: it is the one control here that ends
+    /// the session rather than adjusting it.
+    ///
+    /// Confirmed before acting, unlike web's. Signing out on a phone means
+    /// waiting on an email to get back in, and the button sits a thumb's
+    /// width from a toggle people open this sheet to flip.
+    private var signOutRow: some View {
+        Button("Sign out", role: .destructive) {
+            confirmingSignOut = true
+        }
+        .font(Theme.Font.body.weight(.semibold))
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityIdentifier("settings_sign_out")
+        .confirmationDialog(
+            "Sign out of venn?",
+            isPresented: $confirmingSignOut,
+            titleVisibility: .visible
+        ) {
+            Button("Sign out", role: .destructive) {
+                Task {
+                    await authState.signOut()
+                    onDismiss()
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("You'll need your email to sign back in.")
         }
     }
 
@@ -88,6 +125,7 @@ struct SettingsView: View {
             service: PreviewSettingsService()
         )
     ) {}
+        .environment(AuthState(service: AuthService(client: SupabaseClientProvider.preview.client)))
 }
 
 /// Periphery flags this as unused — it's reachable only from the
