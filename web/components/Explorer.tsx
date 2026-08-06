@@ -17,12 +17,19 @@ import { fetchRecentMedia } from "@/lib/explore";
 import type { Media } from "@/lib/media";
 import { searchProfiles } from "@/lib/people";
 import type { UserProfile } from "@/lib/profile";
+import { RecommendationShelves } from "@/components/RecommendationShelves";
+import type { Shelf } from "@/lib/recommendations";
 import { createClient } from "@/lib/supabase/client";
 
 const SEARCH_DEBOUNCE_MS = 350;
 
+interface ExplorerProps {
+  /** Recommendation shelves, fetched on the server. Empty renders nothing. */
+  shelves?: Shelf[];
+}
+
 /** Ports ExplorerView.swift: category chips over a search field. */
-export function Explorer() {
+export function Explorer({ shelves = [] }: ExplorerProps) {
   const router = useRouter();
   const [category, setCategory] = useState<ExploreCategory>("all");
   const [query, setQuery] = useState("");
@@ -121,7 +128,12 @@ export function Explorer() {
         />
       )}
 
-      {trimmed.length === 0 && category === "all" && (
+      {/* Only with an empty query: shelves are for browsing, and leaving
+          them above live results would push what the user just typed off
+          the screen. */}
+      {trimmed.length === 0 && category === "all" && <RecommendationShelves shelves={shelves} />}
+
+      {trimmed.length === 0 && category === "all" && shelves.length === 0 && (
         <Prompt
           title="Search everything"
           message="Type in the search bar to find movies, TV shows, music, and books all at once."
