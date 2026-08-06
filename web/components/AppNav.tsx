@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { PlusIcon } from "@/components/Icon";
 import { usePathname } from "next/navigation";
 
 /**
@@ -64,9 +65,12 @@ export function AppNav({ unreadCount = 0 }: AppNavProps) {
         <li>
           <Link
             href="/composer"
-            className="rounded-pill bg-(--color-accent) px-3 py-1.5 text-sm font-semibold text-(--color-on-accent)"
+            // Same pill, same accent — just the glyph instead of the word.
+            // The label moves to aria-label so it still announces as "Log".
+            aria-label="Log"
+            className="flex h-8 w-8 items-center justify-center rounded-pill bg-(--color-accent) text-(--color-on-accent)"
           >
-            Log
+            <PlusIcon size={18} />
           </Link>
         </li>
       </ul>

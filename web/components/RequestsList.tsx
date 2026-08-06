@@ -4,6 +4,7 @@ import { useState } from "react";
 import { respondToRequest } from "@/lib/follow";
 import type { UserProfile } from "@/lib/profile";
 import { createClient } from "@/lib/supabase/client";
+import { CheckIcon, CrossIcon } from "@/components/Icon";
 
 interface RequestsListProps {
   initialRequests: UserProfile[];
@@ -66,7 +67,7 @@ export function RequestsList({ initialRequests }: RequestsListProps) {
               aria-label="Decline"
               className="flex h-8 w-8 items-center justify-center rounded-full bg-(--color-surface-strong) text-(--color-text-secondary) disabled:opacity-40"
             >
-              ✕
+              <CrossIcon size={16} />
             </button>
             <button
               type="button"
@@ -75,7 +76,7 @@ export function RequestsList({ initialRequests }: RequestsListProps) {
               aria-label="Accept"
               className="flex h-8 w-8 items-center justify-center rounded-full bg-(--color-surface-strong) text-(--color-accent) disabled:opacity-40"
             >
-              ✓
+              <CheckIcon size={16} />
             </button>
           </div>
         );

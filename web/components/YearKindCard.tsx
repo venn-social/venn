@@ -1,4 +1,5 @@
 import type { KindStats } from "@/lib/yearInReview";
+import { StarIcon } from "@/components/Icon";
 
 const PLURAL: Record<KindStats["kind"], string> = {
   movie: "Movies",
@@ -25,8 +26,8 @@ export function YearKindCard({ stats }: { stats: KindStats }) {
           {stats.consumedCount}
         </p>
         {stats.avgRating !== null && (
-          <p className="text-sm font-semibold text-(--color-text-primary)">
-            <span className="text-(--color-accent)">★</span> {stats.avgRating.toFixed(1)}
+          <p className="flex items-center gap-1 text-sm font-semibold text-(--color-text-primary)">
+            <StarIcon size={14} className="text-(--color-accent)" /> {stats.avgRating.toFixed(1)}
           </p>
         )}
       </div>

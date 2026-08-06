@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { HeartIcon } from "@/components/Icon";
 import { likePost, unlikePost } from "@/lib/likes";
 import { createClient } from "@/lib/supabase/client";
 
@@ -56,9 +57,7 @@ export function LikeButton({ postId, userId, initialCount, initialLiked }: LikeB
       aria-label={liked ? "Unlike this post" : "Like this post"}
       className="flex items-center gap-1.5 text-sm text-(--color-text-secondary) disabled:opacity-60"
     >
-      <span aria-hidden="true" className={liked ? "text-(--color-accent)" : ""}>
-        {liked ? "♥" : "♡"}
-      </span>
+      <HeartIcon filled={liked} className={liked ? "text-(--color-like)" : ""} />
       {count > 0 && <span className="tabular-nums">{count}</span>}
     </button>
   );

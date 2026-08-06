@@ -43,8 +43,12 @@ struct PostActionsView: View {
         HStack(spacing: Theme.Spacing.lg) {
             Button(action: toggleLike) {
                 HStack(spacing: Theme.Spacing.xs) {
+                    // Same heart either way — it fills rather than
+                    // changing shape. Red, not accent: the accent already
+                    // means "interactive", so tinting a like with it would
+                    // make every heart read as a link.
                     Image(systemName: liked ? "heart.fill" : "heart")
-                        .foregroundStyle(liked ? Theme.Color.accent : Theme.Color.textSecondary)
+                        .foregroundStyle(liked ? Theme.Color.like : Theme.Color.textSecondary)
                     if likeCount > 0 {
                         Text(verbatim: "\(likeCount)")
                             .font(Theme.Font.footnote)

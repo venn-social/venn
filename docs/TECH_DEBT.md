@@ -67,4 +67,8 @@ CLAUDE.md rule 15 (Figma-first) is suspended until the Figma Pro subscription la
 - iOS `ProfileView` "See all" — the text button beside the shelf tabs that opens the full editable library, added because covers now open the title instead
 - Web `/notifications` and iOS `NotificationsView` — the Activity screen (rows with avatar, actor name, the event sentence, a quoted comment where there is one, relative time, and the tinted unread state), plus its "Nothing yet" empty state
 - The unread badge in both shells — iOS's `.badge` on the Activity tab, web's capped "9+" pill in `AppNav`
+- Web icon set (`components/Icon.tsx`) — heart (outline/filled), comment bubble, star, thumbs up/down, tick, cross, plus. Hand-drawn SVGs standing in for iOS's SF Symbols; a designer should decide whether these are the real ones or whether the app adopts a licensed set
+- The `--color-like` / `Theme.Color.like` red — the first non-accent colour in the palette, introduced so a liked heart doesn't read as a link. Worth a designer's eye on the exact value in both schemes
+- Web `AppNav`'s compose action as an icon-only accent pill (was the word "Log")
+- Feed attribution: the author's name now renders in the accent colour as a link, with the action verb left secondary — on both platforms
 - Web `/onboarding` — the two-step claim-username + add-photo flow (step label, username field with live ✓/✗ availability, display-name field, circular photo picker with preview, skip affordance). Mirrors iOS's `OnboardingView`/`OnboardingPhotoView` in copy and structure, but is its own responsive web layout and needs its own frames.

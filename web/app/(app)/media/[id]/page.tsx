@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { MediaCover } from "@/components/MediaCover";
+import { StarIcon } from "@/components/Icon";
 import { WatchLinks } from "@/components/WatchLinks";
 import { regionFrom } from "@/lib/catalog/detail";
 import { fetchMediaById, formatRuntime, loadMediaDetail } from "@/lib/mediaDetail";
@@ -60,8 +61,8 @@ export default async function MediaPage({ params }: MediaPageProps) {
             {runtime && <span>{runtime}</span>}
             {detail.pageCount && <span>{detail.pageCount} pages</span>}
             {detail.rating !== null && (
-              <span>
-                <span className="text-(--color-accent)">★</span> {detail.rating.toFixed(1)}
+              <span className="flex items-center gap-1">
+                <StarIcon size={14} className="text-(--color-accent)" /> {detail.rating.toFixed(1)}
               </span>
             )}
           </div>

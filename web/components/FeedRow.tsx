@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Avatar } from "@/components/Avatar";
+import { StarIcon } from "@/components/Icon";
 import type { FeedPost } from "@/lib/feed";
 import { shortRelativeTime } from "@/lib/relativeTime";
 
@@ -28,10 +29,16 @@ export function FeedRow({ post, actions }: FeedRowProps) {
   return (
     <article className="flex flex-col gap-3">
       <div className="flex items-center gap-2">
-        <Link href={`/${post.author.username}`} className="flex items-center gap-2">
+        <Link href={`/${post.author.username}`} className="group flex items-center gap-2">
           <Avatar name={authorName} avatarUrl={post.author.avatarUrl} size={28} />
-          <span className="text-sm font-medium text-(--color-text-secondary)">
-            {authorName} {post.action}
+          <span className="text-sm">
+            {/* Accent is this design system's signal for "interactive", and
+                the name being a link to a profile was previously invisible —
+                it read as the same grey as the verb after it. */}
+            <span className="font-semibold text-(--color-accent) group-hover:underline">
+              {authorName}
+            </span>{" "}
+            <span className="text-(--color-text-secondary)">{post.action}</span>
           </span>
         </Link>
         <span className="ml-auto text-xs text-(--color-text-secondary)">
@@ -66,8 +73,8 @@ export function FeedRow({ post, actions }: FeedRowProps) {
           {metadata && <p className="text-sm text-(--color-text-secondary)">{metadata}</p>}
         </div>
         {post.rating !== null && (
-          <span className="ml-auto shrink-0 text-sm font-semibold text-(--color-text-primary)">
-            <span className="text-(--color-accent)">★</span> {post.rating.toFixed(1)}
+          <span className="ml-auto flex shrink-0 items-center gap-1 text-sm font-semibold text-(--color-text-primary)">
+            <StarIcon size={14} className="text-(--color-accent)" /> {post.rating.toFixed(1)}
           </span>
         )}
       </div>
