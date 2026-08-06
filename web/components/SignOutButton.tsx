@@ -21,7 +21,9 @@ export function SignOutButton() {
   async function handleSignOut() {
     setSigningOut(true);
     try {
-      await createClient().auth.signOut();
+      // scope: "local", not the SDK's "global" default. Signing out of
+      // this browser should not end the session on the user's phone.
+      await createClient().auth.signOut({ scope: "local" });
     } catch {
       // Deliberately ignored — see the note above.
     }
