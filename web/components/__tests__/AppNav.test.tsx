@@ -26,13 +26,20 @@ describe("AppNav", () => {
       .getAllByRole("listitem")
       .map((item) => item.textContent)
       .filter((text) => text !== "venn");
-    expect(labels).toEqual(["Feed", "Explorer", "Lists", "Activity", "Profile", "Log"]);
+    // The compose action is an icon now, so it contributes no text — it is
+    // asserted by its accessible name below instead.
+    expect(labels).toEqual(["Feed", "Explorer", "Lists", "Activity", "Profile", ""]);
   });
 
   it("marks the active route for assistive tech", () => {
     render(<AppNav />);
     expect(screen.getByRole("link", { name: "Feed" }).getAttribute("aria-current")).toBe("page");
     expect(screen.getByRole("link", { name: "Profile" }).getAttribute("aria-current")).toBeNull();
+  });
+
+  it("keeps the compose action reachable as an icon-only button", () => {
+    render(<AppNav />);
+    expect(screen.getByRole("link", { name: "Log" }).getAttribute("href")).toBe("/composer");
   });
 
   it("shows no badge when there is nothing unread", () => {

@@ -12,6 +12,12 @@
   --color-accent: #0070f3;
   --color-on-accent: #ffffff;
 
+  /* The one non-accent colour in the palette. A liked heart has to read as
+     "liked" at a glance, and the blue accent already means "interactive" —
+     colouring it accent would make every like look like a link. Matches
+     Theme.Color.like. */
+  --color-like: #ff375f;
+
   /* Monochrome base, matching Theme.Color.graphite (light) / ink. */
   --color-graphite: #1c1c1c;
 
@@ -32,6 +38,7 @@
   :root {
     --color-accent: #4da3ff;
     --color-on-accent: #000000;
+    --color-like: #ff5c78;
     --color-graphite: #f5f5f0;
     --color-background: #000000;
     --color-surface: #1c1c1e;
@@ -45,6 +52,7 @@
 @theme inline {
   --color-accent: var(--color-accent);
   --color-on-accent: var(--color-on-accent);
+  --color-like: var(--color-like);
   --color-graphite: var(--color-graphite);
   --color-background: var(--color-background);
   --color-surface: var(--color-surface);

@@ -9,6 +9,7 @@ import {
   type SanitizeResult
 } from "@/lib/sanitize";
 import { createClient } from "@/lib/supabase/client";
+import { CheckIcon, CrossIcon } from "@/components/Icon";
 
 interface OnboardingUsernameStepProps {
   userId: string;
@@ -188,10 +189,10 @@ function AvailabilityIndicator({ availability }: { availability: Availability })
     case "checking":
       return <span className="text-(--color-text-secondary)">…</span>;
     case "available":
-      return <span className="text-green-600">✓</span>;
+      return <CheckIcon size={16} className="text-green-600" />;
     case "taken":
     case "invalid":
-      return <span className="text-red-500">✕</span>;
+      return <CrossIcon size={16} className="text-red-500" />;
     default:
       return null;
   }

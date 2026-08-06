@@ -47,11 +47,23 @@ struct FeedRow: View {
         }
     }
 
+    /// The name is a link to the profile; the verb after it is not. Accent
+    /// is this design system's signal for "interactive", and until now the
+    /// name read as the same grey as the verb — there was nothing to
+    /// suggest it could be tapped, and on iOS it could not be.
     private var attribution: some View {
-        HStack {
-            Text("\(authorName) \(feedPost.post.action.rawValue)")
-                .font(Theme.Font.footnote.weight(.medium))
+        HStack(spacing: Theme.Spacing.xs) {
+            NavigationLink(value: feedPost.author) {
+                Text(authorName)
+                    .font(Theme.Font.footnote.weight(.semibold))
+                    .foregroundStyle(Theme.Color.accent)
+            }
+            .buttonStyle(.plain)
+
+            Text(feedPost.post.action.rawValue)
+                .font(Theme.Font.footnote)
                 .foregroundStyle(Theme.Color.textSecondary)
+
             Spacer()
             Text(RelativeTime.short(from: feedPost.post.createdAt))
                 .font(Theme.Font.caption)

@@ -77,6 +77,12 @@ enum Theme {
         /// clearly wherever it appears.
         static let accent = hex(light: 0x0070F3, dark: 0x4DA3FF)
 
+        /// The one non-accent colour in the palette. A liked heart has to
+        /// read as "liked" at a glance, and the accent already means
+        /// "interactive" — tinting it accent would make every like look
+        /// like a link. Mirrored by web's `--color-like`.
+        static let like = hex(light: 0xFF375F, dark: 0xFF5C78)
+
         /// Default screen background.
         static let background = paper
 

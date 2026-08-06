@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CommentIcon } from "@/components/Icon";
 import { LikeButton } from "@/components/LikeButton";
 
 interface PostActionsProps {
@@ -32,7 +33,7 @@ export function PostActions({
         href={`/post/${postId}`}
         className="flex items-center gap-1.5 text-sm text-(--color-text-secondary)"
       >
-        <span aria-hidden="true">💬</span>
+        <CommentIcon />
         <span>
           {commentCount > 0 ? commentCount : ""}{" "}
           <span className={commentCount > 0 ? "sr-only" : ""}>

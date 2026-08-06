@@ -36,13 +36,21 @@ function post(overrides: Partial<FeedPost> = {}): FeedPost {
 describe("FeedRow", () => {
   it("shows who did what, and when", () => {
     render(<FeedRow post={post()} />);
-    expect(screen.getByText("Ada logged")).toBeDefined();
+    // Name and verb are separate elements now: only the name is a link, so
+    // only the name carries the accent colour that says so.
+    expect(screen.getByText("Ada")).toBeDefined();
+    expect(screen.getByText("logged")).toBeDefined();
     expect(screen.getByText("2h")).toBeDefined();
+  });
+
+  it("links the author's name to their profile", () => {
+    render(<FeedRow post={post()} />);
+    expect(screen.getByRole("link", { name: /Ada/ }).getAttribute("href")).toBe("/ada");
   });
 
   it("falls back to the username when there is no display name", () => {
     render(<FeedRow post={post({ author: { ...post().author, displayName: null } })} />);
-    expect(screen.getByText("ada logged")).toBeDefined();
+    expect(screen.getByText("ada")).toBeDefined();
   });
 
   it("joins year and creator for the metadata line", () => {

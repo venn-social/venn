@@ -31,6 +31,11 @@ struct FeedView: View {
                 .navigationDestination(for: Media.self) { media in
                     MediaDetailView(media: media)
                 }
+                // Feed rows now link their author. Without this the link
+                // renders but goes nowhere.
+                .navigationDestination(for: UserProfile.self) { profile in
+                    PublicProfileView(profile: profile)
+                }
                 .navigationDestination(for: FeedPost.self) { feedPost in
                     if let viewerID = signedInUserID {
                         PostDetailView(
