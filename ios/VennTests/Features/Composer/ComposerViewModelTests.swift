@@ -257,15 +257,24 @@ struct ComposerViewModelTests {
 final class FakeComposerService: ComposerServicing, @unchecked Sendable {
     var searchResult: Result<[MediaCandidate], Error> = .success([])
     var logResult: Result<Post, Error> = .failure(NotConfigured())
+    var upsertResult: Result<UUID, Error> = .success(UUID())
 
     private(set) var logCallCount = 0
+    private(set) var searchCallCount = 0
+    private(set) var upsertCallCount = 0
     private(set) var lastCandidate: MediaCandidate?
     private(set) var lastAction: PostAction?
     private(set) var lastRating: Double??
     private(set) var lastCaption: String?
 
     func search(query _: String, kind _: MediaKind, page _: Int) async throws -> [MediaCandidate] {
-        try searchResult.get()
+        searchCallCount += 1
+        return try searchResult.get()
+    }
+
+    func upsertMedia(candidate _: MediaCandidate) async throws -> UUID {
+        upsertCallCount += 1
+        return try upsertResult.get()
     }
 
     func log(

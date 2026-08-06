@@ -3,16 +3,35 @@ import SwiftUI
 /// Sheet wrapper for the log-it composer flow.
 ///
 /// Hosts a NavigationStack that starts at `ComposerCandidateView` and pushes
-/// `RatingView` when the user taps "Log it". Dismisses automatically
-/// when the submit completes or the user cancels.
+/// `RatingView` when the user taps "Log it".
+///
+/// A successful submit lands on a confirmation step rather than dismissing
+/// straight away, because that is the one moment we know exactly which
+/// catalog row the user cares about — and so the only sensible place to
+/// offer "also add to a list" without making them find the thing again.
+/// Web does the same thing after logging.
 struct ComposerSheetView: View {
     @Bindable var viewModel: ComposerViewModel
     @Environment(\.dismiss)
     private var dismiss
+    @Environment(AuthState.self)
+    private var authState
+    @Environment(SupabaseClientProvider.self)
+    private var clientProvider
+
+    private var signedInUserID: UUID? {
+        if case let .signedIn(session) = authState.status {
+            session.user.id
+        } else {
+            nil
+        }
+    }
 
     var body: some View {
         NavigationStack {
-            if let candidate = viewModel.selectedCandidate {
+            if viewModel.submitState == .submitted {
+                confirmation
+            } else if let candidate = viewModel.selectedCandidate {
                 ComposerCandidateView(candidate: candidate, viewModel: viewModel)
                     .toolbar {
                         ToolbarItem(placement: .cancellationAction) {
@@ -24,11 +43,41 @@ struct ComposerSheetView: View {
                     }
             }
         }
-        .onChange(of: viewModel.submitState) { _, state in
-            if state == .submitted {
-                dismiss()
+    }
+
+    private var confirmation: some View {
+        Screen {
+            VStack(alignment: .leading, spacing: Theme.Spacing.xl) {
+                VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
+                    Text("Logged")
+                        .font(Theme.Font.title2)
+                        .foregroundStyle(Theme.Color.textPrimary)
+                    if let title = viewModel.selectedCandidate?.title {
+                        Text(title)
+                            .font(Theme.Font.callout)
+                            .foregroundStyle(Theme.Color.textSecondary)
+                    }
+                }
+
+                // Absent for a hand-typed row, and while the id is still
+                // settling — there would be nothing to add.
+                if let mediaID = viewModel.loggedMediaID, let ownerID = signedInUserID {
+                    AddToListPicker(
+                        ownerID: ownerID,
+                        mediaID: mediaID,
+                        service: ListService(client: clientProvider.client)
+                    )
+                }
+
+                Spacer()
+
+                PrimaryButton(title: "Done") {
+                    viewModel.clearPick()
+                    dismiss()
+                }
             }
         }
+        .navigationBarBackButtonHidden(true)
     }
 }
 
@@ -352,6 +401,10 @@ private struct RatingView: View {
 private final class PreviewComposerService: ComposerServicing, @unchecked Sendable {
     func search(query _: String, kind _: MediaKind, page _: Int) async throws -> [MediaCandidate] {
         []
+    }
+
+    func upsertMedia(candidate _: MediaCandidate) async throws -> UUID {
+        UUID()
     }
 
     func log(
