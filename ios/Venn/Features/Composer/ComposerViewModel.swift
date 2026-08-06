@@ -46,6 +46,11 @@ final class ComposerViewModel {
     /// Whether to publish the log as a visible feed post (default on).
     var postToFeed = true
 
+    /// The catalog row the last successful submit wrote to, so the
+    /// confirmation step can offer to add it to a list without looking it
+    /// up again. Nil until something has been logged.
+    private(set) var loggedMediaID: UUID?
+
     var canSubmit: Bool {
         guard selectedCandidate != nil else { return false }
         guard submitState != .submitting else { return false }
@@ -96,6 +101,8 @@ final class ComposerViewModel {
         caption = ""
         postToFeed = true
         submitState = .ready
+        // A stale id here would offer to add the *previous* thing to a list.
+        loggedMediaID = nil
     }
 
     /// Deselect — returns the UI to the search results list.
@@ -126,13 +133,14 @@ final class ComposerViewModel {
 
         submitState = .submitting
         do {
-            _ = try await service.log(
+            let post = try await service.log(
                 candidate: candidate,
                 authorID: authorID,
                 action: action,
                 rating: numericRating,
                 caption: sanitizedCaption
             )
+            loggedMediaID = post.mediaID
             submitState = .submitted
         } catch let error as AppError {
             submitState = .error(LoadErrorReason(error))
@@ -146,13 +154,14 @@ final class ComposerViewModel {
         guard let candidate = selectedCandidate else { return }
         submitState = .submitting
         do {
-            _ = try await service.log(
+            let post = try await service.log(
                 candidate: candidate,
                 authorID: authorID,
                 action: .saved,
                 rating: nil,
                 caption: nil
             )
+            loggedMediaID = post.mediaID
             submitState = .submitted
         } catch let error as AppError {
             submitState = .error(LoadErrorReason(error))

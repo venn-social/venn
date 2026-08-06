@@ -14,6 +14,16 @@ protocol ComposerServicing: Sendable {
     /// 1-based; each page returns up to 20 results.
     func search(query: String, kind: MediaKind, page: Int) async throws -> [MediaCandidate]
 
+    /// Put `candidate` into `public.media` without logging anything about
+    /// it, returning the row's id.
+    ///
+    /// Needed because `list_items.media_id` references `public.media`: a
+    /// catalog result nobody has logged yet exists nowhere in our database,
+    /// so adding an unlogged film to a list would fail on a foreign key.
+    /// `log` already does this internally; this exposes it for the callers
+    /// that want the row but not the post.
+    func upsertMedia(candidate: MediaCandidate) async throws -> UUID
+
     /// Upsert the chosen `candidate` into `public.media` (select-then-insert,
     /// idempotent on `external_source + external_id`), then insert a post row.
     func log(
@@ -82,7 +92,7 @@ struct ComposerService: ComposerServicing {
         caption: String?
     ) async throws -> Post {
         do {
-            let mediaID = try await upsertMedia(candidate)
+            let mediaID = try await upsertMedia(candidate: candidate)
             return try await insertPost(
                 authorID: authorID,
                 mediaID: mediaID,
@@ -105,7 +115,17 @@ struct ComposerService: ComposerServicing {
     /// `media_external_unique` directly, so we use a select-then-insert
     /// pattern. A concurrent insert of the same (source, id) pair will be
     /// caught by the DB constraint; the calling code treats that as success.
-    private func upsertMedia(_ candidate: MediaCandidate) async throws -> UUID {
+    func upsertMedia(candidate: MediaCandidate) async throws -> UUID {
+        do {
+            return try await catalogRowID(for: candidate)
+        } catch let error as AppError {
+            throw error
+        } catch {
+            throw AppError.from(error)
+        }
+    }
+
+    private func catalogRowID(for candidate: MediaCandidate) async throws -> UUID {
         let existing: [MediaIDRow] = try await client
             .from("media")
             .select("id")
