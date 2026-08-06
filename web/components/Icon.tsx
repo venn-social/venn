@@ -168,3 +168,35 @@ export function PlusIcon(props: IconProps) {
     </Svg>
   );
 }
+
+/** Move a list item up. */
+export function ChevronUpIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path
+        d="m6 15 6-6 6 6"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
+
+/** Move a list item down. */
+export function ChevronDownIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path
+        d="m6 9 6 6 6-6"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}

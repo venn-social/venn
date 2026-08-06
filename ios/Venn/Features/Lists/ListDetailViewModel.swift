@@ -35,6 +35,25 @@ final class ListDetailViewModel {
     }
 
     /// Optimistic removal; a failure reloads rather than losing the item.
+    /// Optimistic: the row moves immediately and a failed write reloads to
+    /// put it back. Waiting for a round trip before showing the new order
+    /// would make ordering a list feel broken.
+    func move(mediaID: UUID, direction: ListOrder.Direction) async {
+        guard case let .loaded(items) = state else { return }
+
+        let ordered = ListOrder.moved(items, mediaID: mediaID, direction: direction)
+        guard ordered != items.map(\.media.id) else { return }
+
+        let byID = Dictionary(uniqueKeysWithValues: items.map { ($0.media.id, $0) })
+        state = .loaded(ordered.compactMap { byID[$0] })
+
+        do {
+            try await service.reorder(listID: listID, mediaIDs: ordered)
+        } catch {
+            await load()
+        }
+    }
+
     func remove(mediaID: UUID) async {
         guard case let .loaded(items) = state else { return }
         state = .loaded(items.filter { $0.media.id != mediaID })
