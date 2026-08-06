@@ -80,6 +80,6 @@ struct TMDBServiceTests {
     func candidateIDIsStableAndUnique() {
         let movie = TMDBMovie(id: 550, title: "Fight Club", releaseDate: "1999-10-15", posterPath: nil, overview: nil)
         let candidate = TMDBService.candidate(from: movie)
-        #expect(candidate.id == "tmdb:550")
+        #expect(candidate.id == "tmdb:movie:550")
     }
 }
