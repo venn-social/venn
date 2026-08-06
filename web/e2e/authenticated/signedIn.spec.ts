@@ -49,9 +49,7 @@ test.describe("signed in", () => {
     await page.goto("/feed");
 
     await expect(page.getByText("Couldn't load the feed.")).toHaveCount(0);
-    await expect(
-      page.getByText("Quiet for now").or(page.locator("article").first())
-    ).toBeVisible();
+    await expect(page.getByText("Quiet for now").or(page.locator("article").first())).toBeVisible();
   });
 
   test("explorer search reaches the catalog APIs", async ({ page }) => {
@@ -71,6 +69,16 @@ test.describe("signed in", () => {
     await page.goto("/feed");
 
     await expect(page).toHaveURL(/\/login/);
+  });
+
+  test("explorer renders even when recommendations are thin", async ({ page }) => {
+    // The E2E user has almost no history, so the interesting assertion is
+    // not that shelves appear — it is that a nearly-empty recommendation
+    // payload leaves Explorer working rather than blanking it.
+    await page.goto("/explorer");
+
+    await expect(page.getByPlaceholder("Search movies, TV, music, books, people")).toBeVisible();
+    await expect(page.getByText("Couldn't load")).toHaveCount(0);
   });
 
   test("lists are reachable and render their own page", async ({ page }) => {
