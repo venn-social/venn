@@ -164,7 +164,8 @@ struct CatalogSimilarService: CatalogSimilarServicing {
                 primaryCreator: work.authors?.first?.name,
                 year: work.firstPublishYear,
                 coverURL: work.coverID.flatMap {
-                    URL(string: "https://covers.openlibrary.org/b/id/\($0)-M.jpg")
+                    // -L, matching OpenLibraryService — see the note there.
+                    URL(string: "https://covers.openlibrary.org/b/id/\($0)-L.jpg")
                 },
                 overview: nil,
                 // Strip the "/works/" prefix so external_id matches what

@@ -32,8 +32,12 @@ struct OpenLibraryService: OpenLibraryServicing {
     // MARK: - Helpers (internal for tests)
 
     static func candidate(from doc: OLDoc) -> MediaCandidate {
+        // -L (465x475), not -M (180x183). A medium cover is smaller than the
+        // tile it renders into, so every book was being upscaled — which is
+        // what made the shelves look soft next to TMDB's posters. Open
+        // Library serves -L via a 302, which URLSession follows.
         let coverURL = doc.coverI.map {
-            coversBase.appending(path: "\($0)-M.jpg")
+            coversBase.appending(path: "\($0)-L.jpg")
         }
         return MediaCandidate(
             title: doc.title,
