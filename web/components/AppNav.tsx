@@ -6,8 +6,9 @@ import { SideMenu } from "@/components/SideMenu";
 import { usePathname } from "next/navigation";
 
 /**
- * Persistent nav for authenticated pages: the three places the product
- * lives, the accent "Log" action, then everything else behind one control.
+ * Persistent nav for authenticated pages: the secondary-surfaces control on
+ * the leading edge, then the three places the product lives, then the accent
+ * "Log" action.
  *
  * Lists, Activity, Settings and Year in Review moved into `SideMenu`. Five
  * top-level destinations meant none of them read as primary; these three
@@ -35,6 +36,9 @@ export function AppNav({ unreadCount = 0 }: AppNavProps) {
   return (
     <nav className="sticky top-0 z-10 border-b border-(--color-separator) bg-(--color-background)">
       <ul className="mx-auto flex max-w-lg items-center gap-6 px-4 py-3">
+        <li>
+          <SideMenu unreadCount={unreadCount} />
+        </li>
         <li className="mr-auto font-semibold text-(--color-text-primary)">venn</li>
         {TABS.map((tab) => {
           const active = pathname === tab.href;
@@ -64,9 +68,6 @@ export function AppNav({ unreadCount = 0 }: AppNavProps) {
           >
             <PlusIcon size={18} />
           </Link>
-        </li>
-        <li>
-          <SideMenu unreadCount={unreadCount} />
         </li>
       </ul>
     </nav>

@@ -105,7 +105,7 @@ struct MainView: View {
         .vennTabFeedback(trigger: selection)
         .swipeBetweenTabs(selection: $selection)
         .accessibilityIdentifier("main_tab_view")
-        .overlay(alignment: .topTrailing) { menuButton }
+        .overlay(alignment: .topLeading) { menuButton }
         .overlay {
             if showMenu {
                 SideMenuView(
@@ -145,7 +145,7 @@ struct MainView: View {
                 }
         }
         .buttonStyle(.plain)
-        .padding(.trailing, Theme.Spacing.lg)
+        .padding(.leading, Theme.Spacing.lg)
         .accessibilityLabel("More")
         .accessibilityIdentifier("side_menu_button")
     }

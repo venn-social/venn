@@ -45,7 +45,7 @@ struct SideMenuView: View {
     var onSelect: (SideMenuDestination) -> Void
 
     var body: some View {
-        ZStack(alignment: .trailing) {
+        ZStack(alignment: .leading) {
             // Tap-away. Above the app, below the panel.
             Color.black.opacity(0.2)
                 .ignoresSafeArea()
@@ -54,7 +54,7 @@ struct SideMenuView: View {
                 .accessibilityAddTraits(.isButton)
 
             panel
-                .transition(.move(edge: .trailing))
+                .transition(.move(edge: .leading))
         }
         .accessibilityIdentifier("side_menu")
     }
