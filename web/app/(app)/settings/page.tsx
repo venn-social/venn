@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { PrivacyToggle } from "@/components/PrivacyToggle";
+import { SignOutButton } from "@/components/SignOutButton";
 import { fetchProfile } from "@/lib/profile";
 import { createClient } from "@/lib/supabase/server";
 
@@ -34,6 +35,11 @@ export default async function SettingsPage() {
           Follow requests
         </Link>
       )}
+
+      {/* Last, and visually separated: it is the one control here that
+          ends the session rather than adjusting it. */}
+      <hr className="mt-4 border-(--color-separator)" />
+      <SignOutButton />
     </main>
   );
 }

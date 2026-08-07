@@ -83,7 +83,11 @@ struct AuthService: AuthServicing {
 
     func signOut() async throws {
         do {
-            try await client.auth.signOut()
+            // .local, not the SDK's .global default. "Sign out" on this
+            // device means this device; global would also end the session
+            // on the user's phone, which is a "sign out everywhere"
+            // security action and belongs behind its own labelled control.
+            try await client.auth.signOut(scope: .local)
         } catch {
             throw AppError.from(error)
         }
