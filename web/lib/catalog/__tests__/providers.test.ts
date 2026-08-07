@@ -84,7 +84,9 @@ describe("toBookCandidates", () => {
     expect(book.primaryCreator).toBe("Susanna Clarke");
     expect(book.year).toBe(2020);
     expect(book.externalId).toBe("OL123W");
-    expect(book.coverUrl).toBe("https://covers.openlibrary.org/b/id/987-M.jpg");
+    // -L, not -M: a medium cover is 180px and renders smaller than the tile
+    // it sits in, so books looked soft next to TMDB posters.
+    expect(book.coverUrl).toBe("https://covers.openlibrary.org/b/id/987-L.jpg");
     expect(book.overview).toBe("The Halls are endless.");
     expect(book.kind).toBe("book");
   });
