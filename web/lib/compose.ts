@@ -93,12 +93,20 @@ export async function createPost(
     caption: string | null;
   }
 ): Promise<void> {
-  const { error } = await client.from("posts").insert({
-    author_id: options.authorId,
-    media_id: options.mediaId,
-    action: options.action,
-    rating: options.rating,
-    caption: options.caption
-  });
+  // Upsert, not insert: posts is now one row per (author, media). Logging
+  // something you had saved, or rating something you had logged, updates
+  // that row rather than adding a second one — which is what put the same
+  // title in a collection twice. A trigger moves created_at forward so the
+  // change still surfaces in friends' feeds.
+  const { error } = await client.from("posts").upsert(
+    {
+      author_id: options.authorId,
+      media_id: options.mediaId,
+      action: options.action,
+      rating: options.rating,
+      caption: options.caption
+    },
+    { onConflict: "author_id,media_id" }
+  );
   if (error) throw error;
 }

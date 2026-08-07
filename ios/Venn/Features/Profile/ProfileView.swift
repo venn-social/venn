@@ -12,54 +12,16 @@ struct ProfileView: View {
 
     @State private var viewModel: ProfileViewModel?
     @State private var editViewModel: ProfileEditViewModel?
-    @State private var settingsViewModel: SettingsViewModel?
     @State private var shelf: ProfileShelf = .collection
+    @State private var kindFilter: MediaKind?
     @State private var libraryDestination: LibraryDestination?
     @State private var followListDestination: FollowListDestination?
-    @State private var showYearInReview = false
     @State private var showFollowRequests = false
 
     var body: some View {
         NavigationStack {
             content
                 .toolbar(.hidden, for: .navigationBar)
-                .sheet(
-                    isPresented: Binding(
-                        get: { editViewModel != nil },
-                        set: {
-                            if !$0 {
-                                editViewModel = nil
-                            }
-                        }
-                    )
-                ) {
-                    if let editViewModel {
-                        ProfileEditView(
-                            viewModel: editViewModel,
-                            onSaved: {
-                                self.editViewModel = nil
-                                Task { await viewModel?.load() }
-                            },
-                            onCancel: { self.editViewModel = nil }
-                        )
-                    }
-                }
-                .sheet(
-                    isPresented: Binding(
-                        get: { settingsViewModel != nil },
-                        set: {
-                            if !$0 {
-                                settingsViewModel = nil
-                            }
-                        }
-                    )
-                ) {
-                    if let settingsViewModel {
-                        SettingsView(viewModel: settingsViewModel) {
-                            self.settingsViewModel = nil
-                        }
-                    }
-                }
                 .containerBackground(for: .navigation) {
                     GlassSkyBackground()
                 }
@@ -78,9 +40,6 @@ struct ProfileView: View {
                 }
                 .navigationDestination(for: Media.self) { media in
                     MediaDetailView(media: media)
-                }
-                .navigationDestination(isPresented: $showYearInReview) {
-                    YearInReviewView()
                 }
                 .navigationDestination(isPresented: $showFollowRequests) {
                     if case let .loaded(snapshot) = viewModel?.state {
@@ -157,8 +116,8 @@ struct ProfileView: View {
                     showFollowRequests = true
                 }
             }
-            iconButton("chart.bar.xaxis", label: "Year in Review") { showYearInReview = true }
-            iconButton("gearshape", label: "Settings") { presentSettingsSheet() }
+            // Year in Review and Settings moved to the side menu, and are
+            // only there — one way to each keeps this bar about the profile.
         }
     }
 
@@ -183,12 +142,21 @@ struct ProfileView: View {
     }
 
     private func shelfGallery(_ snapshot: ProfileSnapshot) -> some View {
-        ProfileShelfGallery(
-            items: shelf == .collection ? snapshot.collection : snapshot.watchlist,
-            emptyMessage: shelf == .collection
-                ? "Nothing in your collection yet."
-                : "Your watchlist is empty."
-        )
+        let all = shelf == .collection ? snapshot.collection : snapshot.watchlist
+        let shown = kindFilter.map { kind in all.filter { $0.media.kind == kind } } ?? all
+        let emptyMessage: LocalizedStringKey = if all.isEmpty {
+            shelf == .collection ? "Nothing in your collection yet." : "Your watchlist is empty."
+        } else {
+            "Nothing of that type here yet."
+        }
+
+        return VStack(spacing: Theme.Spacing.sm) {
+            MediaKindFilter(
+                selection: $kindFilter,
+                available: Set(all.map(\.media.kind))
+            )
+            ProfileShelfGallery(items: shown, emptyMessage: emptyMessage)
+        }
     }
 
     /// Covers themselves now open the title, so the editable list needs its
@@ -221,19 +189,6 @@ struct ProfileView: View {
             displayName: profile.displayName,
             bio: profile.bio,
             avatarURL: profile.avatarURL,
-            service: ProfileService(client: clientProvider.client)
-        )
-    }
-
-    private func presentSettingsSheet() {
-        guard let viewModel,
-              case let .loaded(snapshot) = viewModel.state
-        else {
-            return
-        }
-        settingsViewModel = SettingsViewModel(
-            userID: snapshot.profile.id,
-            isPrivate: snapshot.profile.isPrivate,
             service: ProfileService(client: clientProvider.client)
         )
     }

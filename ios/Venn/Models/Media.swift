@@ -58,6 +58,17 @@ enum MediaKind: String, Codable, CaseIterable, Hashable {
         }
     }
 
+    /// Title-case plural, for filter chips and section headers. Matches
+    /// the labels in web's MediaKindFilter.tsx.
+    var pluralDisplayName: String {
+        switch self {
+        case .movie: "Movies"
+        case .show: "Shows"
+        case .book: "Books"
+        case .album: "Albums"
+        }
+    }
+
     /// SF Symbol for this kind — cover placeholders, search-result rows,
     /// library badges. Defined once here; don't re-declare per feature.
     var systemImage: String {

@@ -6,8 +6,6 @@ import SwiftUI
 enum MainTab: Hashable, CaseIterable {
     case feed
     case explorer
-    case lists
-    case activity
     case profile
 
     /// Tab to the right of this one (or nil at the trailing edge).
@@ -56,14 +54,25 @@ extension View {
     }
 }
 
-/// Signed-in app shell. Five tabs: Feed (default), Explorer, Lists,
-/// Activity, Profile. Each tab is its own feature; routing into nested
-/// views happens inside the tab via `NavigationStack`.
+/// Signed-in app shell. Three tabs: Feed (default), Explorer, Profile —
+/// the places the product lives. Lists, Activity, Year in Review and
+/// Settings moved behind `SideMenuView`, reached from the trailing control
+/// on the toolbar, and are not linked anywhere else.
+///
+/// Each tab is its own feature; routing into nested views happens inside
+/// the tab via `NavigationStack`.
 struct MainView: View {
     @Environment(SupabaseClientProvider.self)
     private var clientProvider
 
     @State private var selection: MainTab = .feed
+    @State private var showMenu = false
+    @State private var menuDestination: SideMenuDestination?
+    /// Built when Settings is opened, because it needs the signed-in
+    /// profile's id and privacy flag, which only exist once loaded.
+    @State private var settingsViewModel: SettingsViewModel?
+    @Environment(AuthState.self)
+    private var authState
     /// Owned here, not by `NotificationsView`, so the badge is right before
     /// the tab has ever been opened — which is the entire point of a badge.
     @State private var notifications: NotificationsViewModel?
@@ -85,19 +94,6 @@ struct MainView: View {
             } label: {
                 Image(systemName: "magnifyingglass").accessibilityLabel("Search")
             }
-            Tab(value: MainTab.lists) {
-                ListsView()
-                    .toolbarBackground(.hidden, for: .tabBar)
-            } label: {
-                Image(systemName: "list.bullet").accessibilityLabel("Lists")
-            }
-            Tab(value: MainTab.activity) {
-                activityTab
-                    .toolbarBackground(.hidden, for: .tabBar)
-            } label: {
-                Image(systemName: "bell").accessibilityLabel("Activity")
-            }
-            .badge(notifications?.unreadCount ?? 0)
             Tab(value: MainTab.profile) {
                 ProfileView()
                     .toolbarBackground(.hidden, for: .tabBar)
@@ -109,7 +105,86 @@ struct MainView: View {
         .vennTabFeedback(trigger: selection)
         .swipeBetweenTabs(selection: $selection)
         .accessibilityIdentifier("main_tab_view")
+        .overlay(alignment: .topTrailing) { menuButton }
+        .overlay {
+            if showMenu {
+                SideMenuView(
+                    isPresented: $showMenu,
+                    unreadCount: notifications?.unreadCount ?? 0
+                ) { destination in
+                    menuDestination = destination
+                }
+            }
+        }
+        .sheet(item: $menuDestination) { destination in
+            menuSheet(for: destination)
+        }
         .task { await ensureNotificationsLoaded() }
+    }
+
+    /// Trailing control that opens the secondary surfaces. An overlay
+    /// rather than a toolbar item because each tab owns its own
+    /// `NavigationStack`, so there is no shared toolbar to hang it from.
+    private var menuButton: some View {
+        Button {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.9)) {
+                showMenu = true
+            }
+        } label: {
+            Image(systemName: "line.3.horizontal")
+                .font(Theme.Font.headline)
+                .foregroundStyle(Theme.Color.textPrimary)
+                .padding(Theme.Spacing.sm)
+                .background(.ultraThinMaterial, in: .circle)
+                .overlay(alignment: .topTrailing) {
+                    if (notifications?.unreadCount ?? 0) > 0 {
+                        Circle()
+                            .fill(Theme.Color.accent)
+                            .frame(width: 8, height: 8)
+                    }
+                }
+        }
+        .buttonStyle(.plain)
+        .padding(.trailing, Theme.Spacing.lg)
+        .accessibilityLabel("More")
+        .accessibilityIdentifier("side_menu_button")
+    }
+
+    @ViewBuilder
+    private func menuSheet(for destination: SideMenuDestination) -> some View {
+        switch destination {
+        case .lists: ListsView()
+        case .activity: activityTab
+        case .yearInReview: YearInReviewView()
+        case .settings: settingsSheet
+        }
+    }
+
+    @ViewBuilder private var settingsSheet: some View {
+        if let settingsViewModel {
+            SettingsView(viewModel: settingsViewModel) { menuDestination = nil }
+        } else {
+            DeferredLoadingView()
+                .task { await loadSettingsViewModel() }
+        }
+    }
+
+    /// Reads the signed-in user straight from the session rather than
+    /// waiting on ProfileView — the menu can be opened from any tab.
+    private func loadSettingsViewModel() async {
+        guard settingsViewModel == nil,
+              case let .signedIn(session) = authState.status
+        else {
+            return
+        }
+        let userID = session.user.id
+        let service = ProfileService(client: clientProvider.client)
+        let isPrivate = await (try? service.profile(for: userID))?.isPrivate ?? false
+        settingsViewModel = SettingsViewModel(
+            userID: userID,
+            isPrivate: isPrivate,
+            service: service
+        )
     }
 
     @ViewBuilder private var activityTab: some View {

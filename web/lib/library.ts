@@ -90,3 +90,18 @@ export function fetchWatchlist(
 ): Promise<LibraryItem[]> {
   return libraryItems(client, userId, WATCHLIST_ACTIONS, kind);
 }
+
+/**
+ * Delete one of your own posts, removing the item from the shelf it sits on.
+ *
+ * Ports ProfileService.removeFromLibrary. RLS refuses a delete that is not
+ * the author's, so this is safe to call optimistically; the app only ever
+ * surfaces the control on your own profile.
+ */
+export async function removeFromLibrary(
+  client: SupabaseClient,
+  postId: string
+): Promise<void> {
+  const { error } = await client.from("posts").delete().eq("id", postId);
+  if (error) throw error;
+}
