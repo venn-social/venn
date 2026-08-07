@@ -141,6 +141,8 @@ struct ListDetailView: View {
             Spacer(minLength: Theme.Spacing.sm)
 
             if isOwner {
+                moveControls(for: item, viewModel: viewModel)
+
                 Button("Remove") {
                     Task { await viewModel.remove(mediaID: item.media.id) }
                 }
@@ -158,6 +160,47 @@ struct ListDetailView: View {
                 client: clientProvider.client
             ),
             lists: service
+        )
+    }
+
+    /// Hidden rather than disabled at the ends: a control that can never do
+    /// anything is noise, and the list's shape already says why.
+    @ViewBuilder
+    private func moveControls(
+        for item: ListItem,
+        viewModel: ListDetailViewModel
+    ) -> some View {
+        if case let .loaded(items) = viewModel.state {
+            let index = items.firstIndex { $0.media.id == item.media.id }
+
+            HStack(spacing: Theme.Spacing.xs) {
+                if let index, index > 0 {
+                    moveButton(.up, item: item, viewModel: viewModel)
+                }
+                if let index, index < items.count - 1 {
+                    moveButton(.down, item: item, viewModel: viewModel)
+                }
+            }
+        }
+    }
+
+    private func moveButton(
+        _ direction: ListOrder.Direction,
+        item: ListItem,
+        viewModel: ListDetailViewModel
+    ) -> some View {
+        Button {
+            Task { await viewModel.move(mediaID: item.media.id, direction: direction) }
+        } label: {
+            Image(systemName: direction == .up ? "chevron.up" : "chevron.down")
+                .font(Theme.Font.caption)
+                .foregroundStyle(Theme.Color.textSecondary)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(
+            direction == .up
+                ? "Move \(item.media.title) up"
+                : "Move \(item.media.title) down"
         )
     }
 

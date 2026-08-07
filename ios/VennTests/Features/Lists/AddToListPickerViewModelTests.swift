@@ -144,6 +144,7 @@ final class FakeListsService: ListServicing, @unchecked Sendable {
     private(set) var listedOwners: [UUID] = []
     private(set) var addedPositions: [Int] = []
     private(set) var removed: [UUID] = []
+    private(set) var reordered: [[UUID]] = []
 
     init(lists: [UserList]) {
         seeded = lists
@@ -204,5 +205,12 @@ final class FakeListsService: ListServicing, @unchecked Sendable {
 
     func removeItem(listID _: UUID, mediaID: UUID) async throws {
         removed.append(mediaID)
+    }
+
+    func reorder(listID _: UUID, mediaIDs: [UUID]) async throws {
+        if let error {
+            throw error
+        }
+        reordered.append(mediaIDs)
     }
 }

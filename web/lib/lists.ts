@@ -175,3 +175,45 @@ export async function removeFromList(
     .eq("media_id", mediaId);
   if (error) throw error;
 }
+
+/**
+ * Rewrite a list's order.
+ *
+ * Sends the whole desired order rather than a swap: the RPC applies it in
+ * one statement, so a failure cannot leave two items claiming the same
+ * slot. It also repairs a list whose positions have already drifted.
+ */
+export async function reorderList(
+  client: SupabaseClient,
+  listId: string,
+  mediaIds: string[]
+): Promise<void> {
+  const { error } = await client.rpc("reorder_list_items", {
+    _list_id: listId,
+    _media_ids: mediaIds
+  });
+  if (error) throw error;
+}
+
+/**
+ * The order that results from moving `mediaId` one place in `direction`.
+ *
+ * Pure, so the move rules are testable without a database, and so the UI
+ * can render the new order optimistically before the write lands. Returns
+ * the input unchanged when the move would fall off either end.
+ */
+export function movedOrder(
+  items: ListItem[],
+  mediaId: string,
+  direction: "up" | "down"
+): string[] {
+  const ids = items.map((item) => item.media.id);
+  const from = ids.indexOf(mediaId);
+  const to = direction === "up" ? from - 1 : from + 1;
+
+  if (from === -1 || to < 0 || to >= ids.length) return ids;
+
+  const next = [...ids];
+  [next[from], next[to]] = [next[to], next[from]];
+  return next;
+}

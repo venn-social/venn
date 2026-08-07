@@ -40,6 +40,37 @@ protocol ListServicing: Sendable {
     func deleteList(id: UUID) async throws
     func addItem(listID: UUID, mediaID: UUID, position: Int, note: String?) async throws
     func removeItem(listID: UUID, mediaID: UUID) async throws
+
+    /// Rewrite the whole order.
+    ///
+    /// Sends every id rather than a swap: the RPC applies it in one
+    /// statement, so a failure cannot leave two items claiming the same
+    /// slot, and a list whose positions have already drifted comes back
+    /// consistent.
+    func reorder(listID: UUID, mediaIDs: [UUID]) async throws
+}
+
+/// The order that results from moving one item a single place.
+///
+/// Pure, so the rules are testable without a database and the view can
+/// render the new order before the write lands. Returns the input unchanged
+/// when the move would fall off either end. Mirrors web's `movedOrder`.
+enum ListOrder {
+    enum Direction {
+        case up, down
+    }
+
+    static func moved(_ items: [ListItem], mediaID: UUID, direction: Direction) -> [UUID] {
+        let ids = items.map(\.media.id)
+        guard let from = ids.firstIndex(of: mediaID) else { return ids }
+
+        let to = direction == .up ? from - 1 : from + 1
+        guard to >= 0, to < ids.count else { return ids }
+
+        var next = ids
+        next.swapAt(from, to)
+        return next
+    }
 }
 
 struct ListService: ListServicing {
@@ -142,6 +173,19 @@ struct ListService: ListServicing {
                     ),
                     onConflict: "list_id,media_id"
                 )
+                .execute()
+        } catch {
+            throw AppError.from(error)
+        }
+    }
+
+    func reorder(listID: UUID, mediaIDs: [UUID]) async throws {
+        do {
+            try await client
+                .rpc("reorder_list_items", params: [
+                    "_list_id": AnyJSON.string(listID.uuidString),
+                    "_media_ids": AnyJSON.array(mediaIDs.map { .string($0.uuidString) }),
+                ])
                 .execute()
         } catch {
             throw AppError.from(error)

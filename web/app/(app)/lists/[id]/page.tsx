@@ -71,7 +71,7 @@ export default async function ListPage({ params }: ListPageProps) {
         <ul className="flex flex-col gap-3">
           {items.map((item) => (
             <li key={item.media.id}>
-              <ListItemRow listId={list.id} item={item} canEdit={isOwner} />
+              <ListItemRow listId={list.id} item={item} items={items} canEdit={isOwner} />
             </li>
           ))}
         </ul>
