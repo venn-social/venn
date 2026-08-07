@@ -200,3 +200,18 @@ export function ChevronDownIcon(props: IconProps) {
     </Svg>
   );
 }
+
+/** Opens the secondary-surfaces panel. */
+export function MenuIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path
+        d="M4 7h16M4 12h16M4 17h16"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={2}
+        strokeLinecap="round"
+      />
+    </Svg>
+  );
+}
