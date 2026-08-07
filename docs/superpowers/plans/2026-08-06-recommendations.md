@@ -705,8 +705,7 @@ export interface CandidateShelf {
  * distinction is in the type rather than discovered at render time.
  */
 export type ShelfItem =
-  | { kind: "media"; media: Media }
-  | { kind: "candidate"; candidate: MediaCandidate };
+  { kind: "media"; media: Media } | { kind: "candidate"; candidate: MediaCandidate };
 
 export interface Shelf {
   source: ShelfSource;

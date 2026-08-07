@@ -113,15 +113,11 @@ Applied to every tier, without exception:
   "sections": [
     {
       "source": "taste_twins",
-      "items": [
-        /* media rows */
-      ]
+      "items": [/* media rows */]
     },
     {
       "source": "followed",
-      "items": [
-        /* media rows */
-      ]
+      "items": [/* media rows */]
     }
   ],
   "seeds": [
