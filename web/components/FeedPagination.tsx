@@ -6,6 +6,8 @@ import { FEED_PAGE_SIZE, fetchFeedPage, type FeedPost } from "@/lib/feed";
 import { createClient } from "@/lib/supabase/client";
 
 interface FeedPaginationProps {
+  /** Signed-in user, so later pages offer the same menu as the first. */
+  viewerId?: string | null;
   /** Cursor from the last server-rendered post — where page 2 begins. */
   initialCursor: string;
   /** False when the server's first page came back short (feed exhausted). */
@@ -17,7 +19,11 @@ interface FeedPaginationProps {
  * itself; this takes over once the sentinel scrolls into view — the web
  * equivalent of iOS's lazy footer `.task` trigger in FeedView.
  */
-export function FeedPagination({ initialCursor, initialHasMore }: FeedPaginationProps) {
+export function FeedPagination({
+  initialCursor,
+  initialHasMore,
+  viewerId = null
+}: FeedPaginationProps) {
   const [posts, setPosts] = useState<FeedPost[]>([]);
   const [cursor, setCursor] = useState(initialCursor);
   const [hasMore, setHasMore] = useState(initialHasMore);
@@ -68,7 +74,7 @@ export function FeedPagination({ initialCursor, initialHasMore }: FeedPagination
   return (
     <>
       {posts.map((post) => (
-        <FeedRow key={post.id} post={post} />
+        <FeedRow key={post.id} post={post} viewerId={viewerId} />
       ))}
 
       {failed && (

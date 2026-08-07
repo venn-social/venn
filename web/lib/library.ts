@@ -67,7 +67,11 @@ async function libraryItems(
     query = query.eq("media.kind", kind);
   }
 
-  const { data, error } = await query.order("created_at", { ascending: false });
+  // Curated first, then everything never placed, newest-first among itself.
+  // Matches the index and iOS's ProfileService ordering exactly.
+  const { data, error } = await query
+    .order("position", { ascending: true, nullsFirst: false })
+    .order("created_at", { ascending: false });
   if (error) throw error;
 
   return ((data ?? []) as unknown as LibraryItemRow[])
@@ -104,4 +108,111 @@ export async function removeFromLibrary(
 ): Promise<void> {
   const { error } = await client.from("posts").delete().eq("id", postId);
   if (error) throw error;
+}
+
+/**
+ * Change the rating on a post you already have.
+ *
+ * Only touches action and rating — the caption and the media it points at
+ * stay as they were. The BEFORE UPDATE trigger moves created_at forward, so
+ * a re-rate resurfaces in friends' feeds rather than staying buried at the
+ * moment you first logged it.
+ */
+export async function updatePostRating(
+  client: SupabaseClient,
+  postId: string,
+  options: { action: PostAction; rating: number | null }
+): Promise<void> {
+  const { error } = await client
+    .from("posts")
+    .update({ action: options.action, rating: options.rating })
+    .eq("id", postId);
+  if (error) throw error;
+}
+
+/**
+ * Put someone else's feed item on your own watchlist.
+ *
+ * `ignoreDuplicates` matters: posts is unique on (author_id, media_id), so a
+ * plain upsert would overwrite a row you already have — quietly demoting a
+ * film you rated five stars back to "saved". Doing nothing when a row
+ * exists is the only safe behaviour here.
+ */
+export async function saveToWatchlist(
+  client: SupabaseClient,
+  options: { authorId: string; mediaId: string }
+): Promise<void> {
+  const { error } = await client.from("posts").upsert(
+    {
+      author_id: options.authorId,
+      media_id: options.mediaId,
+      action: "saved" as PostAction,
+      rating: null,
+      caption: null
+    },
+    { onConflict: "author_id,media_id", ignoreDuplicates: true }
+  );
+  if (error) throw error;
+}
+
+/**
+ * Log someone else's feed item into your own collection.
+ *
+ * A plain upsert, unlike `saveToWatchlist`: promoting something you had
+ * saved into something you have consumed is the point, so overwriting is
+ * correct here.
+ */
+export async function logFromFeed(
+  client: SupabaseClient,
+  options: { authorId: string; mediaId: string }
+): Promise<void> {
+  const { error } = await client.from("posts").upsert(
+    {
+      author_id: options.authorId,
+      media_id: options.mediaId,
+      action: "logged" as PostAction,
+      rating: null,
+      caption: null
+    },
+    { onConflict: "author_id,media_id" }
+  );
+  if (error) throw error;
+}
+
+/**
+ * Rewrite the order of a shelf.
+ *
+ * Sends every id rather than the moved pair: the RPC applies it in one
+ * statement, so a failure cannot leave two covers claiming one slot, and a
+ * shelf whose positions have drifted comes back consistent. Same shape as
+ * `reorderList`.
+ */
+export async function reorderLibrary(
+  client: SupabaseClient,
+  postIds: string[]
+): Promise<void> {
+  const { error } = await client.rpc("reorder_library_items", { _post_ids: postIds });
+  if (error) throw error;
+}
+
+/**
+ * The order that results from moving `postId` to `toIndex`.
+ *
+ * Pure, so the rules are testable without a database and the grid can
+ * render the new arrangement before the write lands. Returns the input
+ * unchanged if either end is out of range.
+ */
+export function movedLibraryOrder(
+  items: LibraryItem[],
+  postId: string,
+  toIndex: number
+): string[] {
+  const ids = items.map((item) => item.id);
+  const from = ids.indexOf(postId);
+  if (from === -1 || toIndex < 0 || toIndex >= ids.length || from === toIndex) return ids;
+
+  const next = [...ids];
+  const [moved] = next.splice(from, 1);
+  next.splice(toIndex, 0, moved);
+  return next;
 }

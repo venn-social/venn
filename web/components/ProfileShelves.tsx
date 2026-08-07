@@ -5,7 +5,16 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { MediaCover } from "@/components/MediaCover";
 import { MediaKindFilter, type KindFilter } from "@/components/MediaKindFilter";
-import { removeFromLibrary, type LibraryItem } from "@/lib/library";
+import { MediaOverflowMenu } from "@/components/MediaOverflowMenu";
+import { RatingChips } from "@/components/RatingChips";
+import { ratingToPost, type RatingChoice } from "@/lib/compose";
+import {
+  removeFromLibrary,
+  reorderLibrary,
+  updatePostRating,
+  type LibraryItem
+} from "@/lib/library";
+import { useGridReorder } from "@/components/useGridReorder";
 import type { MediaKind } from "@/lib/media";
 import { createClient } from "@/lib/supabase/client";
 
@@ -49,7 +58,9 @@ export function ProfileShelves({
   const router = useRouter();
   const [shelf, setShelf] = useState<Shelf>("collection");
   const [kind, setKind] = useState<KindFilter>(null);
-  const [removingId, setRemovingId] = useState<string | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  /** The item whose rating is being edited, if any. */
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const items = shelf === "collection" ? collection : watchlist;
   const emptyMessage = shelf === "collection" ? emptyCollection : emptyWatchlist;
@@ -60,16 +71,59 @@ export function ProfileShelves({
   );
   const visible = kind ? items.filter((item) => item.media.kind === kind) : items;
 
+  // Reordering is only coherent over the whole shelf: dragging inside a
+  // filtered view would write positions that ignore the hidden items.
+  const reorderable = canEdit && kind === null;
+  const reorder = useGridReorder({
+    ids: visible.map((item) => item.id),
+    enabled: reorderable,
+    onCommit: (order) => void handleReorder(order)
+  });
+
+  const byId = new Map(visible.map((item) => [item.id, item]));
+  const ordered = reorder.order
+    .map((id) => byId.get(id))
+    .filter((item): item is LibraryItem => item !== undefined);
+
+  async function handleReorder(order: string[]) {
+    try {
+      await reorderLibrary(createClient(), order);
+      router.refresh();
+    } catch {
+      // The grid keeps the arrangement on screen; a refresh would snap it
+      // back and look like the drag was rejected rather than unsaved.
+    }
+  }
+
   async function handleRemove(item: LibraryItem) {
-    setRemovingId(item.id);
+    setBusyId(item.id);
     try {
       await removeFromLibrary(createClient(), item.id);
       router.refresh();
     } catch {
       // The cover stays put. RLS refuses a delete that isn't the author's,
       // and a transient failure shouldn't look like the item vanished.
-      setRemovingId(null);
+      setBusyId(null);
     }
+  }
+
+  async function handleRate(item: LibraryItem, choice: RatingChoice | null) {
+    setBusyId(item.id);
+    setEditingId(null);
+    try {
+      await updatePostRating(createClient(), item.id, ratingToPost(choice));
+      router.refresh();
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  /** The chip that matches a stored rating, so Edit opens on the current value. */
+  function choiceFor(item: LibraryItem): RatingChoice | null {
+    if (item.rating === null) return null;
+    if (item.rating >= 5) return "love";
+    if (item.rating >= 3) return "like";
+    return "dislike";
   }
 
   return (
@@ -109,21 +163,47 @@ export function ProfileShelves({
         </p>
       ) : (
         <ul className="grid grid-cols-3 gap-2">
-          {visible.map((item) => (
-            <li key={item.id} className="flex flex-col gap-1">
-              <Link href={`/media/${item.media.id}`}>
+          {ordered.map((item, index) => (
+            <li
+              key={item.id}
+              data-reorder-index={index}
+              {...(reorderable ? reorder.handlers(item.id) : {})}
+              className={[
+                "group relative",
+                reorderable ? "touch-none" : "",
+                reorder.draggingId === item.id ? "opacity-50" : ""
+              ].join(" ")}
+            >
+              <Link
+                href={`/media/${item.media.id}`}
+                // A completed drag must not also navigate.
+                onClick={(event) => {
+                  if (reorder.consumedClick()) event.preventDefault();
+                }}
+              >
                 <MediaCover media={item.media} />
               </Link>
               {canEdit && (
-                <button
-                  type="button"
-                  onClick={() => void handleRemove(item)}
-                  disabled={removingId === item.id}
-                  aria-label={`Remove ${item.media.title}`}
-                  className="text-left text-xs text-(--color-text-secondary) hover:text-red-500 disabled:opacity-50"
-                >
-                  Remove
-                </button>
+                <MediaOverflowMenu
+                  label={`Options for ${item.media.title}`}
+                  busy={busyId === item.id}
+                  actions={[
+                    { label: "Edit", onSelect: () => setEditingId(item.id) },
+                    {
+                      label: "Remove",
+                      destructive: true,
+                      onSelect: () => void handleRemove(item)
+                    }
+                  ]}
+                />
+              )}
+              {editingId === item.id && (
+                <div className="absolute inset-x-0 top-full z-20 mt-1 rounded-md border border-(--color-separator) bg-(--color-background) p-2 shadow-lg">
+                  <RatingChips
+                    value={choiceFor(item)}
+                    onChange={(choice) => void handleRate(item, choice)}
+                  />
+                </div>
               )}
             </li>
           ))}

@@ -170,6 +170,7 @@ final class FakeLibraryService: ProfileServicing, @unchecked Sendable {
     var removeResult: Result<Void, Error> = .success(())
 
     private(set) var removedPostIDs: [UUID] = []
+    private(set) var reordered: [[UUID]] = []
 
     func profile(for _: UUID) async throws -> UserProfile {
         try result.get()
@@ -191,6 +192,12 @@ final class FakeLibraryService: ProfileServicing, @unchecked Sendable {
 
     func collection(for _: UUID, kind _: MediaKind?) async throws -> [LibraryItem] {
         try collectionResult.get()
+    }
+
+    func updateRating(postID _: UUID, action _: PostAction, rating _: Double?) async throws {}
+
+    func reorderLibrary(postIDs: [UUID]) async throws {
+        reordered.append(postIDs)
     }
 
     func removeFromLibrary(postID: UUID) async throws {

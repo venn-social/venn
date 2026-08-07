@@ -64,6 +64,7 @@ export default async function FeedPage() {
         <FeedRow
           key={post.id}
           post={post}
+          viewerId={user.id}
           actions={
             <PostActions
               postId={post.id}
@@ -76,6 +77,7 @@ export default async function FeedPage() {
         />
       ))}
       <FeedPagination
+        viewerId={user.id}
         initialCursor={lastPost.createdAt.toISOString()}
         initialHasMore={posts.length >= FEED_PAGE_SIZE}
       />

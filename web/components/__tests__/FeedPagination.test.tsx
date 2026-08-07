@@ -3,6 +3,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { FeedPagination } from "@/components/FeedPagination";
 import type { FeedPost } from "@/lib/feed";
 
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ refresh: vi.fn() })
+}));
+
 vi.mock("@/lib/supabase/client", () => ({
   createClient: () => ({})
 }));

@@ -49,6 +49,10 @@
   }
 }
 
+/* Touch devices never fire hover, so anything revealed on hover has to be
+   permanently visible there or it simply does not exist on a phone. */
+@custom-variant hover-none (@media (hover: none));
+
 @theme inline {
   --color-accent: var(--color-accent);
   --color-on-accent: var(--color-on-accent);

@@ -103,15 +103,27 @@ describe("ProfileShelves", () => {
     expect(screen.queryByText(/Nothing of that type/)).toBeNull();
   });
 
-  it("only offers the remove control on your own shelves", () => {
+  it("only offers the options menu on your own shelves", () => {
     const { rerender } = render(
       <ProfileShelves collection={[item("1", "Piranesi")]} watchlist={[]} {...copy} />
     );
-    expect(screen.queryByRole("button", { name: "Remove Piranesi" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Options for Piranesi" })).toBeNull();
 
     rerender(
       <ProfileShelves collection={[item("1", "Piranesi")]} watchlist={[]} {...copy} canEdit />
     );
-    expect(screen.getByRole("button", { name: "Remove Piranesi" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Options for Piranesi" })).toBeTruthy();
+  });
+
+  it("keeps Edit and Remove behind the menu rather than on the artwork", () => {
+    render(<ProfileShelves collection={[item("1", "Piranesi")]} watchlist={[]} {...copy} canEdit />);
+
+    // Closed: neither action is on screen cluttering the cover.
+    expect(screen.queryByRole("menuitem", { name: "Remove" })).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Options for Piranesi" }));
+
+    expect(screen.getByRole("menuitem", { name: "Edit" })).toBeTruthy();
+    expect(screen.getByRole("menuitem", { name: "Remove" })).toBeTruthy();
   });
 });
