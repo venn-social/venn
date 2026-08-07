@@ -36,7 +36,10 @@ export function toBookCandidates(json: unknown): MediaCandidate[] {
         title: doc.title,
         primaryCreator: doc.author_name?.[0] ?? null,
         year: doc.first_publish_year ?? null,
-        coverUrl: doc.cover_i ? `${COVERS_BASE}/${doc.cover_i}-M.jpg` : null,
+        // -L (465x475), not -M (180x183) — a medium cover is smaller than
+        // the tile it renders into, so every book was upscaled. Served via
+        // a 302 the browser follows.
+        coverUrl: doc.cover_i ? `${COVERS_BASE}/${doc.cover_i}-L.jpg` : null,
         overview: firstSentence(doc),
         externalId,
         externalSource: "openlibrary",
