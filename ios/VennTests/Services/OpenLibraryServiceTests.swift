@@ -77,6 +77,7 @@ struct OpenLibraryServiceTests {
         { "key": "/works/OL99W", "title": "Test", "author_name": null, "first_publish_year": null, "cover_i": null }
         """.utf8)
         let doc = try JSONDecoder().decode(OLDoc.self, from: json)
-        #expect(OpenLibraryService.candidate(from: doc).id == "openlibrary:OL99W")
+        // Kind is part of the identity — see MediaCandidate.id.
+        #expect(OpenLibraryService.candidate(from: doc).id == "openlibrary:book:OL99W")
     }
 }

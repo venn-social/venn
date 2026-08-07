@@ -8,8 +8,13 @@ import Foundation
 /// Supabase — idempotent on `(external_source, external_id)` — before
 /// creating the post row.
 struct MediaCandidate: Equatable, Identifiable {
+    /// `"<source>:<kind>:<externalId>"`, byte-identical to web's
+    /// `candidateId()`. Kind is load-bearing: TMDB numbers movies and TV
+    /// independently, so movie 123 and show 123 are different things that
+    /// would otherwise collide. Recommendations compare this key across
+    /// platforms to filter out what you have already seen.
     var id: String {
-        "\(externalSource.rawValue):\(externalID)"
+        "\(externalSource.rawValue):\(kind.rawValue):\(externalID)"
     }
 
     let title: String

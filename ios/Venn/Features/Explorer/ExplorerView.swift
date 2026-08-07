@@ -23,6 +23,7 @@ struct ExplorerView: View {
     @State private var viewModel: ExplorerViewModel?
     @State private var composerViewModel: ComposerViewModel?
     @State private var peopleViewModel: PeopleSearchViewModel?
+    @State private var recommendations: RecommendationsViewModel?
 
     var body: some View {
         NavigationStack {
@@ -37,6 +38,7 @@ struct ExplorerView: View {
                             } else if selectedCategory == .people {
                                 peopleBrowsePrompt
                             } else {
+                                recommendationsStack
                                 allBrowsePrompt
                             }
                         } else if selectedCategory == .people {
@@ -145,6 +147,17 @@ struct ExplorerView: View {
                 }
                 .buttonStyle(.plain)
                 .vennScrollDepth()
+            }
+        }
+    }
+
+    /// Only in the "All" category with an empty query: shelves are for
+    /// browsing, and leaving them above live search results would push what
+    /// the user just typed off the screen.
+    @ViewBuilder private var recommendationsStack: some View {
+        if let recommendations {
+            RecommendationsView(viewModel: recommendations) { candidate in
+                composerViewModel?.pick(candidate)
             }
         }
     }
@@ -268,6 +281,14 @@ struct ExplorerView: View {
             composerViewModel = ComposerViewModel(
                 service: ComposerService(tmdb: tmdb, client: clientProvider.client)
             )
+        }
+        if recommendations == nil {
+            let viewModel = RecommendationsViewModel(
+                service: RecommendationService(client: clientProvider.client),
+                catalog: CatalogSimilarService(tmdbAPIKey: config.tmdbAPIKey)
+            )
+            recommendations = viewModel
+            await viewModel.load()
         }
         if peopleViewModel == nil {
             let currentUserID: UUID? = if case let .signedIn(session) = authState.status {

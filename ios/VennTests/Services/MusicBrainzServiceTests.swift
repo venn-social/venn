@@ -77,6 +77,9 @@ struct MusicBrainzServiceTests {
         { "id": "test-uuid-001", "title": "T", "first-release-date": null, "artist-credit": null }
         """.utf8)
         let group = try JSONDecoder().decode(MBReleaseGroup.self, from: json)
-        #expect(MusicBrainzService.candidate(from: group).id == "musicbrainz:test-uuid-001")
+        // Kind is part of the identity: TMDB numbers movies and TV
+        // independently, so the key carries it on every provider for
+        // consistency, and web builds the same string.
+        #expect(MusicBrainzService.candidate(from: group).id == "musicbrainz:album:test-uuid-001")
     }
 }
