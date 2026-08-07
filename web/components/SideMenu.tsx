@@ -76,7 +76,7 @@ export function SideMenu({ unreadCount = 0 }: SideMenuProps) {
           />
           <div
             id="side-menu"
-            className="fixed right-0 top-0 z-30 flex h-full w-56 flex-col gap-1 border-l border-(--color-separator) bg-(--color-background) p-4"
+            className="fixed left-0 top-0 z-30 flex h-full w-56 flex-col gap-1 border-r border-(--color-separator) bg-(--color-background) p-4"
           >
             {ITEMS.map((item) => {
               const active = pathname === item.href;

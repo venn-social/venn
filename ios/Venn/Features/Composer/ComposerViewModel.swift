@@ -28,8 +28,47 @@ final class ComposerViewModel {
 
     /// The three-way sentiment rating the user can express.
     /// Nil means the user tapped Skip — the post is logged without a rating.
-    enum RatingChoice: Equatable {
+    enum RatingChoice: Equatable, CaseIterable {
         case love, like, dislike
+
+        var title: String {
+            switch self {
+            case .love: "Love"
+            case .like: "Like"
+            case .dislike: "Dislike"
+            }
+        }
+
+        var systemImage: String {
+            switch self {
+            case .love: "heart.fill"
+            case .like: "hand.thumbsup.fill"
+            case .dislike: "hand.thumbsdown.fill"
+            }
+        }
+
+        /// The row this choice writes. Nil means Skip — logged, unrated.
+        /// The single source of the mapping, so the composer and the rating
+        /// editor cannot drift. Mirrors web's `ratingToPost`.
+        static func postValues(for choice: RatingChoice?) -> (action: PostAction, rating: Double?) {
+            switch choice {
+            case .love: (.rated, 5.0)
+            case .like: (.rated, 3.0)
+            case .dislike: (.rated, 1.0)
+            case .none: (.logged, nil)
+            }
+        }
+
+        /// The choice a stored rating corresponds to, so an editor opens on
+        /// what the user actually said.
+        init?(rating: Double?) {
+            guard let rating else { return nil }
+            switch rating {
+            case 5...: self = .love
+            case 3...: self = .like
+            default: self = .dislike
+            }
+        }
     }
 
     // MARK: - Observable state
@@ -124,12 +163,7 @@ final class ComposerViewModel {
             return normalized
         }()
 
-        let (action, numericRating): (PostAction, Double?) = switch ratingChoice {
-        case .love: (.rated, 5.0)
-        case .like: (.rated, 3.0)
-        case .dislike: (.rated, 1.0)
-        case .none: (.logged, nil)
-        }
+        let (action, numericRating) = RatingChoice.postValues(for: ratingChoice)
 
         submitState = .submitting
         do {

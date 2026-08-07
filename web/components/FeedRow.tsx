@@ -1,11 +1,17 @@
 import Link from "next/link";
 import { Avatar } from "@/components/Avatar";
+import { FeedItemMenu } from "@/components/FeedItemMenu";
 import { StarIcon } from "@/components/Icon";
 import type { FeedPost } from "@/lib/feed";
 import { shortRelativeTime } from "@/lib/relativeTime";
 
 interface FeedRowProps {
   post: FeedPost;
+  /**
+   * The signed-in user, so the artwork can offer Log / Add to Watchlist.
+   * Omitted (or equal to the author) means no menu.
+   */
+  viewerId?: string | null;
   /**
    * The social footer — like button and comment link. Optional so the post
    * detail page can render the row without duplicating the controls it
@@ -19,7 +25,7 @@ interface FeedRowProps {
  * a large cover, the title and its metadata, an optional rating, and an
  * optional note.
  */
-export function FeedRow({ post, actions }: FeedRowProps) {
+export function FeedRow({ post, actions, viewerId = null }: FeedRowProps) {
   const authorName = post.author.displayName ?? post.author.username;
   // "2023 · Celine Song" — whichever of year / creator is present.
   const metadata = [post.media.year?.toString(), post.media.primaryCreator]
@@ -46,10 +52,21 @@ export function FeedRow({ post, actions }: FeedRowProps) {
         </span>
       </div>
 
-      <Link
-        href={`/media/${post.media.id}`}
-        className="flex h-[200px] items-center justify-center overflow-hidden rounded-md bg-(--color-surface-strong)"
-      >
+      <div className="group relative">
+        {/* Mounted only when it has something to offer — a menu that
+            renders null still runs its hooks, which made every feed test
+            need a router it never used. */}
+        {viewerId && viewerId !== post.author.id && (
+          <FeedItemMenu
+            mediaId={post.media.id}
+            mediaTitle={post.media.title}
+            viewerId={viewerId}
+          />
+        )}
+        <Link
+          href={`/media/${post.media.id}`}
+          className="flex h-[200px] items-center justify-center overflow-hidden rounded-md bg-(--color-surface-strong)"
+        >
         {post.media.coverUrl ? (
           // eslint-disable-next-line @next/next/no-img-element -- see the Phase 3 spec on next/image
           <img
@@ -58,10 +75,13 @@ export function FeedRow({ post, actions }: FeedRowProps) {
             loading="lazy"
             className="h-full w-full object-cover"
           />
-        ) : (
-          <span className="px-4 text-center text-(--color-text-secondary)">{post.media.title}</span>
-        )}
-      </Link>
+          ) : (
+            <span className="px-4 text-center text-(--color-text-secondary)">
+              {post.media.title}
+            </span>
+          )}
+        </Link>
+      </div>
 
       <div className="flex items-baseline gap-3">
         <div className="flex flex-col gap-0.5">

@@ -14,6 +14,8 @@ struct ProfileView: View {
     @State private var editViewModel: ProfileEditViewModel?
     @State private var shelf: ProfileShelf = .collection
     @State private var kindFilter: MediaKind?
+    /// The item whose rating is being edited, if any.
+    @State private var editingItem: LibraryItem?
     @State private var libraryDestination: LibraryDestination?
     @State private var followListDestination: FollowListDestination?
     @State private var showFollowRequests = false
@@ -40,6 +42,11 @@ struct ProfileView: View {
                 }
                 .navigationDestination(for: Media.self) { media in
                     MediaDetailView(media: media)
+                }
+                .sheet(item: $editingItem) { item in
+                    RatingEditSheet(item: item) { action, rating in
+                        Task { await updateRating(item, action: action, rating: rating) }
+                    }
                 }
                 .navigationDestination(isPresented: $showFollowRequests) {
                     if case let .loaded(snapshot) = viewModel?.state {
@@ -155,7 +162,17 @@ struct ProfileView: View {
                 selection: $kindFilter,
                 available: Set(all.map(\.media.kind))
             )
-            ProfileShelfGallery(items: shown, emptyMessage: emptyMessage)
+            ProfileShelfGallery(
+                items: shown,
+                emptyMessage: emptyMessage,
+                // Reordering is only coherent over the whole shelf —
+                // dragging inside a filtered view would write positions
+                // that ignore everything hidden.
+                canEdit: kindFilter == nil,
+                onEdit: { editingItem = $0 },
+                onRemove: { item in Task { await removeFromLibrary(item) } },
+                onReorder: { order in Task { await reorderShelf(order) } }
+            )
         }
     }
 
@@ -191,6 +208,25 @@ struct ProfileView: View {
             avatarURL: profile.avatarURL,
             service: ProfileService(client: clientProvider.client)
         )
+    }
+
+    private func removeFromLibrary(_ item: LibraryItem) async {
+        let service = ProfileService(client: clientProvider.client)
+        try? await service.removeFromLibrary(postID: item.id)
+        await viewModel?.load()
+    }
+
+    private func reorderShelf(_ order: [UUID]) async {
+        let service = ProfileService(client: clientProvider.client)
+        try? await service.reorderLibrary(postIDs: order)
+        await viewModel?.load()
+    }
+
+    private func updateRating(_ item: LibraryItem, action: PostAction, rating: Double?) async {
+        let service = ProfileService(client: clientProvider.client)
+        try? await service.updateRating(postID: item.id, action: action, rating: rating)
+        editingItem = nil
+        await viewModel?.load()
     }
 
     private func makeLibraryViewModel(for dest: LibraryDestination) -> LibraryViewModel {

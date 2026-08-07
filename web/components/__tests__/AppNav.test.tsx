@@ -28,9 +28,9 @@ describe("AppNav", () => {
       .filter((text) => text !== "venn");
     // The compose action is an icon now, so it contributes no text — it is
     // asserted by its accessible name below instead.
-    // Lists and Activity moved into the side menu; the trailing two empty
-    // strings are the icon-only compose action and the menu toggle.
-    expect(labels).toEqual(["Feed", "Explorer", "Profile", "", ""]);
+    // The leading empty string is the icon-only side-menu toggle, the
+    // trailing one is the compose action. Lists and Activity are in the menu.
+    expect(labels).toEqual(["", "Feed", "Explorer", "Profile", ""]);
   });
 
   it("marks the active route for assistive tech", () => {

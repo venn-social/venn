@@ -44,6 +44,15 @@ protocol ProfileServicing: Sendable {
     /// the signed-in user's own library.
     func removeFromLibrary(postID: UUID) async throws
 
+    /// Change the rating on a post you already have. Only touches action and
+    /// rating; the caption and media stay as they were.
+    func updateRating(postID: UUID, action: PostAction, rating: Double?) async throws
+
+    /// Rewrite a shelf's order. Sends every id rather than the moved pair,
+    /// so one statement settles it and a drifted shelf comes back
+    /// consistent. Mirrors web's `reorderLibrary`.
+    func reorderLibrary(postIDs: [UUID]) async throws
+
     /// Upload a JPEG avatar to Storage (`avatars/<uid>/avatar.jpg`,
     /// replacing any previous one), point `profiles.avatar_url` at it, and
     /// return the public URL. Storage policies scope writes to the caller's
@@ -159,6 +168,30 @@ struct ProfileService: ProfileServicing {
         )
     }
 
+    func updateRating(postID: UUID, action: PostAction, rating: Double?) async throws {
+        do {
+            try await client
+                .from("posts")
+                .update(RatingUpdatePayload(action: action, rating: rating))
+                .eq("id", value: postID)
+                .execute()
+        } catch {
+            throw AppError.from(error)
+        }
+    }
+
+    func reorderLibrary(postIDs: [UUID]) async throws {
+        do {
+            try await client
+                .rpc("reorder_library_items", params: [
+                    "_post_ids": AnyJSON.array(postIDs.map { .string($0.uuidString) }),
+                ])
+                .execute()
+        } catch {
+            throw AppError.from(error)
+        }
+    }
+
     func removeFromLibrary(postID: UUID) async throws {
         do {
             try await client
@@ -192,7 +225,10 @@ struct ProfileService: ProfileServicing {
             if let kind {
                 query = query.eq("media.kind", value: kind.rawValue)
             }
+            // Curated first, then everything never placed, newest-first
+            // among itself. Matches web's fetchCollection ordering exactly.
             let rows: [LibraryItemRow] = try await query
+                .order("position", ascending: true, nullsFirst: false)
                 .order("created_at", ascending: false)
                 .execute()
                 .value
@@ -286,4 +322,12 @@ private struct PrivacyUpdate: Encodable {
     enum CodingKeys: String, CodingKey {
         case isPrivate = "is_private"
     }
+}
+
+/// Wire payload for a rating edit. `position` and `caption` are deliberately
+/// absent so an edit never disturbs where the item sits or what was written
+/// about it.
+private struct RatingUpdatePayload: Encodable {
+    let action: PostAction
+    let rating: Double?
 }

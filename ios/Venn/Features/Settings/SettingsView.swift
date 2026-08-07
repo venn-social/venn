@@ -157,6 +157,8 @@ private struct PreviewSettingsService: ProfileServicing {
     }
 
     func removeFromLibrary(postID _: UUID) async throws {}
+    func updateRating(postID _: UUID, action _: PostAction, rating _: Double?) async throws {}
+    func reorderLibrary(postIDs _: [UUID]) async throws {}
     func uploadAvatar(userID _: UUID, jpegData _: Data) async throws -> URL {
         URL(filePath: "/dev/null")
     }
