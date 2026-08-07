@@ -70,18 +70,8 @@ export default async function ProfilePage() {
         >
           Edit profile
         </Link>
-        <Link
-          href="/settings"
-          className="rounded-pill border border-(--color-separator) px-4 py-1.5 text-sm font-semibold text-(--color-text-primary)"
-        >
-          Settings
-        </Link>
-        <Link
-          href="/profile/year"
-          className="rounded-pill border border-(--color-separator) px-4 py-1.5 text-sm font-semibold text-(--color-text-primary)"
-        >
-          Year in Review
-        </Link>
+        {/* Settings and Year in Review live in the side menu now, and only
+            there — one way to each keeps this page about the profile. */}
       </div>
 
       <ProfileShelves
@@ -89,6 +79,7 @@ export default async function ProfilePage() {
         watchlist={watchlistResult}
         emptyCollection="Nothing in your collection yet."
         emptyWatchlist="Your watchlist is empty."
+        canEdit
       />
     </main>
   );

@@ -28,7 +28,9 @@ describe("AppNav", () => {
       .filter((text) => text !== "venn");
     // The compose action is an icon now, so it contributes no text — it is
     // asserted by its accessible name below instead.
-    expect(labels).toEqual(["Feed", "Explorer", "Lists", "Activity", "Profile", ""]);
+    // Lists and Activity moved into the side menu; the trailing two empty
+    // strings are the icon-only compose action and the menu toggle.
+    expect(labels).toEqual(["Feed", "Explorer", "Profile", "", ""]);
   });
 
   it("marks the active route for assistive tech", () => {
@@ -42,26 +44,15 @@ describe("AppNav", () => {
     expect(screen.getByRole("link", { name: "Log" }).getAttribute("href")).toBe("/composer");
   });
 
-  it("shows no badge when there is nothing unread", () => {
+  it("no longer offers Lists or Activity as tabs", () => {
+    // They live in the side menu now, and only there.
     render(<AppNav />);
-    expect(screen.getByRole("link", { name: "Activity" }).textContent).toBe("Activity");
+    expect(screen.queryByRole("link", { name: "Lists" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "Activity" })).toBeNull();
   });
 
-  it("badges Activity with the unread count", () => {
+  it("hands the unread count to the menu toggle", () => {
     render(<AppNav unreadCount={3} />);
-    // The link is labelled with the real number, because the visible
-    // badge caps at "9+" and would otherwise under-report it.
-    expect(screen.getByRole("link", { name: "Activity, 3 unread" })).toBeTruthy();
-  });
-
-  it("caps the badge rather than letting it stretch the nav", () => {
-    render(<AppNav unreadCount={42} />);
-    const activity = screen.getByRole("link", { name: /Activity/ });
-    expect(activity.textContent).toContain("9+");
-  });
-
-  it("announces the exact count even when the badge is capped", () => {
-    render(<AppNav unreadCount={42} />);
-    expect(screen.getByRole("link", { name: "Activity, 42 unread" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "More, 3 unread" })).toBeTruthy();
   });
 });

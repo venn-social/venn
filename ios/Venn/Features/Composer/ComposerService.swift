@@ -157,20 +157,28 @@ struct ComposerService: ComposerServicing {
         rating: Double?,
         caption: String?
     ) async throws -> Post {
+        // Upsert, not insert: posts is one row per (author, media). Logging
+        // something you had saved, or rating something you had logged,
+        // updates that row rather than adding a second one — which is what
+        // put the same title in a collection twice. A trigger moves
+        // created_at forward so the change still reaches friends' feeds.
         let rows: [PostsSchema.Row] = try await client
             .from("posts")
-            .insert(PostInsertPayload(
-                authorID: authorID,
-                mediaID: mediaID,
-                action: action,
-                rating: rating,
-                caption: caption
-            ))
+            .upsert(
+                PostInsertPayload(
+                    authorID: authorID,
+                    mediaID: mediaID,
+                    action: action,
+                    rating: rating,
+                    caption: caption
+                ),
+                onConflict: "author_id,media_id"
+            )
             .select()
             .execute()
             .value
         guard let row = rows.first, let post = Post(row: row) else {
-            throw AppError.unknown(message: "Post insert failed to decode")
+            throw AppError.unknown(message: "Post upsert failed to decode")
         }
         return post
     }

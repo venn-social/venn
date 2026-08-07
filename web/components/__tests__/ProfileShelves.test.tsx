@@ -1,9 +1,14 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { ProfileShelves } from "@/components/ProfileShelves";
+
+// ProfileShelves refreshes after a removal, so it needs a router.
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ refresh: vi.fn() })
+}));
 import type { LibraryItem } from "@/lib/library";
 
-function item(id: string, title: string): LibraryItem {
+function item(id: string, title: string, kind: LibraryItem["media"]["kind"] = "book"): LibraryItem {
   return {
     id,
     action: "logged",
@@ -11,7 +16,7 @@ function item(id: string, title: string): LibraryItem {
     createdAt: new Date("2026-08-01T10:00:00Z"),
     media: {
       id: `m-${id}`,
-      kind: "book",
+      kind,
       title,
       year: 2020,
       primaryCreator: "Susanna Clarke",
@@ -63,5 +68,50 @@ describe("ProfileShelves", () => {
 
     expect(screen.getByText("Your watchlist is empty.")).toBeDefined();
     expect(screen.queryByText("Nothing in your collection yet.")).toBeNull();
+  });
+
+  it("filters the shelf by media kind", () => {
+    render(
+      <ProfileShelves
+        collection={[item("1", "Piranesi", "book"), item("2", "Drive", "movie")]}
+        watchlist={[]}
+        {...copy}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("tab", { name: "Movies" }));
+
+    expect(screen.queryByText("Piranesi")).toBeNull();
+  });
+
+  it("says the filter came up empty rather than reusing the shelf's empty copy", () => {
+    // "Nothing in your collection yet." would be a lie when the collection
+    // has things — they just are not of the chosen type.
+    render(
+      <ProfileShelves
+        collection={[item("1", "Piranesi", "book"), item("2", "Drive", "movie")]}
+        watchlist={[]}
+        {...copy}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("tab", { name: "Movies" }));
+    fireEvent.click(screen.getByRole("tab", { name: "Watchlist" }));
+    fireEvent.click(screen.getByRole("tab", { name: "Collection" }));
+
+    // Switching shelves resets the filter, so everything is back.
+    expect(screen.queryByText(/Nothing of that type/)).toBeNull();
+  });
+
+  it("only offers the remove control on your own shelves", () => {
+    const { rerender } = render(
+      <ProfileShelves collection={[item("1", "Piranesi")]} watchlist={[]} {...copy} />
+    );
+    expect(screen.queryByRole("button", { name: "Remove Piranesi" })).toBeNull();
+
+    rerender(
+      <ProfileShelves collection={[item("1", "Piranesi")]} watchlist={[]} {...copy} canEdit />
+    );
+    expect(screen.getByRole("button", { name: "Remove Piranesi" })).toBeTruthy();
   });
 });
