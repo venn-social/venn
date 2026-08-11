@@ -82,15 +82,6 @@ struct AuthService: AuthServicing {
         }
     }
 
-    /// Exchange the numeric code from the sign-in email for a session.
-    ///
-    /// The same email carries both a link and a code. The link is the happy
-    /// path; the code is what works when the link opens in the wrong
-    /// browser, gets rewritten by a mail client, or simply does not arrive
-    /// as a tappable link. Web has had this fallback since tech-debt row 14
-    /// — iOS had only the link.
-    func verifyCode(email: String, token: String) async throws
-
     func verifyCode(email: String, token: String) async throws {
         do {
             try await client.auth.verifyOTP(email: email, token: token, type: .email)
