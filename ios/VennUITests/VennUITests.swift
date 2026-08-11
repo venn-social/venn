@@ -254,6 +254,14 @@ final class VennUITests: XCTestCase {
 
         menuButton.tap()
 
+        // Distinguishes "the tap never opened it" from "it opened but its
+        // rows are not in the hierarchy" — the two have very different
+        // fixes, and the failure message alone could not tell them apart.
+        XCTAssertTrue(
+            app.otherElements["side_menu"].waitForExistence(timeout: 15),
+            "The panel itself never appeared — the tap did not open the menu."
+        )
+
         for destination in ["settings", "lists", "activity", "yearInReview"] {
             XCTAssertTrue(
                 app.buttons["side_menu_\(destination)"].waitForExistence(timeout: 15),
