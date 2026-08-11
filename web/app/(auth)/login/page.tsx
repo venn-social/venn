@@ -1,20 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { canResend, resendSecondsRemaining } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/client";
 
 /**
  * Magic-link sign-in — mirrors ios/Venn/Features/Auth/AuthView.swift's
- * copy and states (idle/sending/error/sent) per CLAUDE.md rule 17. Simpler
- * than iOS for Phase 1: no resend cooldown, no guest bypass yet.
- *
- * Also accepts the numeric code the same email includes alongside the
- * link (web-only fallback — the link's redirect depends on the exact
- * origin being allow-listed in Supabase, which local dev ports make
- * fragile; the code sidesteps that entirely since it's verified directly
- * against Supabase, no redirect involved). iOS doesn't have this since
- * its deep-link scheme doesn't have the same local-dev redirect problem;
- * tracked in docs/TECH_DEBT.md if iOS ever wants it too.
+ * copy and states (idle/sending/error/sent/verifying) per CLAUDE.md rule
+ * 17. Both platforms now accept the numeric code the email carries
+ * alongside the link, and both gate resend behind the same cooldown.
  */
 /**
  * Supabase's built-in email sender throttles at roughly 3-4 sends/hour and
@@ -40,6 +34,18 @@ export default function LoginPage() {
     "idle"
   );
   const [errorMessage, setErrorMessage] = useState("");
+  const [lastSentAt, setLastSentAt] = useState<number | null>(null);
+  /** Ticks once a second so the countdown re-renders. */
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    if (status !== "sent") return;
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [status]);
+
+  const secondsUntilResend = resendSecondsRemaining(lastSentAt, now);
+  const resendUnlocked = status === "sent" && canResend(lastSentAt, now);
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -59,6 +65,32 @@ export default function LoginPage() {
       setErrorMessage(signInErrorMessage(error));
       return;
     }
+    setLastSentAt(Date.now());
+    setNow(Date.now());
+    setStatus("sent");
+  }
+
+  async function handleResend() {
+    setStatus("sending");
+    setErrorMessage("");
+
+    const supabase = createClient();
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
+
+    if (error) {
+      // Back to "sent", not "error": the inbox panel has to stay up so the
+      // code field survives a failed resend.
+      setStatus("sent");
+      setErrorMessage(signInErrorMessage(error));
+      return;
+    }
+    setLastSentAt(Date.now());
+    setNow(Date.now());
     setStatus("sent");
   }
 
@@ -120,10 +152,19 @@ export default function LoginPage() {
           </form>
           <button
             type="button"
+            onClick={() => void handleResend()}
+            disabled={!resendUnlocked}
+            className="text-sm font-semibold text-(--color-accent) disabled:opacity-50"
+          >
+            {secondsUntilResend > 0 ? `Resend in ${secondsUntilResend}s` : "Resend link"}
+          </button>
+          <button
+            type="button"
             onClick={() => {
               setStatus("idle");
               setCode("");
               setErrorMessage("");
+              setLastSentAt(null);
             }}
             className="text-sm font-semibold text-(--color-accent)"
           >
