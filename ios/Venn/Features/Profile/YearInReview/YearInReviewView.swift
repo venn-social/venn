@@ -19,7 +19,7 @@ struct YearInReviewView: View {
         .navigationTitle("Year in Review")
         .navigationBarTitleDisplayMode(.inline)
         .containerBackground(for: .navigation) {
-            GlassSkyBackground()
+            Theme.Color.background
         }
         .task { await ensureLoaded() }
     }

@@ -35,6 +35,7 @@ import SwiftUI
             }
         }
 
+        func verifyCode(email _: String, token _: String) async throws {}
         func handleCallback(_: URL) async throws {}
         func signOut() async throws {}
         func signInAnonymously() async throws {}

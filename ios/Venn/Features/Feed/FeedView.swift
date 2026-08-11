@@ -26,7 +26,7 @@ struct FeedView: View {
             content
                 .toolbar(.hidden, for: .navigationBar)
                 .containerBackground(for: .navigation) {
-                    GlassSkyBackground()
+                    Theme.Color.background
                 }
                 .navigationDestination(for: Media.self) { media in
                     MediaDetailView(media: media)

@@ -56,6 +56,13 @@ struct SideMenuView: View {
             panel
                 .transition(.move(edge: .leading))
         }
+        // `.contain`, explicitly. Attaching an accessibility modifier to a
+        // container lets SwiftUI merge the subtree into one element, which
+        // is what hid every row here: the panel rendered and was tappable
+        // by sight, but none of its buttons existed to VoiceOver or to a
+        // UI test. The dimmer below being its own labelled element made the
+        // merge more likely, not less.
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("side_menu")
     }
 

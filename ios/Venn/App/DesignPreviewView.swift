@@ -12,38 +12,18 @@ import SwiftUI
         @Environment(SupabaseClientProvider.self)
         private var clientProvider
 
-        @State private var selection = initialSelection
         @State private var debugAuth: AuthState?
 
         var body: some View {
             Group {
                 if let debugAuth {
-                    TabView(selection: $selection) {
-                        // Mirrors MainView: hidden tab-bar background so
-                        // only the floating glass pill sits over the app.
-                        Tab(value: MainTab.feed) {
-                            FeedView()
-                                .toolbarBackground(.hidden, for: .tabBar)
-                        } label: {
-                            Image(systemName: "house").accessibilityLabel("Home")
-                        }
-                        Tab(value: MainTab.explorer) {
-                            ExplorerView()
-                                .toolbarBackground(.hidden, for: .tabBar)
-                        } label: {
-                            Image(systemName: "magnifyingglass").accessibilityLabel("Search")
-                        }
-                        Tab(value: MainTab.profile) {
-                            ProfileView()
-                                .toolbarBackground(.hidden, for: .tabBar)
-                        } label: {
-                            Image(systemName: "person.fill").accessibilityLabel("Profile")
-                        }
-                    }
-                    .tint(Theme.Color.accent)
-                    .vennTabFeedback(trigger: selection)
-                    .swipeBetweenTabs(selection: $selection)
-                    .environment(debugAuth)
+                    // The real shell, not a second copy of it. This used to
+                    // rebuild MainView's TabView by hand, which meant a
+                    // change to the real one (the side-menu control, the tab
+                    // list) never showed up here — and the preview looked
+                    // correct while the shipped shell went untested.
+                    MainView(initialTab: Self.initialSelection)
+                        .environment(debugAuth)
                 } else {
                     Color.clear
                 }
