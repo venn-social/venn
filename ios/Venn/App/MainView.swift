@@ -65,6 +65,10 @@ struct MainView: View {
     @Environment(SupabaseClientProvider.self)
     private var clientProvider
 
+    /// Which tab opens first. Defaults to Feed; the DEBUG preview shell
+    /// passes a pinned tab so UI tests can land straight on one.
+    var initialTab: MainTab = .feed
+
     @State private var selection: MainTab = .feed
     @State private var showMenu = false
     @State private var menuDestination: SideMenuDestination?
@@ -120,6 +124,7 @@ struct MainView: View {
             menuSheet(for: destination)
         }
         .task { await ensureNotificationsLoaded() }
+        .onAppear { selection = initialTab }
     }
 
     /// Trailing control that opens the secondary surfaces. An overlay

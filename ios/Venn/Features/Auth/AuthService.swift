@@ -26,6 +26,15 @@ protocol AuthServicing: Sendable {
     // tracked separately (rate-limit-blocked on Supabase email).
     /// Completes sign-in from the URL the magic-link email opened the app
     /// with. Called from `App.onOpenURL`.
+    /// Exchange the numeric code from the sign-in email for a session.
+    ///
+    /// The same email carries both a link and a code. The link is the happy
+    /// path; the code is what works when the link opens in the wrong
+    /// browser, gets rewritten by a mail client, or simply does not arrive
+    /// as a tappable link. Web has had this fallback since tech-debt row 14
+    /// — iOS had only the link.
+    func verifyCode(email: String, token: String) async throws
+
     func handleCallback(_ url: URL) async throws
 
     /// Clears the local session and revokes the refresh token server-side.
@@ -68,6 +77,23 @@ struct AuthService: AuthServicing {
     func sendMagicLink(email: String, redirectTo: URL) async throws {
         do {
             try await client.auth.signInWithOTP(email: email, redirectTo: redirectTo)
+        } catch {
+            throw AppError.from(error)
+        }
+    }
+
+    /// Exchange the numeric code from the sign-in email for a session.
+    ///
+    /// The same email carries both a link and a code. The link is the happy
+    /// path; the code is what works when the link opens in the wrong
+    /// browser, gets rewritten by a mail client, or simply does not arrive
+    /// as a tappable link. Web has had this fallback since tech-debt row 14
+    /// — iOS had only the link.
+    func verifyCode(email: String, token: String) async throws
+
+    func verifyCode(email: String, token: String) async throws {
+        do {
+            try await client.auth.verifyOTP(email: email, token: token, type: .email)
         } catch {
             throw AppError.from(error)
         }

@@ -115,6 +115,7 @@ import SwiftUI
         }
 
         func sendMagicLink(email _: String, redirectTo _: URL) async throws {}
+        func verifyCode(email _: String, token _: String) async throws {}
         func handleCallback(_: URL) async throws {}
         func signOut() async throws {}
         func signInAnonymously() async throws {}

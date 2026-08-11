@@ -273,6 +273,18 @@ final class FakeAuthService: AuthServicing, @unchecked Sendable {
         sendContinuation = nil
     }
 
+    var verifyCodeResult: Result<Void, Error> = .success(())
+    private(set) var verifyCount = 0
+    var lastVerifiedEmail: String?
+    var lastVerifiedToken: String?
+
+    func verifyCode(email: String, token: String) async throws {
+        verifyCount += 1
+        lastVerifiedEmail = email
+        lastVerifiedToken = token
+        try verifyCodeResult.get()
+    }
+
     // periphery:ignore - protocol-conformance stub for tests that don't
     // exercise the deep-link callback path.
     func handleCallback(_: URL) async throws {}
@@ -283,5 +295,123 @@ final class FakeAuthService: AuthServicing, @unchecked Sendable {
 
     func signInAnonymously() async throws {
         try signInAnonymouslyResult.get()
+    }
+}
+
+/// The emailed-code fallback, which iOS gained to match web's sign-in.
+@MainActor
+struct AuthCodeVerificationTests {
+    private func makeViewModel(
+        _ service: FakeAuthService
+    ) -> AuthViewModel {
+        AuthViewModel(
+            service: service,
+            redirectURL: URL(staticString: "social.venn.app://auth-callback")
+        )
+    }
+
+    @Test
+    func verifyingSendsTheNormalizedEmailAndTypedCode() async {
+        let service = FakeAuthService()
+        let viewModel = makeViewModel(service)
+        viewModel.email = "  Charles@Example.COM "
+        viewModel.state = .sent
+        viewModel.code = "123456"
+
+        await viewModel.verifyCode()
+
+        #expect(service.verifyCount == 1)
+        // Sanitize normalizes before the request, exactly as sending does —
+        // a code issued for the normalized address will not verify against
+        // whatever casing the user typed.
+        #expect(service.lastVerifiedEmail == "charles@example.com")
+        #expect(service.lastVerifiedToken == "123456")
+    }
+
+    @Test
+    func surroundingWhitespaceIsTrimmedFromAPastedCode() async {
+        let service = FakeAuthService()
+        let viewModel = makeViewModel(service)
+        viewModel.email = "charles@example.com"
+        viewModel.state = .sent
+        viewModel.code = "  123456 "
+
+        await viewModel.verifyCode()
+
+        #expect(service.lastVerifiedToken == "123456")
+    }
+
+    @Test
+    func aRejectedCodeReturnsToSentSoTheFieldStaysOnScreen() async {
+        // Going to `.error` would swap the inbox panel for the email form,
+        // taking the code field away at the moment it is needed.
+        let service = FakeAuthService()
+        service.verifyCodeResult = .failure(AppError.unknown(message: "bad code"))
+        let viewModel = makeViewModel(service)
+        viewModel.email = "charles@example.com"
+        viewModel.state = .sent
+        viewModel.code = "000000"
+
+        await viewModel.verifyCode()
+
+        #expect(viewModel.state == .sent)
+        #expect(viewModel.verifyFailed)
+    }
+
+    @Test
+    func retryingClearsThePreviousRejection() async {
+        let service = FakeAuthService()
+        service.verifyCodeResult = .failure(AppError.unknown(message: "bad code"))
+        let viewModel = makeViewModel(service)
+        viewModel.email = "charles@example.com"
+        viewModel.state = .sent
+        viewModel.code = "000000"
+        await viewModel.verifyCode()
+        #expect(viewModel.verifyFailed)
+
+        service.verifyCodeResult = .success(())
+        viewModel.code = "123456"
+        await viewModel.verifyCode()
+
+        #expect(!viewModel.verifyFailed)
+    }
+
+    @Test
+    func anEmptyCodeIsNotSent() async {
+        let service = FakeAuthService()
+        let viewModel = makeViewModel(service)
+        viewModel.email = "charles@example.com"
+        viewModel.state = .sent
+        viewModel.code = "   "
+
+        await viewModel.verifyCode()
+
+        #expect(service.verifyCount == 0)
+    }
+
+    @Test
+    func verifyIsDisabledUntilSomethingIsTyped() {
+        let viewModel = makeViewModel(FakeAuthService())
+        #expect(!viewModel.canVerify)
+
+        viewModel.code = "1"
+        #expect(viewModel.canVerify)
+    }
+
+    @Test
+    func startingOverClearsTheCodeAndAnyRejection() async {
+        let service = FakeAuthService()
+        service.verifyCodeResult = .failure(AppError.unknown(message: "bad code"))
+        let viewModel = makeViewModel(service)
+        viewModel.email = "charles@example.com"
+        viewModel.state = .sent
+        viewModel.code = "000000"
+        await viewModel.verifyCode()
+
+        viewModel.reset()
+
+        #expect(viewModel.code.isEmpty)
+        #expect(!viewModel.verifyFailed)
+        #expect(viewModel.state == .idle)
     }
 }

@@ -231,6 +231,37 @@ final class VennUITests: XCTestCase {
         }
     }
 
+    /// The side menu is the only way to Settings, Lists, Activity and Year
+    /// in Review now that they are off the tab bar. If the control does not
+    /// render, four screens are unreachable and nothing else would catch it
+    /// — the unit tests check the destination list, not that anything puts
+    /// it on screen.
+    ///
+    /// Runs against `-designPreview`, which now renders the real `MainView`
+    /// with a synthetic session. Using the guest sign-in instead made this
+    /// depend on anonymous auth being enabled for the Supabase project, and
+    /// it silently is not — the test failed for that reason rather than for
+    /// anything about the menu.
+    @MainActor
+    func testSideMenuReachesTheSecondarySurfaces() {
+        let app = launchApp(extraArgs: ["-designPreview"])
+
+        let menuButton = app.buttons["side_menu_button"]
+        XCTAssertTrue(
+            menuButton.waitForExistence(timeout: 60),
+            "The side-menu control never appeared, so Settings, Lists, Activity and Year in Review are unreachable."
+        )
+
+        menuButton.tap()
+
+        for destination in ["settings", "lists", "activity", "yearInReview"] {
+            XCTAssertTrue(
+                app.buttons["side_menu_\(destination)"].waitForExistence(timeout: 15),
+                "The side menu is missing its \(destination) entry."
+            )
+        }
+    }
+
     @MainActor
     private func launchApp(extraArgs: [String]) -> XCUIApplication {
         // Skip the 5-second branded splash for tab-rendering coverage.

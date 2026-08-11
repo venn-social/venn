@@ -14,6 +14,7 @@ final class AuthViewModel {
         case idle
         case sending
         case sent
+        case verifying
         case error(ErrorReason)
     }
 
@@ -25,6 +26,9 @@ final class AuthViewModel {
         case offline
         case rateLimited
         case sendFailed
+        /// The typed code was wrong or expired. Distinct from `sendFailed`
+        /// because the recovery is different: retype, don't resend.
+        case badCode
     }
 
     /// Resend is gated behind a cooldown so an impatient tap-storm doesn't
@@ -33,7 +37,13 @@ final class AuthViewModel {
     static let resendCooldown: TimeInterval = 30
 
     var email = ""
+    /// The numeric code from the sign-in email — the fallback for when the
+    /// link itself does not work.
+    var code = ""
     var state: State = .idle
+    /// Set when a code is rejected, cleared on the next attempt. Separate
+    /// from `state` so the inbox panel keeps rendering underneath it.
+    var verifyFailed = false
     private(set) var lastSentAt: Date?
 
     private let service: any AuthServicing
@@ -49,6 +59,36 @@ final class AuthViewModel {
         self.service = service
         self.redirectURL = redirectURL
         self.now = now
+    }
+
+    /// Enabled once something has been typed and no verification is in
+    /// flight. Mirrors web's `code.length === 0` guard.
+    var canVerify: Bool {
+        state != .verifying && !code.trimmingCharacters(in: .whitespaces).isEmpty
+    }
+
+    /// Exchange the emailed code for a session. On success the auth-state
+    /// listener flips `status` and the app routes itself; there is nothing
+    /// to do here but stop showing a spinner.
+    func verifyCode() async {
+        let token = code.trimmingCharacters(in: .whitespaces)
+        guard !token.isEmpty,
+              case let .valid(normalized) = Sanitize.email(email)
+        else {
+            state = .error(.badCode)
+            return
+        }
+
+        verifyFailed = false
+        state = .verifying
+        do {
+            try await service.verifyCode(email: normalized, token: token)
+        } catch {
+            // Back to `.sent`, not `.error`: the inbox panel with the code
+            // field has to stay on screen for a retype to be possible.
+            state = .sent
+            verifyFailed = true
+        }
     }
 
     /// Seconds until "Resend link" unlocks (0 = ready). The view ticks a
@@ -126,5 +166,7 @@ final class AuthViewModel {
     func reset() {
         state = .idle
         lastSentAt = nil
+        code = ""
+        verifyFailed = false
     }
 }
