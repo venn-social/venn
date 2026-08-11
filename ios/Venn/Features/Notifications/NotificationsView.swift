@@ -34,7 +34,7 @@ struct NotificationsView: View {
             content
                 .navigationTitle("Activity")
                 .containerBackground(for: .navigation) {
-                    GlassSkyBackground()
+                    Theme.Color.background
                 }
                 .navigationDestination(for: NotificationDestination.self) { destination in
                     switch destination {

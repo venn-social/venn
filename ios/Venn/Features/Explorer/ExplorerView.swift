@@ -55,7 +55,7 @@ struct ExplorerView: View {
             }
             .toolbar(.hidden, for: .navigationBar)
             .containerBackground(for: .navigation) {
-                GlassSkyBackground()
+                Theme.Color.background
             }
             .sheet(isPresented: isComposerPresented) {
                 if let vm = composerViewModel {

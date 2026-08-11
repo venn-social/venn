@@ -44,7 +44,12 @@ enum Theme {
         )
         static let paper = SwiftUI.Color(.systemBackground)
         static let mist = SwiftUI.Color(.secondarySystemBackground)
-        static let ash = SwiftUI.Color(.tertiarySystemBackground)
+        // Explicit hex, not `.tertiarySystemBackground`: that resolves to
+        // pure white in light mode, so every input and inset surface on iOS
+        // was white-on-white and read as a flat gap where web showed a
+        // filled field. Web's --color-surface-strong is #E5E5EA / #2C2C2E;
+        // these are the same values, so the two platforms now agree.
+        static let ash = hex(light: 0xE5E5EA, dark: 0x2C2C2E)
         static let onAccent = adaptive(light: .white, dark: .black)
 
         /// Reduce-Transparency fallback solid for the glass-sky background.

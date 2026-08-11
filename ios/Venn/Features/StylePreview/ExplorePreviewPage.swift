@@ -80,14 +80,14 @@
     }
 
     #Preview("light") {
-        ZStack { GlassSkyBackground()
+        ZStack { Theme.Color.background
             ExplorePreviewPage()
         }
         .preferredColorScheme(.light)
     }
 
     #Preview("dark") {
-        ZStack { GlassSkyBackground()
+        ZStack { Theme.Color.background
             ExplorePreviewPage()
         }
         .preferredColorScheme(.dark)

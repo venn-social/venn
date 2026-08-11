@@ -25,7 +25,7 @@ struct ProfileView: View {
             content
                 .toolbar(.hidden, for: .navigationBar)
                 .containerBackground(for: .navigation) {
-                    GlassSkyBackground()
+                    Theme.Color.background
                 }
                 .navigationDestination(item: $libraryDestination) { dest in
                     LibraryListView(viewModel: makeLibraryViewModel(for: dest))

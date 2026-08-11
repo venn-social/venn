@@ -29,7 +29,7 @@ struct PublicProfileView: View {
         .navigationTitle("@\(profile.username)")
         .navigationBarTitleDisplayMode(.inline)
         .containerBackground(for: .navigation) {
-            GlassSkyBackground()
+            Theme.Color.background
         }
         .navigationDestination(item: $followListDestination) { destination in
             FollowListView(viewModel: FollowListViewModel(

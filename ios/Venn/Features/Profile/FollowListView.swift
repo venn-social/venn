@@ -96,7 +96,7 @@ struct FollowListView: View {
         .navigationTitle(viewModel.kind.title)
         .navigationBarTitleDisplayMode(.inline)
         .containerBackground(for: .navigation) {
-            GlassSkyBackground()
+            Theme.Color.background
         }
         .task { await viewModel.load() }
     }

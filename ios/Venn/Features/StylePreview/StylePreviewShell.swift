@@ -37,14 +37,14 @@
     }
 
     #Preview("light") {
-        ZStack { GlassSkyBackground()
+        ZStack { Theme.Color.background
             StylePreviewShell()
         }
         .preferredColorScheme(.light)
     }
 
     #Preview("dark") {
-        ZStack { GlassSkyBackground()
+        ZStack { Theme.Color.background
             StylePreviewShell()
         }
         .preferredColorScheme(.dark)

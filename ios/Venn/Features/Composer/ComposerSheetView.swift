@@ -113,7 +113,7 @@ private struct ComposerCandidateView: View {
         .navigationTitle(candidate.title)
         .navigationBarTitleDisplayMode(.inline)
         .containerBackground(for: .navigation) {
-            GlassSkyBackground()
+            Theme.Color.background
         }
         .navigationDestination(isPresented: $pushRating) {
             RatingView(viewModel: viewModel)
@@ -246,7 +246,7 @@ private struct RatingView: View {
         .navigationTitle("How was it?")
         .navigationBarTitleDisplayMode(.inline)
         .containerBackground(for: .navigation) {
-            GlassSkyBackground()
+            Theme.Color.background
         }
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {

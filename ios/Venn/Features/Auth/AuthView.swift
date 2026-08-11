@@ -6,9 +6,8 @@ import SwiftUI
 /// the email field and Continue, and — once sent — the inbox panel with a
 /// code field.
 ///
-/// Deliberately plain. The rest of the app sits on `GlassSkyBackground`,
-/// but web's sign-in is a flat background and this is the one screen the
-/// two platforms get compared on directly, so it opts out.
+/// Plain background, like every other screen now that iOS has dropped the
+/// atmospheric gradient in favour of matching web.
 ///
 /// Render branches off `viewModel.state`:
 /// - `.idle` / `.sending` / `.error` — email field + Continue.
@@ -27,7 +26,6 @@ struct AuthView: View {
 
     var body: some View {
         ZStack {
-            // Opaque, so the app-wide gradient does not show through here.
             Theme.Color.background
                 .ignoresSafeArea()
 

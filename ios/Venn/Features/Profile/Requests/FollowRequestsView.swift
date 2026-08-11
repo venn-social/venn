@@ -37,7 +37,7 @@ struct FollowRequestsView: View {
         .navigationTitle("Follow Requests")
         .navigationBarTitleDisplayMode(.inline)
         .containerBackground(for: .navigation) {
-            GlassSkyBackground()
+            Theme.Color.background
         }
         .task { await viewModel.load() }
     }

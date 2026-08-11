@@ -45,7 +45,7 @@ struct LibraryListView: View {
         .navigationTitle(viewModel.shelf.title)
         .navigationBarTitleDisplayMode(.inline)
         .containerBackground(for: .navigation) {
-            GlassSkyBackground()
+            Theme.Color.background
         }
         // The Profile stack this is pushed onto already registers a
         // `Media` destination; declaring a second one is ignored.
