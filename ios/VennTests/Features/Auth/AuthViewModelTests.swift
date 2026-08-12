@@ -172,6 +172,46 @@ struct AuthViewModelTests {
     }
 
     @Test
+    func cooldownRoundsUpSoTheButtonNeverUnderstatesTheWait() async {
+        // At 29.5s elapsed there is half a second left. Showing "0s" while
+        // the control is still disabled reads as broken. Mirrors web's
+        // resendSecondsRemaining rounding case.
+        let service = FakeAuthService()
+        var fakeNow = Date(timeIntervalSince1970: 1_000_000)
+        let viewModel = AuthViewModel(
+            service: service,
+            redirectURL: URL(staticString: "social.venn.app://auth-callback")
+        ) { fakeNow }
+        viewModel.email = "charles@example.com"
+        await viewModel.submit()
+
+        fakeNow = fakeNow.addingTimeInterval(29.5)
+
+        #expect(viewModel.resendSecondsRemaining == 1)
+        #expect(viewModel.canResend == false)
+    }
+
+    @Test
+    func aClockThatJumpsBackwardsExtendsTheWaitRatherThanBreaking() async {
+        // System clock changes and DST have both produced negative elapsed
+        // time in the wild. Waiting longer is the safe direction; going
+        // negative would unlock resend immediately and burn the send limit.
+        let service = FakeAuthService()
+        var fakeNow = Date(timeIntervalSince1970: 1_000_000)
+        let viewModel = AuthViewModel(
+            service: service,
+            redirectURL: URL(staticString: "social.venn.app://auth-callback")
+        ) { fakeNow }
+        viewModel.email = "charles@example.com"
+        await viewModel.submit()
+
+        fakeNow = fakeNow.addingTimeInterval(-60)
+
+        #expect(viewModel.resendSecondsRemaining == 90)
+        #expect(viewModel.canResend == false)
+    }
+
+    @Test
     func resendSendsAgainAndRestartsCooldown() async {
         let service = FakeAuthService()
         var fakeNow = Date(timeIntervalSince1970: 1_000_000)
