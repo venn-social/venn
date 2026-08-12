@@ -11,6 +11,20 @@ import SwiftUI
 struct FeedRow: View {
     let feedPost: FeedPost
 
+    /// The signed-in user, so the cover can offer Log / Add to Watchlist.
+    /// Nil when signed out; equal to the author on your own posts, where
+    /// there is nothing to offer that you do not already have.
+    var viewerID: UUID?
+
+    /// Runs the chosen action. The row does not own a service — the host
+    /// screen does — so it hands the choice back up.
+    var onLibraryAction: ((LibraryQuickAction) -> Void)?
+
+    private var showsLibraryMenu: Bool {
+        guard let viewerID, onLibraryAction != nil else { return false }
+        return viewerID != feedPost.author.id
+    }
+
     private var authorName: String {
         feedPost.author.displayName ?? feedPost.author.username
     }
@@ -35,6 +49,18 @@ struct FeedRow: View {
                 )
             }
             .buttonStyle(.plain)
+            // Long-press rather than a visible control: web reveals its menu
+            // on hover, which no touch device can do, so iOS uses the
+            // gesture that already means "more options" here.
+            .contextMenu {
+                if showsLibraryMenu {
+                    ForEach(LibraryQuickAction.allCases) { action in
+                        Button(action.title, systemImage: action.systemImage) {
+                            onLibraryAction?(action)
+                        }
+                    }
+                }
+            }
 
             titleAndRating
 

@@ -21,9 +21,33 @@ struct FeedView: View {
         }
     }
 
+    /// Brief confirmation after a Log / Add to Watchlist from a row.
+    /// Dismisses itself: it reports something already done, so there is
+    /// nothing for the reader to act on.
+    @ViewBuilder private var quickActionToast: some View {
+        if let message = viewModel?.lastQuickActionMessage {
+            Text(message)
+                .font(Theme.Font.footnote.weight(.medium))
+                .foregroundStyle(Theme.Color.onAccent)
+                .padding(.horizontal, Theme.Spacing.md)
+                .padding(.vertical, Theme.Spacing.sm)
+                .background(Theme.Color.accent, in: .capsule)
+                .padding(.bottom, Theme.Spacing.xxl)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+                .accessibilityIdentifier("feed_quick_action_toast")
+                .task(id: message) {
+                    try? await Task.sleep(for: .seconds(2))
+                    withAnimation { viewModel?.lastQuickActionMessage = nil }
+                }
+        }
+    }
+
     var body: some View {
         NavigationStack {
             content
+                // The write lands on a screen the reader is not looking at,
+                // so the confirmation is the only feedback there is.
+                .overlay(alignment: .bottom) { quickActionToast }
                 .toolbar(.hidden, for: .navigationBar)
                 .containerBackground(for: .navigation) {
                     Theme.Color.background
@@ -82,7 +106,21 @@ struct FeedView: View {
                         // the conversation. Matches web, and means a like
                         // no longer costs a screen transition.
                         VStack(alignment: .leading, spacing: Theme.Spacing.md) {
-                            FeedRow(feedPost: feedPost)
+                            FeedRow(
+                                feedPost: feedPost,
+                                viewerID: signedInUserID,
+                                onLibraryAction: signedInUserID.map { viewerID in
+                                    { action in
+                                        Task {
+                                            await viewModel.performQuickAction(
+                                                action,
+                                                mediaID: feedPost.media.id,
+                                                viewerID: viewerID
+                                            )
+                                        }
+                                    }
+                                }
+                            )
                             if let viewerID = signedInUserID {
                                 actions(for: feedPost, viewerID: viewerID, viewModel: viewModel)
                             }
