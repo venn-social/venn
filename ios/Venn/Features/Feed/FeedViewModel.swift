@@ -40,6 +40,33 @@ final class FeedViewModel {
         self.pageSize = pageSize
     }
 
+    /// Confirmation for the last completed quick action, cleared once
+    /// shown. Kept here rather than in the row so it survives the row being
+    /// recycled by the list.
+    var lastQuickActionMessage: String?
+
+    /// Log or save a feed item into the signed-in user's own library.
+    ///
+    /// Fire-and-forget from the row's point of view: nothing on this screen
+    /// changes, so the only feedback is the confirmation string.
+    func performQuickAction(
+        _ action: LibraryQuickAction,
+        mediaID: UUID,
+        viewerID: UUID
+    ) async {
+        do {
+            switch action {
+            case .log:
+                try await service.logFromFeed(authorID: viewerID, mediaID: mediaID)
+            case .watchlist:
+                try await service.saveToWatchlist(authorID: viewerID, mediaID: mediaID)
+            }
+            lastQuickActionMessage = action.confirmation
+        } catch {
+            lastQuickActionMessage = "Couldn't do that. Please try again."
+        }
+    }
+
     func social(for postID: UUID) -> PostSocial {
         social[postID] ?? .none
     }

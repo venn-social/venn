@@ -276,6 +276,24 @@ final class FakeFeedService: FeedServicing, @unchecked Sendable {
         guard !pages.isEmpty else { throw AppError.network }
         return pages.removeFirst()
     }
+
+    var quickActionError: AppError?
+    private(set) var logged: [(authorID: UUID, mediaID: UUID)] = []
+    private(set) var saved: [(authorID: UUID, mediaID: UUID)] = []
+
+    func logFromFeed(authorID: UUID, mediaID: UUID) async throws {
+        if let quickActionError {
+            throw quickActionError
+        }
+        logged.append((authorID, mediaID))
+    }
+
+    func saveToWatchlist(authorID: UUID, mediaID: UUID) async throws {
+        if let quickActionError {
+            throw quickActionError
+        }
+        saved.append((authorID, mediaID))
+    }
 }
 
 /// Records which post ids each batch call asked for, so tests can assert
@@ -311,4 +329,83 @@ final class FakeFeedSocialService: SocialServicing, @unchecked Sendable {
 
     func addComment(postID _: UUID, authorID _: UUID, body _: String) async throws {}
     func deleteComment(commentID _: UUID) async throws {}
+}
+
+/// Logging or saving something spotted on someone else's feed.
+@MainActor
+struct FeedQuickActionTests {
+    private func makeViewModel(_ service: FakeFeedService) -> FeedViewModel {
+        FeedViewModel(service: service, socialService: FakeFeedSocialService())
+    }
+
+    @Test
+    func loggingWritesForTheViewerNotThePostsAuthor() async {
+        // The whole point is adding someone else's find to *your* library.
+        let service = FakeFeedService(pages: [[]])
+        let viewModel = makeViewModel(service)
+        let viewer = UUID()
+        let media = UUID()
+
+        await viewModel.performQuickAction(.log, mediaID: media, viewerID: viewer)
+
+        #expect(service.logged.count == 1)
+        #expect(service.logged[0].authorID == viewer)
+        #expect(service.logged[0].mediaID == media)
+        #expect(service.saved.isEmpty)
+    }
+
+    @Test
+    func addingToWatchlistTakesTheSaveePathNotTheLogPath() async {
+        // These are different writes: one promotes, the other must not
+        // clobber an entry that already exists.
+        let service = FakeFeedService(pages: [[]])
+        let viewModel = makeViewModel(service)
+
+        await viewModel.performQuickAction(.watchlist, mediaID: UUID(), viewerID: UUID())
+
+        #expect(service.saved.count == 1)
+        #expect(service.logged.isEmpty)
+    }
+
+    @Test
+    func aSuccessfulActionReportsWhereTheItemWent() async {
+        let service = FakeFeedService(pages: [[]])
+        let viewModel = makeViewModel(service)
+
+        await viewModel.performQuickAction(.log, mediaID: UUID(), viewerID: UUID())
+        #expect(viewModel.lastQuickActionMessage == "Added to your collection")
+
+        await viewModel.performQuickAction(.watchlist, mediaID: UUID(), viewerID: UUID())
+        #expect(viewModel.lastQuickActionMessage == "Added to your watchlist")
+    }
+
+    @Test
+    func aFailedActionSaysSoRatherThanClaimingSuccess() async {
+        // Nothing else on this screen changes, so a silent failure would
+        // read as success and the item would simply never be there.
+        let service = FakeFeedService(pages: [[]])
+        service.quickActionError = .network
+        let viewModel = makeViewModel(service)
+
+        await viewModel.performQuickAction(.log, mediaID: UUID(), viewerID: UUID())
+
+        #expect(viewModel.lastQuickActionMessage == "Couldn't do that. Please try again.")
+        #expect(service.logged.isEmpty)
+    }
+}
+
+/// The labels the menu shows, which have to match web's FeedItemMenu.
+struct LibraryQuickActionTests {
+    @Test
+    func offersLogThenWatchlistWithWebsLabels() {
+        #expect(LibraryQuickAction.allCases.map(\.title) == ["Log", "Add to Watchlist"])
+    }
+
+    @Test
+    func everyActionHasAnIconAndAConfirmation() {
+        for action in LibraryQuickAction.allCases {
+            #expect(!action.systemImage.isEmpty)
+            #expect(!action.confirmation.isEmpty)
+        }
+    }
 }

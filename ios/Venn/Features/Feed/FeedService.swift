@@ -18,6 +18,21 @@ protocol FeedServicing: Sendable {
     /// Without a session (previews, DEBUG design boot) this degrades to
     /// the global feed rather than failing — there's no graph to scope to.
     func recentPosts(limit: Int, before: Date?) async throws -> [FeedPost]
+
+    /// Log a feed item straight into your own collection.
+    ///
+    /// A plain upsert: `posts` is unique on (author_id, media_id), and
+    /// promoting something you had saved into something you have consumed
+    /// is exactly what this should do.
+    func logFromFeed(authorID: UUID, mediaID: UUID) async throws
+
+    /// Put a feed item on your own watchlist without disturbing an entry
+    /// you already have.
+    ///
+    /// Insert-if-absent, unlike `logFromFeed`. A plain upsert here would
+    /// quietly demote a film you rated five stars back to "saved" — the one
+    /// outcome nobody wants from tapping "Add to Watchlist".
+    func saveToWatchlist(authorID: UUID, mediaID: UUID) async throws
 }
 
 /// Production implementation backed by Supabase Postgrest. Funnels
@@ -25,6 +40,36 @@ protocol FeedServicing: Sendable {
 /// semantic error type — same pattern as `ProfileService` (ADR 0006).
 struct FeedService: FeedServicing {
     let client: SupabaseClient
+
+    func logFromFeed(authorID: UUID, mediaID: UUID) async throws {
+        try await writePost(authorID: authorID, mediaID: mediaID, action: .logged, ignoringExisting: false)
+    }
+
+    func saveToWatchlist(authorID: UUID, mediaID: UUID) async throws {
+        try await writePost(authorID: authorID, mediaID: mediaID, action: .saved, ignoringExisting: true)
+    }
+
+    /// One row per (author, media), so both entry points upsert. Only the
+    /// watchlist path ignores an existing row; see the protocol for why.
+    private func writePost(
+        authorID: UUID,
+        mediaID: UUID,
+        action: PostAction,
+        ignoringExisting: Bool
+    ) async throws {
+        do {
+            try await client
+                .from("posts")
+                .upsert(
+                    FeedPostWritePayload(authorID: authorID, mediaID: mediaID, action: action),
+                    onConflict: "author_id,media_id",
+                    ignoreDuplicates: ignoringExisting
+                )
+                .execute()
+        } catch {
+            throw AppError.from(error)
+        }
+    }
 
     func recentPosts(limit: Int, before: Date?) async throws -> [FeedPost] {
         do {
@@ -149,5 +194,26 @@ extension FeedPost {
         )
         self.media = media
         author = row.author
+    }
+}
+
+/// Wire shape for logging or saving something already in `public.media`.
+/// Rating and caption are deliberately absent — this is the one-tap path
+/// from a feed row, and the composer is where those get set.
+private struct FeedPostWritePayload: Encodable {
+    let authorId: UUID
+    let mediaId: UUID
+    let action: String
+
+    enum CodingKeys: String, CodingKey {
+        case authorId = "author_id"
+        case mediaId = "media_id"
+        case action
+    }
+
+    init(authorID: UUID, mediaID: UUID, action: PostAction) {
+        authorId = authorID
+        mediaId = mediaID
+        self.action = action.rawValue
     }
 }
