@@ -249,7 +249,7 @@ final class VennUITests: XCTestCase {
         let menuButton = app.buttons["side_menu_button"]
         XCTAssertTrue(
             menuButton.waitForExistence(timeout: 60),
-            "The side-menu control never appeared, so Settings, Lists, Activity and Year in Review are unreachable."
+            "The side-menu control never appeared, so Settings, Lists, Activity and Last 12 Months are unreachable."
         )
 
         menuButton.tap()

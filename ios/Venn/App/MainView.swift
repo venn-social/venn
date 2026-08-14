@@ -55,7 +55,7 @@ extension View {
 }
 
 /// Signed-in app shell. Three tabs: Feed (default), Explorer, Profile —
-/// the places the product lives. Lists, Activity, Year in Review and
+/// the places the product lives. Lists, Activity, Last 12 Months and
 /// Settings moved behind `SideMenuView`, reached from the trailing control
 /// on the toolbar, and are not linked anywhere else.
 ///

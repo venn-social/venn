@@ -26,7 +26,7 @@ describe("SideMenu", () => {
     render(<SideMenu />);
     open();
     const labels = screen.getAllByRole("link").map((link) => link.textContent);
-    expect(labels).toEqual(["Settings", "Lists", "Activity", "Year in Review"]);
+    expect(labels).toEqual(["Settings", "Lists", "Activity", "Last 12 Months"]);
   });
 
   it("points each entry at its route", () => {
@@ -37,7 +37,7 @@ describe("SideMenu", () => {
     expect(screen.getByRole("link", { name: /Activity/ }).getAttribute("href")).toBe(
       "/notifications"
     );
-    expect(screen.getByRole("link", { name: "Year in Review" }).getAttribute("href")).toBe(
+    expect(screen.getByRole("link", { name: "Last 12 Months" }).getAttribute("href")).toBe(
       "/profile/year"
     );
   });
@@ -80,5 +80,19 @@ describe("SideMenu", () => {
     expect(screen.getByRole("link", { name: "Settings" })).toBeTruthy();
     open();
     expect(screen.queryByRole("link", { name: "Settings" })).toBeNull();
+  });
+});
+
+describe("Last 12 Months naming", () => {
+  it("does not promise a calendar year, because the query does not return one", () => {
+    // personal_stats_monthly() returns the trailing twelve months. The
+    // accessibility label always said so; the visible heading used to say
+    // "Year in Review", which is a different thing entirely and the sort of
+    // claim nobody re-reads once it ships.
+    render(<SideMenu />);
+    fireEvent.click(screen.getByRole("button", { name: /More/ }));
+
+    expect(screen.queryByRole("link", { name: /Year in Review/i })).toBeNull();
+    expect(screen.getByRole("link", { name: "Last 12 Months" })).toBeTruthy();
   });
 });
