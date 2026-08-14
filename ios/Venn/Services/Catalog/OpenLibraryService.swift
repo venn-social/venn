@@ -144,9 +144,13 @@ struct OLDoc: Decodable {
     let firstSentence: OLText?
     /// Populated by the `fields=*,editions` request — see `presentation`.
     let editions: OLEditions?
+    /// Used to fetch the author record when the credit is in another
+    /// script — see `withLatinAuthors`.
+    let authorKey: [String]?
 
     enum CodingKeys: String, CodingKey {
         case key, title, editions
+        case authorKey = "author_key"
         case authorName = "author_name"
         case firstPublishYear = "first_publish_year"
         case coverI = "cover_i"
