@@ -36,11 +36,12 @@ struct OpenLibraryService: OpenLibraryServicing {
         // tile it renders into, so every book was being upscaled — which is
         // what made the shelves look soft next to TMDB's posters. Open
         // Library serves -L via a 302, which URLSession follows.
-        let coverURL = doc.coverI.map {
+        let shown = doc.presentation
+        let coverURL = shown.coverID.map {
             coversBase.appending(path: "\($0)-L.jpg")
         }
         return MediaCandidate(
-            title: doc.title,
+            title: shown.title,
             primaryCreator: doc.authorName?.first,
             year: doc.firstPublishYear,
             coverURL: coverURL,
@@ -63,6 +64,9 @@ struct OpenLibraryService: OpenLibraryServicing {
             URLQueryItem(name: "q", value: query),
             URLQueryItem(name: "limit", value: String(pageSize)),
             URLQueryItem(name: "page", value: String(page)),
+            // Makes the response carry the edition that matched the query,
+            // rather than only the work's original-language title.
+            URLQueryItem(name: "fields", value: "*,editions"),
         ]
         guard let url = components?.url else {
             preconditionFailure("Invalid OpenLibrary search URL")
@@ -80,13 +84,46 @@ struct OLDoc: Decodable {
     let firstPublishYear: Int?
     let coverI: Int?
     let firstSentence: OLText?
+    /// Populated by the `fields=*,editions` request — see `presentation`.
+    let editions: OLEditions?
 
     enum CodingKeys: String, CodingKey {
-        case key, title
+        case key, title, editions
         case authorName = "author_name"
         case firstPublishYear = "first_publish_year"
         case coverI = "cover_i"
         case firstSentence = "first_sentence"
+    }
+
+    /// The title and cover to show for this hit.
+    ///
+    /// Open Library's `title` is the *work's* canonical title, which is the
+    /// original language — so searching "kafka on the shore" returns
+    /// 海辺のカフカ and "perfume" returns Das Parfum. The matched edition is
+    /// the one the searcher meant.
+    ///
+    /// Title and cover are taken together, never mixed. "The Stranger" over
+    /// the French cover reads as the wrong book, which is worse than simply
+    /// showing the French title.
+    var presentation: (title: String, coverID: Int?) {
+        guard let edition = editions?.docs.first, let editionTitle = edition.title else {
+            return (title, coverI)
+        }
+        return (editionTitle, edition.coverI ?? coverI)
+    }
+}
+
+struct OLEditions: Decodable {
+    let docs: [OLEdition]
+}
+
+struct OLEdition: Decodable {
+    let title: String?
+    let coverI: Int?
+
+    enum CodingKeys: String, CodingKey {
+        case title
+        case coverI = "cover_i"
     }
 }
 
