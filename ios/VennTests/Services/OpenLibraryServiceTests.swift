@@ -80,4 +80,79 @@ struct OpenLibraryServiceTests {
         // Kind is part of the identity — see MediaCandidate.id.
         #expect(OpenLibraryService.candidate(from: doc).id == "openlibrary:book:OL99W")
     }
+
+    /// Mirrors web's "openLibrary edition preference" cases. Open Library's
+    /// work title is the original language, so these two suites have to
+    /// agree or the same search shows a different title per platform.
+    private func doc(_ json: String) throws -> OLDoc {
+        try JSONDecoder().decode(OLDoc.self, from: Data(json.utf8))
+    }
+
+    @Test
+    func showsTheEditionThatMatchedRatherThanTheWorksOriginalTitle() throws {
+        // "kafka on the shore" returns a work titled 海辺のカフカ; the
+        // searcher meant the English edition.
+        let parsed = try doc("""
+        { "key": "/works/OL1W", "title": "海辺のカフカ", "cover_i": 111,
+          "editions": { "docs": [{ "title": "Kafka on the Shore", "cover_i": 222 }] } }
+        """)
+        #expect(parsed.presentation.title == "Kafka on the Shore")
+    }
+
+    @Test
+    func takesTheCoverFromTheSameEditionAsTheTitle() throws {
+        // A title and cover from different editions reads as the wrong book,
+        // which is worse than showing the original language.
+        let parsed = try doc("""
+        { "key": "/works/OL1W", "title": "Das Parfum", "cover_i": 111,
+          "editions": { "docs": [{ "title": "Perfume", "cover_i": 222 }] } }
+        """)
+        #expect(parsed.presentation.coverID == 222)
+    }
+
+    @Test
+    func fallsBackToTheWorksCoverWhenTheEditionHasNone() throws {
+        let parsed = try doc("""
+        { "key": "/works/OL1W", "title": "Das Parfum", "cover_i": 111,
+          "editions": { "docs": [{ "title": "Perfume" }] } }
+        """)
+        #expect(parsed.presentation.coverID == 111)
+    }
+
+    @Test
+    func keepsTheWorksTitleWhenNoEditionCameBack() throws {
+        let parsed = try doc("""
+        { "key": "/works/OL1W", "title": "Norwegian Wood", "cover_i": 5 }
+        """)
+        #expect(parsed.presentation.title == "Norwegian Wood")
+        #expect(parsed.presentation.coverID == 5)
+    }
+
+    @Test
+    func ignoresAnEditionsArrayThatIsPresentButEmpty() throws {
+        let parsed = try doc("""
+        { "key": "/works/OL1W", "title": "Piranesi", "editions": { "docs": [] } }
+        """)
+        #expect(parsed.presentation.title == "Piranesi")
+    }
+
+    @Test
+    func ignoresAnEditionWithNoTitleOfItsOwn() throws {
+        let parsed = try doc("""
+        { "key": "/works/OL1W", "title": "Piranesi",
+          "editions": { "docs": [{ "cover_i": 9 }] } }
+        """)
+        #expect(parsed.presentation.title == "Piranesi")
+    }
+
+    @Test
+    func identityStaysTheWorkEvenWhenAnEditionSuppliesTheTitle() throws {
+        // Re-pointing external_id at the edition would orphan every book
+        // already logged, and break the recommendation exclusion key.
+        let parsed = try doc("""
+        { "key": "/works/OL99W", "title": "Das Parfum",
+          "editions": { "docs": [{ "title": "Perfume" }] } }
+        """)
+        #expect(OpenLibraryService.candidate(from: parsed).externalID == "OL99W")
+    }
 }
