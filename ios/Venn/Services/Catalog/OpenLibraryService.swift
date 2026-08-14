@@ -15,6 +15,10 @@ struct OpenLibraryService: OpenLibraryServicing {
     private static let base = URL(staticString: "https://openlibrary.org")
     private static let coversBase = URL(staticString: "https://covers.openlibrary.org/b/id")
     private static let pageSize = 20
+    /// A page of twenty foreign-language results should not become twenty
+    /// extra requests; Open Library rate-limits hard and answers with an
+    /// empty 200 when it does.
+    private static let authorLookupLimit = 5
 
     let session: URLSession
 
@@ -26,7 +30,61 @@ struct OpenLibraryService: OpenLibraryServicing {
         let url = Self.searchURL(query: query, page: page)
         let data = try await ExternalAPI.fetch(url: url, session: session)
         let response = try JSONDecoder().decode(OLSearchResponse.self, from: data)
-        return response.docs.map(Self.candidate(from:))
+        return await withLatinAuthors(response.docs.map { ($0, Self.candidate(from: $0)) })
+    }
+
+    /// Replace author names written in another script with their Latin form.
+    ///
+    /// The search response only carries the name as printed on the book, so
+    /// a Japanese author arrives as 村上春樹. The Latin form lives on the
+    /// author record, which costs one request — but only for the credits
+    /// that actually need it, which is nearly always none. Capped so a page
+    /// of foreign-language results cannot fan out into twenty requests.
+    ///
+    /// This runs at search time on purpose: `primary_creator` is copied
+    /// into `media` when something is logged, so fixing it only on the
+    /// detail screen would leave every shelf and feed row still unreadable.
+    private func withLatinAuthors(
+        _ pairs: [(doc: OLDoc, candidate: MediaCandidate)]
+    ) async -> [MediaCandidate] {
+        let needing = pairs.filter { pair in
+            guard let creator = pair.candidate.primaryCreator else { return false }
+            return !AuthorName.isLatinScript(creator)
+        }
+        guard !needing.isEmpty else { return pairs.map(\.candidate) }
+
+        var resolved: [String: String] = [:]
+        for pair in needing.prefix(Self.authorLookupLimit) {
+            guard let key = pair.doc.authorKey?.first, resolved[key] == nil else { continue }
+            if let latin = await Self.latinAuthorName(key: key, session: session) {
+                resolved[key] = latin
+            }
+        }
+        guard !resolved.isEmpty else { return pairs.map(\.candidate) }
+
+        return pairs.map { pair in
+            guard let key = pair.doc.authorKey?.first, let latin = resolved[key] else {
+                return pair.candidate
+            }
+            return pair.candidate.replacingPrimaryCreator(latin)
+        }
+    }
+
+    /// One author record, for its Latin `personal_name`. Returns nil rather
+    /// than throwing: a failed lookup should leave the original name, not
+    /// fail the search.
+    private static func latinAuthorName(key: String, session: URLSession) async -> String? {
+        guard let url = URL(string: "https://openlibrary.org/authors/\(key).json") else {
+            return nil
+        }
+        guard let data = try? await ExternalAPI.fetch(url: url, session: session),
+              let record = try? JSONDecoder().decode(OLAuthorRecord.self, from: data)
+        else {
+            return nil
+        }
+        let preferred = AuthorName.preferred(name: record.name, personalName: record.personalName)
+        guard let preferred, AuthorName.isLatinScript(preferred) else { return nil }
+        return preferred
     }
 
     // MARK: - Helpers (internal for tests)
@@ -86,9 +144,13 @@ struct OLDoc: Decodable {
     let firstSentence: OLText?
     /// Populated by the `fields=*,editions` request — see `presentation`.
     let editions: OLEditions?
+    /// Used to fetch the author record when the credit is in another
+    /// script — see `withLatinAuthors`.
+    let authorKey: [String]?
 
     enum CodingKeys: String, CodingKey {
         case key, title, editions
+        case authorKey = "author_key"
         case authorName = "author_name"
         case firstPublishYear = "first_publish_year"
         case coverI = "cover_i"
@@ -133,4 +195,15 @@ struct OLText: Decodable {
 
 private struct OLSearchResponse: Decodable {
     let docs: [OLDoc]
+}
+
+/// Author record, fetched only when a credit needs its Latin form.
+struct OLAuthorRecord: Decodable {
+    let name: String?
+    let personalName: String?
+
+    enum CodingKeys: String, CodingKey {
+        case name
+        case personalName = "personal_name"
+    }
 }

@@ -192,6 +192,14 @@ struct OLAuthorRef: Decodable {
 
 struct OLAuthorName: Decodable {
     let name: String?
+    /// Latin form, surname-first ("Murakami, Haruki"). Present on authors
+    /// whose `name` is in another script.
+    let personalName: String?
+
+    enum CodingKeys: String, CodingKey {
+        case name
+        case personalName = "personal_name"
+    }
 }
 
 struct OLWork: Decodable {
@@ -249,7 +257,10 @@ enum OpenLibraryDetail {
         guard let data = try? await ExternalAPI.fetch(url: url, session: session) else {
             return nil
         }
-        return try? JSONDecoder().decode(OLAuthorName.self, from: data).name
+        guard let decoded = try? JSONDecoder().decode(OLAuthorName.self, from: data) else {
+            return nil
+        }
+        return AuthorName.preferred(name: decoded.name, personalName: decoded.personalName)
     }
 }
 

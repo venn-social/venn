@@ -1,5 +1,6 @@
 // No yearFrom here: OpenLibrary returns first_publish_year already numeric,
 // unlike TMDB's and MusicBrainz's date strings.
+import { isLatinScript, preferredAuthorName } from "@/lib/catalog/authorName";
 import { EMPTY_DETAIL, type MediaDetail } from "@/lib/catalog/detail";
 import { candidateId, type MediaCandidate } from "@/lib/catalog/types";
 
@@ -22,7 +23,15 @@ interface OLDoc {
   first_sentence?: { value?: string } | string;
   /** Populated by `fields=*,editions` — see `presentation()`. */
   editions?: { docs?: OLEdition[] };
+  author_key?: string[];
 }
+
+/**
+ * A page of twenty foreign-language results should not become twenty extra
+ * requests; Open Library rate-limits hard and answers with an empty 200
+ * when it does.
+ */
+const AUTHOR_LOOKUP_LIMIT = 5;
 
 /**
  * The title and cover to show for a search hit.
@@ -92,7 +101,60 @@ export async function searchOpenLibrary(query: string): Promise<MediaCandidate[]
     `${API_BASE}/search.json?q=${encodeURIComponent(query)}&page=1` + `&fields=*,editions`;
   const response = await fetch(url);
   if (!response.ok) throw new Error(`OpenLibrary search failed (${response.status})`);
-  return toBookCandidates(await response.json());
+  const json = await response.json();
+  return withLatinAuthors(toBookCandidates(json), json);
+}
+
+/**
+ * Replace author names written in another script with their Latin form.
+ *
+ * The search response only carries the name as printed on the book, so a
+ * Japanese author arrives as 村上春樹. The Latin form lives on the author
+ * record, which costs one request — but only for the credits that actually
+ * need it, which is nearly always none.
+ *
+ * This runs at search time on purpose. `primary_creator` is copied into
+ * `media` when something is logged, so fixing it only on the detail screen
+ * would leave every shelf and feed row still unreadable.
+ */
+async function withLatinAuthors(
+  candidates: MediaCandidate[],
+  json: unknown
+): Promise<MediaCandidate[]> {
+  const docs = ((json as { docs?: OLDoc[] } | null)?.docs ?? []) as OLDoc[];
+
+  const keysNeeded: string[] = [];
+  candidates.forEach((candidate, index) => {
+    const creator = candidate.primaryCreator;
+    if (!creator || isLatinScript(creator)) return;
+    const key = docs[index]?.author_key?.[0];
+    if (key && !keysNeeded.includes(key)) keysNeeded.push(key);
+  });
+  if (keysNeeded.length === 0) return candidates;
+
+  const resolved = new Map<string, string>();
+  await Promise.all(
+    keysNeeded.slice(0, AUTHOR_LOOKUP_LIMIT).map(async (key) => {
+      try {
+        const response = await fetch(`${API_BASE}/authors/${key}.json`);
+        if (!response.ok) return;
+        const record = (await response.json()) as { name?: string; personal_name?: string };
+        const preferred = preferredAuthorName(record.name, record.personal_name);
+        // A failed or still-unreadable lookup leaves the original name
+        // rather than failing the search.
+        if (preferred && isLatinScript(preferred)) resolved.set(key, preferred);
+      } catch {
+        // Ignored — see above.
+      }
+    })
+  );
+  if (resolved.size === 0) return candidates;
+
+  return candidates.map((candidate, index) => {
+    const key = docs[index]?.author_key?.[0];
+    const latin = key ? resolved.get(key) : undefined;
+    return latin ? { ...candidate, primaryCreator: latin } : candidate;
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -149,8 +211,11 @@ export async function fetchOpenLibraryDetail(externalId: string): Promise<MediaD
       try {
         const authorResponse = await fetch(`${API_BASE}${key}.json`);
         if (!authorResponse.ok) return null;
-        const author = (await authorResponse.json()) as { name?: string };
-        return author.name ?? null;
+        const author = (await authorResponse.json()) as {
+          name?: string;
+          personal_name?: string;
+        };
+        return preferredAuthorName(author.name, author.personal_name);
       } catch {
         return null;
       }

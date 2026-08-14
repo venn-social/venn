@@ -28,3 +28,21 @@ struct MediaCandidate: Equatable, Identifiable {
     let externalSource: ExternalSource
     let kind: MediaKind
 }
+
+extension MediaCandidate {
+    /// A copy crediting a different name, used when the search result's
+    /// author is written in a script the reader cannot read and the author
+    /// record offers a Latin form.
+    func replacingPrimaryCreator(_ creator: String) -> MediaCandidate {
+        MediaCandidate(
+            title: title,
+            primaryCreator: creator,
+            year: year,
+            coverURL: coverURL,
+            overview: overview,
+            externalID: externalID,
+            externalSource: externalSource,
+            kind: kind
+        )
+    }
+}
