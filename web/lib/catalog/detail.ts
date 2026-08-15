@@ -46,6 +46,15 @@ export interface MediaDetail {
   watchLinks: WatchLink[];
   /** ISO country the watch links apply to — availability is regional. */
   watchRegion: string | null;
+  /**
+   * True when the provider could not be reached, as opposed to answering
+   * with nothing.
+   *
+   * The two look identical in the data and are completely different to a
+   * reader: one means "we know of no cast", the other means "we could not
+   * ask". Only the second is worth offering a retry for.
+   */
+  unavailable?: boolean;
   /** Deep link back to the source, so people can go read more. */
   sourceUrl: string | null;
 }
