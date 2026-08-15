@@ -5,6 +5,8 @@ export interface PostComment {
   id: string;
   body: string;
   createdAt: Date;
+  /** Null until the text is changed. Set by the database, never the client. */
+  editedAt: Date | null;
   author: UserProfile;
 }
 
@@ -12,6 +14,7 @@ export interface CommentRow {
   id: string;
   body: string;
   created_at: string;
+  edited_at?: string | null;
   author: ProfileRow;
 }
 
@@ -24,6 +27,7 @@ export function toComment(row: CommentRow): PostComment | null {
     id: row.id,
     body: row.body,
     createdAt: new Date(row.created_at),
+    editedAt: row.edited_at ? new Date(row.edited_at) : null,
     author: toUserProfile(row.author)
   };
 }
@@ -43,7 +47,7 @@ export async function fetchComments(
 ): Promise<PostComment[]> {
   const { data, error } = await client
     .from("post_comments")
-    .select("id, body, created_at, author:profiles(*)")
+    .select("id, body, created_at, edited_at, author:profiles(*)")
     .eq("post_id", postId)
     .order("created_at", { ascending: true })
     .limit(limit);
@@ -68,6 +72,22 @@ export async function addComment(
  * Deletable by the comment's author or the post's author — the policy
  * enforces it, so this just issues the delete and lets RLS decide.
  */
+/**
+ * Change the text of a comment you wrote.
+ *
+ * Only the body is sent. The database pins the post, the author and the
+ * original timestamp, and stamps `edited_at` itself — so an edit cannot be
+ * made silent, and cannot move a comment somewhere it was never written.
+ */
+export async function editComment(
+  client: SupabaseClient,
+  commentId: string,
+  body: string
+): Promise<void> {
+  const { error } = await client.from("post_comments").update({ body }).eq("id", commentId);
+  if (error) throw error;
+}
+
 export async function deleteComment(client: SupabaseClient, commentId: string): Promise<void> {
   const { error } = await client.from("post_comments").delete().eq("id", commentId);
   if (error) throw error;
