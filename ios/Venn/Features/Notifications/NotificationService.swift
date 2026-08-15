@@ -64,6 +64,17 @@ protocol NotificationServicing: Sendable {
     /// it's zero.
     @discardableResult
     func markAllRead() async throws -> Int
+
+    /// Changes to the signed-in user's notifications, as they happen.
+    ///
+    /// Yields on any insert, update or delete rather than carrying a
+    /// payload: callers re-read the count, which handles something marked
+    /// read on another device as well as something arriving, where adding
+    /// and subtracting locally would not.
+    ///
+    /// RLS applies to Realtime, so the stream can only ever deliver the
+    /// reader's own rows — the same guarantee a SELECT gets.
+    func changes() -> AsyncStream<Void>
 }
 
 /// Production implementation backed by Supabase Postgrest. Funnels
@@ -174,5 +185,45 @@ extension AppNotification {
             postTitle: row.post?.media?.title,
             commentBody: row.comment?.body
         )
+    }
+}
+
+extension NotificationService {
+    func changes() -> AsyncStream<Void> {
+        AsyncStream { continuation in
+            let channel = client.realtimeV2.channel("notifications-badge")
+
+            let task = Task {
+                let inserts = channel.postgresChange(InsertAction.self, table: "notifications")
+                let updates = channel.postgresChange(UpdateAction.self, table: "notifications")
+                let deletes = channel.postgresChange(DeleteAction.self, table: "notifications")
+
+                await channel.subscribe()
+
+                // Merged rather than watched separately: every caller wants
+                // the same thing from all three, which is "look again".
+                await withTaskGroup(of: Void.self) { group in
+                    group.addTask { await Self.forward(inserts, to: continuation) }
+                    group.addTask { await Self.forward(updates, to: continuation) }
+                    group.addTask { await Self.forward(deletes, to: continuation) }
+                }
+            }
+
+            continuation.onTermination = { _ in
+                task.cancel()
+                Task { await channel.unsubscribe() }
+            }
+        }
+    }
+
+    /// Collapses a typed change stream into a bare "something happened".
+    /// The payload is deliberately dropped — callers re-read the count.
+    private static func forward<Change: Sendable>(
+        _ stream: AsyncStream<Change>,
+        to continuation: AsyncStream<Void>.Continuation
+    ) async {
+        for await _ in stream {
+            continuation.yield()
+        }
     }
 }

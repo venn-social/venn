@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { MenuIcon } from "@/components/Icon";
+import { useUnreadCount } from "@/components/useUnreadCount";
 
 /**
  * The secondary surfaces, folded away behind one control.
@@ -30,6 +31,9 @@ interface SideMenuProps {
 export function SideMenu({ unreadCount = 0 }: SideMenuProps) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  // The prop is the server's count at render time; this keeps it current
+  // while the page stays open.
+  const liveUnread = useUnreadCount(unreadCount);
 
   // Escape closes it, which is the one keyboard affordance people reach for
   // without being told.
@@ -50,12 +54,12 @@ export function SideMenu({ unreadCount = 0 }: SideMenuProps) {
         aria-expanded={open}
         aria-controls="side-menu"
         aria-label={
-          unreadCount > 0 ? `More, ${unreadCount} unread` : "More"
+          liveUnread > 0 ? `More, ${liveUnread} unread` : "More"
         }
         className="relative flex h-8 w-8 items-center justify-center rounded-pill text-(--color-text-secondary) hover:text-(--color-text-primary)"
       >
         <MenuIcon size={18} />
-        {unreadCount > 0 && !open && (
+        {liveUnread > 0 && !open && (
           <span
             aria-hidden="true"
             className="absolute right-0.5 top-0.5 h-2 w-2 rounded-pill bg-(--color-accent)"
@@ -80,7 +84,7 @@ export function SideMenu({ unreadCount = 0 }: SideMenuProps) {
           >
             {ITEMS.map((item) => {
               const active = pathname === item.href;
-              const badged = item.href === "/notifications" && unreadCount > 0;
+              const badged = item.href === "/notifications" && liveUnread > 0;
               return (
                 <Link
                   key={item.href}
@@ -100,7 +104,7 @@ export function SideMenu({ unreadCount = 0 }: SideMenuProps) {
                   {item.label}
                   {badged && (
                     <span className="ml-2 rounded-pill bg-(--color-accent) px-1.5 py-0.5 text-xs font-semibold text-(--color-on-accent)">
-                      {unreadCount > 9 ? "9+" : unreadCount}
+                      {liveUnread > 9 ? "9+" : liveUnread}
                     </span>
                   )}
                 </Link>
