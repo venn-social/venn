@@ -61,6 +61,34 @@ final class PostDetailViewModel {
         submitting = false
     }
 
+    /// Optimistic, like delete: the new text shows immediately and a failed
+    /// save reloads to put the original back.
+    ///
+    /// The marker is set here too, because the database sets it on the row
+    /// and the reader should see the same thing straight away rather than
+    /// only after the next load.
+    func editComment(_ commentID: UUID, body: String) async {
+        let trimmed = body.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, case let .loaded(comments) = state else { return }
+
+        state = .loaded(comments.map { comment in
+            guard comment.id == commentID else { return comment }
+            return PostComment(
+                id: comment.id,
+                body: trimmed,
+                createdAt: comment.createdAt,
+                editedAt: Date(),
+                author: comment.author
+            )
+        })
+
+        do {
+            try await service.editComment(commentID: commentID, body: trimmed)
+        } catch {
+            await load()
+        }
+    }
+
     /// Optimistic: the comment disappears immediately, and a failed delete
     /// puts it back by reloading — the same shape `FollowRequestsViewModel`
     /// uses for accept/reject.

@@ -9,6 +9,10 @@ struct PostDetailView: View {
 
     @State private var viewModel: PostDetailViewModel?
     @State private var draft = ""
+    /// The comment being edited, and its working text. Separate from
+    /// `draft` so opening an edit does not swallow a half-written comment.
+    @State private var editingID: UUID?
+    @State private var editDraft = ""
 
     var body: some View {
         ScrollView {
@@ -75,23 +79,85 @@ struct PostDetailView: View {
                     Text(RelativeTime.short(from: comment.createdAt))
                         .font(Theme.Font.caption)
                         .foregroundStyle(Theme.Color.textSecondary)
+                    if comment.editedAt != nil {
+                        Text("(edited)")
+                            .font(Theme.Font.caption)
+                            .foregroundStyle(Theme.Color.textSecondary)
+                            .accessibilityIdentifier("comment_edited_marker")
+                    }
                 }
-                Text(comment.body)
-                    .font(Theme.Font.callout)
-                    .foregroundStyle(Theme.Color.textPrimary)
-                    .fixedSize(horizontal: false, vertical: true)
+
+                if editingID == comment.id {
+                    commentEditor(comment, viewModel: viewModel)
+                } else {
+                    Text(comment.body)
+                        .font(Theme.Font.callout)
+                        .foregroundStyle(Theme.Color.textPrimary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
 
             Spacer(minLength: Theme.Spacing.sm)
 
             // Mirrors the RLS policy: your own comment anywhere, or anyone's
             // comment on your own post.
-            if comment.author.id == viewerID || feedPost.post.authorID == viewerID {
-                Button("Delete") {
-                    Task { await viewModel.deleteComment(comment.id) }
+            if editingID != comment.id {
+                HStack(spacing: Theme.Spacing.md) {
+                    // Editing is the author's alone. Removing someone's
+                    // comment from your own post is moderation; rewriting it
+                    // is impersonation, so the post's author does not get it.
+                    if comment.author.id == viewerID {
+                        Button("Edit") {
+                            editDraft = comment.body
+                            editingID = comment.id
+                        }
+                        .font(Theme.Font.caption)
+                        .foregroundStyle(Theme.Color.textSecondary)
+                    }
+
+                    if comment.author.id == viewerID || feedPost.post.authorID == viewerID {
+                        Button("Delete") {
+                            Task { await viewModel.deleteComment(comment.id) }
+                        }
+                        .font(Theme.Font.caption)
+                        .foregroundStyle(Theme.Color.textSecondary)
+                    }
                 }
-                .font(Theme.Font.caption)
-                .foregroundStyle(Theme.Color.textSecondary)
+            }
+        }
+    }
+
+    private func commentEditor(
+        _ comment: PostComment,
+        viewModel: PostDetailViewModel
+    ) -> some View {
+        VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
+            TextField("Edit your comment", text: $editDraft, axis: .vertical)
+                .font(Theme.Font.callout)
+                .lineLimit(1...6)
+                .padding(Theme.Spacing.sm)
+                .background(
+                    Theme.Color.surfaceStrong,
+                    in: .rect(cornerRadius: Theme.Radius.sm)
+                )
+                .accessibilityIdentifier("comment_edit_field")
+
+            HStack(spacing: Theme.Spacing.md) {
+                Button("Save") {
+                    let text = editDraft
+                    editingID = nil
+                    Task { await viewModel.editComment(comment.id, body: text) }
+                }
+                .font(Theme.Font.caption.weight(.semibold))
+                .foregroundStyle(Theme.Color.accent)
+                .disabled(
+                    editDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                        || editDraft == comment.body
+                )
+
+                Button("Cancel") { editingID = nil }
+                    .font(Theme.Font.caption)
+                    .foregroundStyle(Theme.Color.textSecondary)
             }
         }
     }

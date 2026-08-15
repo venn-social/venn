@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Avatar } from "@/components/Avatar";
-import { addComment, deleteComment, type PostComment } from "@/lib/comments";
+import { addComment, deleteComment, editComment, type PostComment } from "@/lib/comments";
 import { shortRelativeTime } from "@/lib/relativeTime";
 import { sanitizeCaption } from "@/lib/sanitize";
 import { createClient } from "@/lib/supabase/client";
@@ -35,6 +35,9 @@ export function CommentThread({
   const [body, setBody] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  /** The comment being edited, and its working text. */
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [draft, setDraft] = useState("");
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -68,6 +71,26 @@ export function CommentThread({
     }
   }
 
+  async function handleEdit(commentId: string) {
+    const next = draft.trim();
+    if (!next) return;
+
+    try {
+      await editComment(createClient(), commentId, next);
+      // Mirror what the database did rather than refetching: it stamps
+      // edited_at, so showing the marker immediately keeps the edit as
+      // visible here as it is to everyone else.
+      setComments((current) =>
+        current.map((comment) =>
+          comment.id === commentId ? { ...comment, body: next, editedAt: new Date() } : comment
+        )
+      );
+      setEditingId(null);
+    } catch {
+      setError("Couldn't save that edit. Please try again.");
+    }
+  }
+
   async function handleDelete(commentId: string) {
     const previous = comments;
     setComments((current) => current.filter((comment) => comment.id !== commentId));
@@ -96,6 +119,11 @@ export function CommentThread({
             // The RLS policy allows both; mirroring it here keeps the
             // button from appearing where the delete would be refused.
             const canDelete = userId === comment.author.id || userId === postAuthorId;
+            // Editing is the author's alone. Removing someone's comment from
+            // your own post is moderation; rewriting it is impersonation, so
+            // the post's author deliberately does not get this.
+            const canEdit = userId === comment.author.id;
+            const isEditing = editingId === comment.id;
 
             return (
               <li key={comment.id} className="flex gap-3">
@@ -106,17 +134,69 @@ export function CommentThread({
                     <span className="text-xs text-(--color-text-secondary)">
                       {shortRelativeTime(comment.createdAt)}
                     </span>
-                    {canDelete && (
-                      <button
-                        type="button"
-                        onClick={() => void handleDelete(comment.id)}
-                        className="ml-auto text-xs text-(--color-text-secondary) hover:text-red-500"
-                      >
-                        Delete
-                      </button>
+                    {comment.editedAt && (
+                      <span className="text-xs text-(--color-text-secondary)">(edited)</span>
                     )}
+                    <span className="ml-auto flex gap-3">
+                      {canEdit && !isEditing && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingId(comment.id);
+                            setDraft(comment.body);
+                          }}
+                          className="text-xs text-(--color-text-secondary) hover:text-(--color-text-primary)"
+                        >
+                          Edit
+                        </button>
+                      )}
+                      {canDelete && (
+                        <button
+                          type="button"
+                          onClick={() => void handleDelete(comment.id)}
+                          className="text-xs text-(--color-text-secondary) hover:text-red-500"
+                        >
+                          Delete
+                        </button>
+                      )}
+                    </span>
                   </div>
-                  <p className="text-(--color-text-primary)">{comment.body}</p>
+                  {isEditing ? (
+                    <form
+                      onSubmit={(event) => {
+                        event.preventDefault();
+                        void handleEdit(comment.id);
+                      }}
+                      className="flex flex-col gap-2 pt-1"
+                    >
+                      <textarea
+                        value={draft}
+                        onChange={(event) => setDraft(event.target.value)}
+                        rows={2}
+                        maxLength={500}
+                        aria-label={`Edit your comment`}
+                        className="rounded-sm border border-(--color-separator) bg-(--color-surface-strong) px-3 py-2 text-(--color-text-primary) outline-none"
+                      />
+                      <span className="flex gap-2">
+                        <button
+                          type="submit"
+                          disabled={draft.trim().length === 0 || draft.trim() === comment.body}
+                          className="rounded-pill bg-(--color-accent) px-3 py-1 text-sm font-semibold text-(--color-on-accent) disabled:opacity-50"
+                        >
+                          Save
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEditingId(null)}
+                          className="text-sm font-semibold text-(--color-text-secondary)"
+                        >
+                          Cancel
+                        </button>
+                      </span>
+                    </form>
+                  ) : (
+                    <p className="text-(--color-text-primary)">{comment.body}</p>
+                  )}
                 </div>
               </li>
             );

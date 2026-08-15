@@ -63,3 +63,39 @@ describe("toCommentCounts", () => {
     expect(toCommentCounts(null)).toEqual({});
   });
 });
+
+describe("edited comments", () => {
+  it("carries the edited marker through from the row", () => {
+    const comment = toComment({
+      id: "c1",
+      body: "corrected",
+      created_at: "2026-08-15T10:00:00Z",
+      edited_at: "2026-08-15T10:05:00Z",
+      author
+    });
+    expect(comment?.editedAt).toEqual(new Date("2026-08-15T10:05:00Z"));
+  });
+
+  it("leaves the marker null on a comment nobody has edited", () => {
+    const comment = toComment({
+      id: "c1",
+      body: "as written",
+      created_at: "2026-08-15T10:00:00Z",
+      edited_at: null,
+      author
+    });
+    expect(comment?.editedAt).toBeNull();
+  });
+
+  it("treats a row with no edited_at at all as unedited", () => {
+    // Older rows predate the column, and a missing field must not read as
+    // an edit that never happened.
+    const comment = toComment({
+      id: "c1",
+      body: "as written",
+      created_at: "2026-08-15T10:00:00Z",
+      author
+    });
+    expect(comment?.editedAt).toBeNull();
+  });
+});

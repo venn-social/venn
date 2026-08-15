@@ -16,6 +16,9 @@ struct PostComment: Identifiable, Equatable, Sendable {
     let id: UUID
     let body: String
     let createdAt: Date
+    /// Nil until the text is changed. Set by the database, never the client,
+    /// so an edit cannot be made silent.
+    let editedAt: Date?
     let author: UserProfile
 }
 
@@ -40,6 +43,13 @@ protocol SocialServicing: Sendable {
 
     /// Deletable by the comment's author or the post's author; the RLS
     /// policy decides, so this just issues the delete.
+    /// Change the text of a comment you wrote.
+    ///
+    /// Only the body is sent. The database pins the post, the author and the
+    /// original timestamp, and stamps `edited_at` itself, so an edit cannot
+    /// be silent and cannot move a comment somewhere it was never written.
+    func editComment(commentID: UUID, body: String) async throws
+
     func deleteComment(commentID: UUID) async throws
 
     /// Comment counts for many posts at once, batched for the same reason
@@ -98,7 +108,7 @@ struct SocialService: SocialServicing {
         do {
             let rows: [CommentRow] = try await client
                 .from("post_comments")
-                .select("id, body, created_at, author:profiles(*)")
+                .select("id, body, created_at, edited_at, author:profiles(*)")
                 .eq("post_id", value: postID)
                 .order("created_at", ascending: true)
                 .limit(limit)
@@ -115,6 +125,18 @@ struct SocialService: SocialServicing {
             try await client
                 .from("post_comments")
                 .insert(CommentInsert(postId: postID, authorId: authorID, body: body))
+                .execute()
+        } catch {
+            throw AppError.from(error)
+        }
+    }
+
+    func editComment(commentID: UUID, body: String) async throws {
+        do {
+            try await client
+                .from("post_comments")
+                .update(CommentEdit(body: body))
+                .eq("id", value: commentID)
                 .execute()
         } catch {
             throw AppError.from(error)
@@ -176,11 +198,13 @@ struct CommentRow: Decodable, Equatable {
     let id: UUID
     let body: String
     let createdAt: Date
+    let editedAt: Date?
     let author: UserProfile
 
     enum CodingKeys: String, CodingKey {
         case id, body, author
         case createdAt = "created_at"
+        case editedAt = "edited_at"
     }
 }
 
@@ -192,6 +216,10 @@ private struct LikeRow: Encodable {
         case postId = "post_id"
         case userId = "user_id"
     }
+}
+
+private struct CommentEdit: Encodable {
+    let body: String
 }
 
 private struct CommentInsert: Encodable {
@@ -211,6 +239,7 @@ extension PostComment {
         id = row.id
         body = row.body
         createdAt = row.createdAt
+        editedAt = row.editedAt
         author = row.author
     }
 }

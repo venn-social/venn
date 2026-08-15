@@ -328,6 +328,8 @@ final class FakeFeedSocialService: SocialServicing, @unchecked Sendable {
     }
 
     func addComment(postID _: UUID, authorID _: UUID, body _: String) async throws {}
+    func editComment(commentID _: UUID, body _: String) async throws {}
+
     func deleteComment(commentID _: UUID) async throws {}
 }
 

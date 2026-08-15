@@ -48,8 +48,27 @@ private actor FakeSocialService: SocialServicing {
         }
         addedBodies.append(body)
         comments.append(
-            PostComment(id: UUID(), body: body, createdAt: Date(), author: Self.author)
+            PostComment(id: UUID(), body: body, createdAt: Date(), editedAt: nil, author: Self.author)
         )
+    }
+
+    private(set) var edited: [(id: UUID, body: String)] = []
+
+    func editComment(commentID: UUID, body: String) async throws {
+        if let writeError {
+            throw writeError
+        }
+        edited.append((commentID, body))
+        comments = comments.map { comment in
+            guard comment.id == commentID else { return comment }
+            return PostComment(
+                id: comment.id,
+                body: body,
+                createdAt: comment.createdAt,
+                editedAt: Date(),
+                author: comment.author
+            )
+        }
     }
 
     func deleteComment(commentID: UUID) async throws {
@@ -78,7 +97,13 @@ private actor FakeSocialService: SocialServicing {
 @MainActor
 struct PostDetailViewModelTests {
     private func comment(_ body: String) -> PostComment {
-        PostComment(id: UUID(), body: body, createdAt: Date(), author: FakeSocialService.author)
+        PostComment(
+            id: UUID(),
+            body: body,
+            createdAt: Date(),
+            editedAt: nil,
+            author: FakeSocialService.author
+        )
     }
 
     @Test("loads comments and like info together")
@@ -164,5 +189,88 @@ struct PostDetailViewModelTests {
         } else {
             Issue.record("expected a loaded state after delete")
         }
+    }
+
+    @Test("editing shows the new text and the marker immediately")
+    func editIsOptimisticAndMarked() async {
+        let service = FakeSocialService()
+        await service.seed(comments: [comment("frist")])
+        let viewModel = PostDetailViewModel(postID: UUID(), service: service)
+        await viewModel.load()
+
+        guard case let .loaded(before) = viewModel.state, let target = before.first else {
+            Issue.record("expected a loaded comment")
+            return
+        }
+        #expect(target.editedAt == nil)
+
+        await viewModel.editComment(target.id, body: "first")
+
+        guard case let .loaded(after) = viewModel.state, let edited = after.first else {
+            Issue.record("expected a loaded comment")
+            return
+        }
+        #expect(edited.body == "first")
+        // The database stamps this; showing it straight away means the
+        // reader sees the same thing everyone else will.
+        #expect(edited.editedAt != nil)
+    }
+
+    @Test("an edit is trimmed before it is sent")
+    func editTrimsWhitespace() async {
+        let service = FakeSocialService()
+        await service.seed(comments: [comment("original")])
+        let viewModel = PostDetailViewModel(postID: UUID(), service: service)
+        await viewModel.load()
+
+        guard case let .loaded(before) = viewModel.state, let target = before.first else {
+            Issue.record("expected a loaded comment")
+            return
+        }
+        await viewModel.editComment(target.id, body: "  tidied  ")
+
+        let sent = await service.edited
+        #expect(sent.count == 1)
+        #expect(sent.first?.body == "tidied")
+    }
+
+    @Test("an empty edit is not sent, since it would blank the comment")
+    func emptyEditIsIgnored() async {
+        let service = FakeSocialService()
+        await service.seed(comments: [comment("original")])
+        let viewModel = PostDetailViewModel(postID: UUID(), service: service)
+        await viewModel.load()
+
+        guard case let .loaded(before) = viewModel.state, let target = before.first else {
+            Issue.record("expected a loaded comment")
+            return
+        }
+        await viewModel.editComment(target.id, body: "   ")
+
+        let sent = await service.edited
+        #expect(sent.isEmpty)
+    }
+
+    @Test("a failed edit restores the original text")
+    func failedEditReloads() async {
+        // Leaving the optimistic text on screen would tell the author their
+        // correction saved when it did not.
+        let service = FakeSocialService()
+        await service.seed(comments: [comment("original")])
+        let viewModel = PostDetailViewModel(postID: UUID(), service: service)
+        await viewModel.load()
+
+        guard case let .loaded(before) = viewModel.state, let target = before.first else {
+            Issue.record("expected a loaded comment")
+            return
+        }
+        await service.failWrite(with: AppError.network)
+        await viewModel.editComment(target.id, body: "never lands")
+
+        guard case let .loaded(after) = viewModel.state else {
+            Issue.record("expected a loaded state")
+            return
+        }
+        #expect(after.first?.body == "original")
     }
 }
