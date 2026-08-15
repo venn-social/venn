@@ -9,17 +9,17 @@ import { MenuIcon } from "@/components/Icon";
  * The secondary surfaces, folded away behind one control.
  *
  * Feed, Explorer and Profile are where the product lives; Lists, Activity,
- * Settings and Year in Review are places you go on purpose. Keeping the
+ * Settings and Last 12 Months are places you go on purpose. Keeping the
  * latter in the top-level nav made five competing destinations out of
  * three. They now live here and nowhere else — the profile page no longer
- * links Settings or Year in Review either, so there is exactly one way to
+ * links Settings or Last 12 Months either, so there is exactly one way to
  * each.
  */
 const ITEMS = [
   { href: "/settings", label: "Settings" },
   { href: "/lists", label: "Lists" },
   { href: "/notifications", label: "Activity" },
-  { href: "/profile/year", label: "Year in Review" },
+  { href: "/profile/year", label: "Last 12 Months" },
 ] as const;
 
 interface SideMenuProps {

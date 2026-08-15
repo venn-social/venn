@@ -70,7 +70,7 @@ export default async function ProfilePage() {
         >
           Edit profile
         </Link>
-        {/* Settings and Year in Review live in the side menu now, and only
+        {/* Settings and Last 12 Months live in the side menu now, and only
             there — one way to each keeps this page about the profile. */}
       </div>
 

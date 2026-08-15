@@ -3,7 +3,7 @@ import SwiftUI
 /// The secondary surfaces, reachable from one control.
 ///
 /// Feed, Explorer and Profile are where the product lives; Lists,
-/// Activity, Year in Review and Settings are places you go on purpose.
+/// Activity, Last 12 Months and Settings are places you go on purpose.
 /// Keeping all seven at top level made none of them read as primary, so
 /// these four moved behind a trailing-edge panel — and live nowhere else,
 /// so there is exactly one way to each.
@@ -24,7 +24,7 @@ enum SideMenuDestination: String, CaseIterable, Identifiable {
         switch self {
         case .lists: "Lists"
         case .activity: "Activity"
-        case .yearInReview: "Year in Review"
+        case .yearInReview: "Last 12 Months"
         case .settings: "Settings"
         }
     }

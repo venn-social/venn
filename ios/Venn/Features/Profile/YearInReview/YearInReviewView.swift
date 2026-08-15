@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Personal "Year in Review" — how much you've logged over the trailing
+/// Personal activity summary — how much you've logged over the trailing
 /// twelve months, broken down by kind. Read-only: no actions, nothing to
 /// edit, just your own activity reflected back at you. Reached from a
 /// button in `ProfileView`'s top bar.
@@ -16,7 +16,7 @@ struct YearInReviewView: View {
         Screen {
             content
         }
-        .navigationTitle("Year in Review")
+        .navigationTitle("Last 12 Months")
         .navigationBarTitleDisplayMode(.inline)
         .containerBackground(for: .navigation) {
             Theme.Color.background

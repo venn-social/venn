@@ -123,7 +123,7 @@ struct ProfileView: View {
                     showFollowRequests = true
                 }
             }
-            // Year in Review and Settings moved to the side menu, and are
+            // Last 12 Months and Settings moved to the side menu, and are
             // only there — one way to each keeps this bar about the profile.
         }
     }

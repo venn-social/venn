@@ -10,7 +10,7 @@ import { usePathname } from "next/navigation";
  * the leading edge, then the three places the product lives, then the accent
  * "Log" action.
  *
- * Lists, Activity, Settings and Year in Review moved into `SideMenu`. Five
+ * Lists, Activity, Settings and Last 12 Months moved into `SideMenu`. Five
  * top-level destinations meant none of them read as primary; these three
  * are where you actually spend time, and the rest are somewhere you go on
  * purpose.

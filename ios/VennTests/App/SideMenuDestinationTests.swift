@@ -12,8 +12,19 @@ struct SideMenuDestinationTests {
             "Settings",
             "Lists",
             "Activity",
-            "Year in Review",
+            "Last 12 Months",
         ])
+    }
+
+    @Test
+    func doesNotPromiseACalendarYear() {
+        // personal_stats_monthly() returns the trailing twelve months. The
+        // accessibility label always said so; the visible heading used to
+        // say "Year in Review", which is a different thing entirely and the
+        // sort of claim nobody re-reads once it ships.
+        let titles = SideMenuDestination.allCases.map(\.title)
+        #expect(!titles.contains { $0.localizedCaseInsensitiveContains("year") })
+        #expect(titles.contains("Last 12 Months"))
     }
 
     @Test
