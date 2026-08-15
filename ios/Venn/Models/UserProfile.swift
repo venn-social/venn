@@ -13,6 +13,8 @@ struct UserProfile: Decodable, Identifiable, Equatable, Hashable {
     let avatarURL: URL?
     let bio: String?
     let isPrivate: Bool
+    /// Drives what the catalog is asked for, not what any stored row says.
+    let language: AppLanguage
     let createdAt: Date
 
     enum CodingKeys: String, CodingKey {
@@ -22,6 +24,7 @@ struct UserProfile: Decodable, Identifiable, Equatable, Hashable {
         case avatarURL = "avatar_url"
         case bio
         case isPrivate = "is_private"
+        case language
         case createdAt = "created_at"
     }
 
@@ -38,6 +41,9 @@ struct UserProfile: Decodable, Identifiable, Equatable, Hashable {
         avatarURL = try container.decodeIfPresent(URL.self, forKey: .avatarURL)
         bio = try container.decodeIfPresent(String.self, forKey: .bio)
         isPrivate = try container.decodeIfPresent(Bool.self, forKey: .isPrivate) ?? false
+        // Same leniency as isPrivate, and for the same reason: a response
+        // predating the column must not fail to decode.
+        language = try AppLanguage.from(container.decodeIfPresent(String.self, forKey: .language))
         createdAt = try container.decode(Date.self, forKey: .createdAt)
     }
 
@@ -48,6 +54,7 @@ struct UserProfile: Decodable, Identifiable, Equatable, Hashable {
         avatarURL: URL?,
         bio: String?,
         isPrivate: Bool = false,
+        language: AppLanguage = .en,
         createdAt: Date
     ) {
         self.id = id
@@ -56,6 +63,7 @@ struct UserProfile: Decodable, Identifiable, Equatable, Hashable {
         self.avatarURL = avatarURL
         self.bio = bio
         self.isPrivate = isPrivate
+        self.language = language
         self.createdAt = createdAt
     }
 }

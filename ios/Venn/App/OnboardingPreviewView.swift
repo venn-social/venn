@@ -86,6 +86,8 @@ import SwiftUI
 
         func updatePrivacy(userID _: UUID, isPrivate _: Bool) async throws {}
 
+        func updateLanguage(userID _: UUID, language _: AppLanguage) async throws {}
+
         func watchlist(for _: UUID, kind _: MediaKind?) async throws -> [LibraryItem] {
             []
         }

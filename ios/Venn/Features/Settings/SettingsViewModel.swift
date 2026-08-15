@@ -29,20 +29,47 @@ final class SettingsViewModel {
     }
 
     private(set) var isPrivate: Bool
+    private(set) var language: AppLanguage
     private(set) var state: State = .idle
 
     let userID: UUID
     private let service: any ProfileServicing
 
-    init(userID: UUID, isPrivate: Bool, service: any ProfileServicing) {
+    init(
+        userID: UUID,
+        isPrivate: Bool,
+        language: AppLanguage = .en,
+        service: any ProfileServicing
+    ) {
         self.userID = userID
         self.isPrivate = isPrivate
+        self.language = language
         self.service = service
     }
 
     /// Optimistic: flips immediately, writes, reverts to the prior value on
     /// failure. A no-op if `newValue` already matches the current value
     /// (e.g. a `Toggle` binding re-firing).
+    /// Optimistic, like the privacy toggle: the picker moves immediately and
+    /// goes back if the write fails, rather than showing a choice that was
+    /// never saved.
+    func setLanguage(_ newValue: AppLanguage) async {
+        guard newValue != language else { return }
+        let original = language
+        language = newValue
+        state = .saving
+        do {
+            try await service.updateLanguage(userID: userID, language: newValue)
+            state = .idle
+        } catch let error as AppError {
+            language = original
+            state = .error(reason(for: error))
+        } catch {
+            language = original
+            state = .error(.saveFailed)
+        }
+    }
+
     func setPrivate(_ newValue: Bool) async {
         guard newValue != isPrivate else { return }
         let original = isPrivate

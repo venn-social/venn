@@ -1,3 +1,4 @@
+import { DEFAULT_LANGUAGE, tmdbLanguage, type LanguageCode } from "@/lib/language";
 import {
   EMPTY_DETAIL,
   type MediaDetail,
@@ -60,10 +61,17 @@ export function toShowCandidates(json: unknown): MediaCandidate[] {
 export async function searchTMDB(
   kind: "movie" | "show",
   query: string,
-  apiKey: string
+  apiKey: string,
+  language: LanguageCode = DEFAULT_LANGUAGE
 ): Promise<MediaCandidate[]> {
   const path = kind === "movie" ? "movie" : "tv";
-  const url = `${API_BASE}/search/${path}?api_key=${encodeURIComponent(apiKey)}&query=${encodeURIComponent(query)}&page=1`;
+  // TMDB returns the title as released in this language, which is the whole
+  // point of the setting — a French reader searching for a film should get
+  // the name it went out under in France.
+  const url =
+    `${API_BASE}/search/${path}?api_key=${encodeURIComponent(apiKey)}` +
+    `&query=${encodeURIComponent(query)}&page=1` +
+    `&language=${encodeURIComponent(tmdbLanguage(language))}`;
 
   const response = await fetch(url);
   if (!response.ok) throw new Error(`TMDB search failed (${response.status})`);

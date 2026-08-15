@@ -184,10 +184,13 @@ struct MainView: View {
         }
         let userID = session.user.id
         let service = ProfileService(client: clientProvider.client)
-        let isPrivate = await (try? service.profile(for: userID))?.isPrivate ?? false
+        let profile = await (try? service.profile(for: userID))
         settingsViewModel = SettingsViewModel(
             userID: userID,
-            isPrivate: isPrivate,
+            isPrivate: profile?.isPrivate ?? false,
+            // Falls back to the device's language rather than English, so
+            // someone whose phone is in French does not have to go and say so.
+            language: profile?.language ?? AppLanguage.deviceDefault,
             service: service
         )
     }

@@ -1,3 +1,4 @@
+import { toLanguage, type LanguageCode } from "@/lib/language";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 /**
@@ -11,6 +12,8 @@ export interface UserProfile {
   avatarUrl: string | null;
   bio: string | null;
   isPrivate: boolean;
+  /** Drives what the catalog is asked for, not what any stored row says. */
+  language: LanguageCode;
   createdAt: string;
 }
 
@@ -26,6 +29,7 @@ export interface ProfileRow {
   avatar_url: string | null;
   bio: string | null;
   is_private: boolean;
+  language?: string | null;
   created_at: string;
 }
 
@@ -37,6 +41,9 @@ export function toUserProfile(row: ProfileRow): UserProfile {
     avatarUrl: row.avatar_url,
     bio: row.bio,
     isPrivate: row.is_private,
+    // Lenient, like is_private: a response predating the column must not
+    // break decoding.
+    language: toLanguage(row.language),
     createdAt: row.created_at,
   };
 }
@@ -118,4 +125,20 @@ export async function fetchFollowCounts(
   if (error) throw error;
   const row = (data as FollowCounts[])[0];
   return row ?? { followers: 0, following: 0 };
+}
+
+/**
+ * Change the language the catalog is searched in.
+ *
+ * A direct update like `updatePrivacy` — RLS already restricts it to the
+ * caller's own row. Stored `media` is untouched: this changes what you
+ * find, not what everyone else sees.
+ */
+export async function updateLanguage(
+  client: SupabaseClient,
+  userId: string,
+  language: LanguageCode
+): Promise<void> {
+  const { error } = await client.from("profiles").update({ language }).eq("id", userId);
+  if (error) throw error;
 }

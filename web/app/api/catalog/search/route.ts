@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { searchMusicBrainz } from "@/lib/catalog/musicBrainz";
 import { searchOpenLibrary } from "@/lib/catalog/openLibrary";
+import { toLanguage, type LanguageCode } from "@/lib/language";
 import { searchTMDB } from "@/lib/catalog/tmdb";
 import { createClient } from "@/lib/supabase/server";
 
@@ -47,7 +48,15 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const candidates = await searchFor(kind as Kind, query);
+    // One extra read by primary key, so the results come back in the
+    // language this person actually reads.
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("language")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    const candidates = await searchFor(kind as Kind, query, toLanguage(profile?.language));
     return NextResponse.json({ candidates });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Search failed.";
@@ -55,7 +64,11 @@ export async function GET(request: NextRequest) {
   }
 }
 
-async function searchFor(kind: Kind, query: string) {
+async function searchFor(kind: Kind, query: string, language: LanguageCode) {
+  // Only TMDB is asked for a language. Open Library already answers with the
+  // edition that matched the query, and MusicBrainz does not translate
+  // release titles at all — passing a language there would imply a promise
+  // neither provider keeps.
   if (kind === "book") return searchOpenLibrary(query);
   if (kind === "album") return searchMusicBrainz(query);
 
@@ -64,5 +77,5 @@ async function searchFor(kind: Kind, query: string) {
     // Mirrors iOS's AppError.validation for the same missing-key case.
     throw new Error("Movie and show search needs a TMDB API key.");
   }
-  return searchTMDB(kind, query, apiKey);
+  return searchTMDB(kind, query, apiKey, language);
 }
