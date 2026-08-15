@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { DetailUnavailable } from "@/components/DetailUnavailable";
 import { MediaCover } from "@/components/MediaCover";
 import { StarIcon } from "@/components/Icon";
 import { WatchLinks } from "@/components/WatchLinks";
@@ -75,6 +76,8 @@ export default async function MediaPage({ params }: MediaPageProps) {
           </Link>
         </div>
       </div>
+
+      {detail.unavailable && <DetailUnavailable />}
 
       {detail.overview && (
         <section className="flex flex-col gap-2">

@@ -44,8 +44,9 @@ export async function loadMediaDetail(media: Media, region: string): Promise<Med
     const detail = await fetchFromProvider(media, region);
     return { ...detail, sourceUrl };
   } catch {
-    // Still give them the link out, even if we couldn't enrich.
-    return { ...EMPTY_DETAIL, sourceUrl };
+    // Still give them the link out, even if we couldn't enrich — and say
+    // that we failed rather than implying the item simply has no detail.
+    return { ...EMPTY_DETAIL, sourceUrl, unavailable: true };
   }
 }
 
