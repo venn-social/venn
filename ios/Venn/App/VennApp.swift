@@ -5,6 +5,7 @@ struct VennApp: App {
     @State private var appConfig: AppConfig
     @State private var clientProvider: SupabaseClientProvider
     @State private var authState: AuthState
+    @State private var languageStore = LanguageStore()
     @State private var scrollState: ScrollState
     private let authService: AuthService
 
@@ -38,6 +39,7 @@ struct VennApp: App {
                 .environment(clientProvider)
                 .environment(authState)
                 .environment(scrollState)
+                .environment(languageStore)
                 .task { await authState.bootstrap() }
                 .onOpenURL { url in
                     Task { try? await authService.handleCallback(url) }

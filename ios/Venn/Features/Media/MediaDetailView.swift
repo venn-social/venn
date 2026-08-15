@@ -12,6 +12,8 @@ struct MediaDetailView: View {
 
     @Environment(AppConfig.self)
     private var config
+    @Environment(LanguageStore.self)
+    private var languageStore
     @Environment(SupabaseClientProvider.self)
     private var clientProvider
 
@@ -143,7 +145,7 @@ struct MediaDetailView: View {
 
         let composer = composerViewModel ?? ComposerViewModel(
             service: ComposerService(
-                tmdb: config.tmdbAPIKey.map { TMDBService(apiKey: $0) },
+                tmdb: config.tmdbAPIKey.map { TMDBService(apiKey: $0, language: languageStore.current) },
                 client: clientProvider.client
             )
         )
@@ -181,4 +183,5 @@ struct MediaDetailView: View {
     }
     .environment(AppConfig.preview)
     .environment(SupabaseClientProvider.preview)
+    .environment(LanguageStore())
 }

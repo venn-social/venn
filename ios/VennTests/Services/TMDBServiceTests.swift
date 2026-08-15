@@ -83,3 +83,56 @@ struct TMDBServiceTests {
         #expect(candidate.id == "tmdb:movie:550")
     }
 }
+
+/// The search language actually reaching the request, which is the whole
+/// point of the preference — a picker that saves but changes nothing is
+/// worse than no picker.
+struct TMDBSearchLanguageTests {
+    private func query(_ url: URL) -> [String: String] {
+        let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
+        return Dictionary(uniqueKeysWithValues: items.map { ($0.name, $0.value ?? "") })
+    }
+
+    @Test
+    func searchAsksTMDBForThePreferredLanguage() {
+        let url = TMDBService.searchURL(
+            path: "/3/search/movie",
+            query: "drive",
+            page: 1,
+            apiKey: "k",
+            language: .fr
+        )
+        #expect(query(url)["language"] == "fr-FR")
+    }
+
+    @Test
+    func everySupportedLanguageProducesAWellFormedTag() {
+        for language in AppLanguage.allCases {
+            let url = TMDBService.searchURL(
+                path: "/3/search/tv",
+                query: "severance",
+                page: 1,
+                apiKey: "k",
+                language: language
+            )
+            #expect(query(url)["language"] == language.tmdbLanguage)
+        }
+    }
+
+    @Test
+    func theOtherSearchParametersAreUnchanged() {
+        // The language is an addition, not a replacement — losing the query
+        // or the key here would be a silent, total break.
+        let url = TMDBService.searchURL(
+            path: "/3/search/movie",
+            query: "her",
+            page: 2,
+            apiKey: "secret",
+            language: .ja
+        )
+        let parameters = query(url)
+        #expect(parameters["query"] == "her")
+        #expect(parameters["page"] == "2")
+        #expect(parameters["api_key"] == "secret")
+    }
+}

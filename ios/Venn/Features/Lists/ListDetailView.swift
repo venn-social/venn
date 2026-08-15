@@ -9,6 +9,8 @@ struct ListDetailView: View {
 
     @Environment(AppConfig.self)
     private var config
+    @Environment(LanguageStore.self)
+    private var languageStore
     @Environment(SupabaseClientProvider.self)
     private var clientProvider
 
@@ -156,7 +158,7 @@ struct ListDetailView: View {
         addViewModel = ListAddViewModel(
             listID: list.id,
             catalog: ComposerService(
-                tmdb: config.tmdbAPIKey.map { TMDBService(apiKey: $0) },
+                tmdb: config.tmdbAPIKey.map { TMDBService(apiKey: $0, language: languageStore.current) },
                 client: clientProvider.client
             ),
             lists: service

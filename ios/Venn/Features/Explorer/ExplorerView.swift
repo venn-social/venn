@@ -15,6 +15,8 @@ struct ExplorerView: View {
     private var clientProvider
     @Environment(AppConfig.self)
     private var config
+    @Environment(LanguageStore.self)
+    private var languageStore
     @Environment(AuthState.self)
     private var authState
 
@@ -277,7 +279,7 @@ struct ExplorerView: View {
             }
         }
         if composerViewModel == nil {
-            let tmdb = config.tmdbAPIKey.map { TMDBService(apiKey: $0) }
+            let tmdb = config.tmdbAPIKey.map { TMDBService(apiKey: $0, language: languageStore.current) }
             composerViewModel = ComposerViewModel(
                 service: ComposerService(tmdb: tmdb, client: clientProvider.client)
             )
@@ -331,4 +333,5 @@ private struct ExplorerMediaCell: View {
         .environment(AppConfig.preview)
         .environment(SupabaseClientProvider.preview)
         .environment(AuthState(service: AuthService(client: SupabaseClientProvider.preview.client)))
+        .environment(LanguageStore())
 }

@@ -56,5 +56,6 @@ import SwiftUI
     #Preview {
         DesignPreviewView()
             .environment(SupabaseClientProvider.preview)
+            .environment(LanguageStore())
     }
 #endif
