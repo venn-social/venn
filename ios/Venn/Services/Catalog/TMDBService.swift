@@ -19,21 +19,37 @@ struct TMDBService: TMDBServicing {
 
     let apiKey: String
     let session: URLSession
+    /// Which language TMDB should answer in. Defaults to English so a caller
+    /// that has not been given one still works, rather than failing to build.
+    let language: AppLanguage
 
-    init(apiKey: String, session: URLSession = .shared) {
+    init(apiKey: String, language: AppLanguage = .en, session: URLSession = .shared) {
         self.apiKey = apiKey
+        self.language = language
         self.session = session
     }
 
     func searchMovies(query: String, page: Int = 1) async throws -> [MediaCandidate] {
-        let url = Self.searchURL(path: "/3/search/movie", query: query, page: page, apiKey: apiKey)
+        let url = Self.searchURL(
+            path: "/3/search/movie",
+            query: query,
+            page: page,
+            apiKey: apiKey,
+            language: language
+        )
         let data = try await ExternalAPI.fetch(url: url, session: session)
         let response = try JSONDecoder().decode(TMDBMovieSearchResponse.self, from: data)
         return response.results.map(Self.candidate(from:))
     }
 
     func searchShows(query: String, page: Int = 1) async throws -> [MediaCandidate] {
-        let url = Self.searchURL(path: "/3/search/tv", query: query, page: page, apiKey: apiKey)
+        let url = Self.searchURL(
+            path: "/3/search/tv",
+            query: query,
+            page: page,
+            apiKey: apiKey,
+            language: language
+        )
         let data = try await ExternalAPI.fetch(url: url, session: session)
         let response = try JSONDecoder().decode(TMDBShowSearchResponse.self, from: data)
         return response.results.map(Self.candidate(from:))
@@ -67,13 +83,24 @@ struct TMDBService: TMDBServicing {
         )
     }
 
-    private static func searchURL(path: String, query: String, page: Int, apiKey: String) -> URL {
+    // MARK: - Helpers (internal for tests)
+
+    static func searchURL(
+        path: String,
+        query: String,
+        page: Int,
+        apiKey: String,
+        language: AppLanguage
+    ) -> URL {
         var components = URLComponents(url: base, resolvingAgainstBaseURL: false)
         components?.path = path
         components?.queryItems = [
             URLQueryItem(name: "api_key", value: apiKey),
             URLQueryItem(name: "query", value: query),
             URLQueryItem(name: "page", value: String(page)),
+            // TMDB returns the title as released in this language, which is
+            // the whole point of the setting.
+            URLQueryItem(name: "language", value: language.tmdbLanguage),
         ]
         guard let url = components?.url else {
             preconditionFailure("Invalid TMDB search URL for path \(path)")

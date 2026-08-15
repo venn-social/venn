@@ -77,6 +77,8 @@ struct MainView: View {
     @State private var settingsViewModel: SettingsViewModel?
     @Environment(AuthState.self)
     private var authState
+    @Environment(LanguageStore.self)
+    private var languageStore
     /// Owned here, not by `NotificationsView`, so the badge is right before
     /// the tab has ever been opened — which is the entire point of a badge.
     @State private var notifications: NotificationsViewModel?
@@ -124,6 +126,14 @@ struct MainView: View {
             menuSheet(for: destination)
         }
         .task { await ensureNotificationsLoaded() }
+        .task { await seedSearchLanguage() }
+        // The picker writes to the profile; this is what makes the very next
+        // search use it, rather than the change taking effect on relaunch.
+        .onChange(of: settingsViewModel?.language) { _, newValue in
+            if let newValue {
+                languageStore.set(newValue)
+            }
+        }
         .onAppear { selection = initialTab }
     }
 
@@ -176,6 +186,16 @@ struct MainView: View {
 
     /// Reads the signed-in user straight from the session rather than
     /// waiting on ProfileView — the menu can be opened from any tab.
+    /// Reads the stored language once at launch, so search is right before
+    /// anyone opens Settings — and before the settings sheet has ever been
+    /// built, which is where the profile would otherwise first be fetched.
+    private func seedSearchLanguage() async {
+        guard case let .signedIn(session) = authState.status else { return }
+        let service = ProfileService(client: clientProvider.client)
+        guard let profile = try? await service.profile(for: session.user.id) else { return }
+        languageStore.set(profile.language)
+    }
+
     private func loadSettingsViewModel() async {
         guard settingsViewModel == nil,
               case let .signedIn(session) = authState.status
@@ -185,12 +205,15 @@ struct MainView: View {
         let userID = session.user.id
         let service = ProfileService(client: clientProvider.client)
         let profile = await (try? service.profile(for: userID))
+        let resolved = profile?.language ?? AppLanguage.deviceDefault
+        // Search should already be right before anyone opens Settings.
+        languageStore.set(resolved)
         settingsViewModel = SettingsViewModel(
             userID: userID,
             isPrivate: profile?.isPrivate ?? false,
             // Falls back to the device's language rather than English, so
             // someone whose phone is in French does not have to go and say so.
-            language: profile?.language ?? AppLanguage.deviceDefault,
+            language: resolved,
             service: service
         )
     }
@@ -222,4 +245,5 @@ struct MainView: View {
         .environment(AppConfig.preview)
         .environment(provider)
         .environment(state)
+        .environment(LanguageStore())
 }
