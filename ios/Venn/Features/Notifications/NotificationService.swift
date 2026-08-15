@@ -198,7 +198,11 @@ extension NotificationService {
                 let updates = channel.postgresChange(UpdateAction.self, table: "notifications")
                 let deletes = channel.postgresChange(DeleteAction.self, table: "notifications")
 
-                await channel.subscribe()
+                // subscribeWithError, not the deprecated subscribe(). A
+                // failed subscription leaves the badge on its polled value
+                // rather than taking the app down — live is an improvement
+                // on correct, not a replacement for it.
+                try? await channel.subscribeWithError()
 
                 // Merged rather than watched separately: every caller wants
                 // the same thing from all three, which is "look again".
