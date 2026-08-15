@@ -89,6 +89,9 @@ These come from [`CLAUDE.md`](../CLAUDE.md):
 - **Every user-typed column gets a CHECK constraint** that mirrors the bounds in `ios/Venn/Utils/Sanitize.swift`. The validators there are the first line of defence; the Postgres constraints are the last.
 - **Every new table starts with RLS enabled.** No exceptions. Then write the explicit policies that allow what you actually want.
 - **Update the DTO in the same PR as the migration.** A PR that adds a column but doesn't add it to the matching `Decodable` struct is incomplete.
+- **Don't put values in migrations.** A migration that says `set primary_creator = 'Haruki Murakami' where external_id = '…'` fixes one row and teaches the codebase nothing — the next author in another alphabet arrives just as broken, and the fix has to be typed again by hand. If stored data is wrong, the rule that produced it is wrong. Fix the rule, then run a **repair script** that applies the same rule to every affected row.
+
+  `web/scripts/repair-creator-names.ts` is the pattern: it asks the provider the same question the app asks, works for any row and any language, is dry by default, and can be re-run whenever. Schema changes belong in migrations; data corrections belong in re-runnable scripts.
 
 ---
 
