@@ -226,7 +226,7 @@ struct NotificationBadgeLiveTests {
     func changeRefreshesBadge() async {
         // Adding one locally cannot handle something marked read on another
         // device; re-reading handles both directions.
-        let service = FakeNotificationService(seeded: [])
+        let service = FakeNotificationService(notifications: [])
         service.unread = 2
         let viewModel = NotificationsViewModel(service: service)
         await viewModel.refreshBadge()
@@ -252,13 +252,15 @@ struct NotificationBadgeLiveTests {
     func observerEndsCleanly() async {
         // Cancelling the task is what unsubscribes; a loop that outlived it
         // would keep a channel open behind a signed-out session.
-        let service = FakeNotificationService(seeded: [])
+        let service = FakeNotificationService(notifications: [])
         let viewModel = NotificationsViewModel(service: service)
 
         let observing = Task { await viewModel.observeChanges() }
         service.finishChanges()
         await observing.value
 
-        #expect(observing.isCancelled == false)
+        // Finishing the stream ends the loop on its own; nothing had to be
+        // cancelled, which is what makes teardown safe.
+        #expect(!observing.isCancelled)
     }
 }
