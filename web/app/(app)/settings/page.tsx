@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { LanguagePicker } from "@/components/LanguagePicker";
 import { PrivacyToggle } from "@/components/PrivacyToggle";
 import { SignOutButton } from "@/components/SignOutButton";
 import { fetchProfile } from "@/lib/profile";
@@ -29,6 +30,8 @@ export default async function SettingsPage() {
       <h1 className="text-xl font-semibold text-(--color-text-primary)">Settings</h1>
 
       <PrivacyToggle userId={user.id} initialIsPrivate={profile.isPrivate} />
+
+      <LanguagePicker userId={user.id} initialLanguage={profile.language} />
 
       {profile.isPrivate && (
         <Link href="/requests" className="font-semibold text-(--color-accent)">

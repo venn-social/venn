@@ -25,6 +25,8 @@ describe("toUserProfile", () => {
       avatarUrl: null,
       bio: "The official venn account.",
       isPrivate: false,
+      // Defaults when the column is absent from the row.
+      language: "en",
       createdAt: "2026-06-12T17:31:27.999742+00:00",
     });
   });

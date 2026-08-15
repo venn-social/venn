@@ -31,6 +31,12 @@ protocol ProfileServicing: Sendable {
     /// row, no RPC needed.
     func updatePrivacy(userID: UUID, isPrivate: Bool) async throws
 
+    /// Change the language the catalog is searched in.
+    ///
+    /// Stored `media` is untouched: this changes what you find, not what
+    /// everyone else sees, because those rows are shared by every user.
+    func updateLanguage(userID: UUID, language: AppLanguage) async throws
+
     /// Items the user saved for later (`action == .saved`). Pass a `kind`
     /// to scope the results to one media type; nil returns all kinds.
     func watchlist(for userID: UUID, kind: MediaKind?) async throws -> [LibraryItem]
@@ -149,6 +155,18 @@ struct ProfileService: ProfileServicing {
             try await client
                 .from("profiles")
                 .update(PrivacyUpdate(isPrivate: isPrivate))
+                .eq("id", value: userID)
+                .execute()
+        } catch {
+            throw AppError.from(error)
+        }
+    }
+
+    func updateLanguage(userID: UUID, language: AppLanguage) async throws {
+        do {
+            try await client
+                .from("profiles")
+                .update(["language": language.rawValue])
                 .eq("id", value: userID)
                 .execute()
         } catch {

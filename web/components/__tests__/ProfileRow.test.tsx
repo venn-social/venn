@@ -11,6 +11,7 @@ function profile(overrides: Partial<UserProfile> = {}): UserProfile {
     avatarUrl: null,
     bio: null,
     isPrivate: false,
+    language: "en" as const,
     createdAt: "2026-01-01T00:00:00Z",
     ...overrides
   };

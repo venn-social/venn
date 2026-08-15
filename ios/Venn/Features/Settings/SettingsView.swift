@@ -17,6 +17,8 @@ struct SettingsView: View {
                 VStack(alignment: .leading, spacing: Theme.Spacing.lg) {
                     privacyRow
 
+                    languageRow
+
                     if case let .error(reason) = viewModel.state {
                         Text(errorMessage(for: reason))
                             .font(Theme.Font.caption)
@@ -72,6 +74,50 @@ struct SettingsView: View {
         } message: {
             Text("You'll need your email to sign back in.")
         }
+    }
+
+    /// Which language the catalog is searched in.
+    ///
+    /// The copy is careful on purpose. This does not translate the app, and
+    /// it does not restate titles other people have already logged — those
+    /// rows are shared. Promising more would be the kind of setting people
+    /// toggle, see nothing change, and stop trusting.
+    private var languageRow: some View {
+        VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
+            Text("Search language")
+                .font(Theme.Font.body.weight(.medium))
+                .foregroundStyle(Theme.Color.textPrimary)
+
+            Text(
+                "What the catalog is searched in. Titles other people have "
+                    + "already logged stay as they were."
+            )
+            .font(Theme.Font.caption)
+            .foregroundStyle(Theme.Color.textSecondary)
+
+            Picker("Search language", selection: languageBinding) {
+                ForEach(AppLanguage.allCases) { language in
+                    Text(language.label).tag(language)
+                }
+            }
+            .pickerStyle(.menu)
+            .tint(Theme.Color.accent)
+            .disabled(viewModel.state == .saving)
+            .accessibilityIdentifier("settings_language_picker")
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(Theme.Spacing.md)
+        .background(Theme.Color.surface, in: .rect(cornerRadius: Theme.Radius.md))
+    }
+
+    /// Routes through the view-model's optimistic write, like `privacyBinding`.
+    private var languageBinding: Binding<AppLanguage> {
+        Binding(
+            get: { viewModel.language },
+            set: { newValue in
+                Task { await viewModel.setLanguage(newValue) }
+            }
+        )
     }
 
     private var privacyRow: some View {
@@ -148,6 +194,8 @@ private struct PreviewSettingsService: ProfileServicing {
     }
 
     func updatePrivacy(userID _: UUID, isPrivate _: Bool) async throws {}
+
+    func updateLanguage(userID _: UUID, language _: AppLanguage) async throws {}
     func watchlist(for _: UUID, kind _: MediaKind?) async throws -> [LibraryItem] {
         []
     }
