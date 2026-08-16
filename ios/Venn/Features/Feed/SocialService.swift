@@ -19,7 +19,50 @@ struct PostComment: Identifiable, Equatable, Sendable {
     /// Nil until the text is changed. Set by the database, never the client,
     /// so an edit cannot be made silent.
     let editedAt: Date?
+    /// Nil on a root comment. Replies are one level deep, enforced in the DB.
+    let parentID: UUID?
     let author: UserProfile
+}
+
+/// A root comment with its replies, oldest first — how a thread reads.
+struct CommentThreadItem: Identifiable, Equatable, Sendable {
+    let comment: PostComment
+    let replies: [PostComment]
+
+    var id: UUID {
+        comment.id
+    }
+}
+
+extension PostComment {
+    /// Group a flat fetch into threads.
+    ///
+    /// Pure, and no recursion: replies are one level deep by database
+    /// constraint, so a root and its replies is the whole shape. A reply
+    /// whose parent is missing is promoted to a root rather than dropped —
+    /// that happens when a thread is paginated, and losing someone's words is
+    /// worse than showing them slightly out of place.
+    ///
+    /// Mirrors web's `toThreads`.
+    static func threads(from comments: [PostComment]) -> [CommentThreadItem] {
+        let roots = comments.filter { $0.parentID == nil }
+        let rootIDs = Set(roots.map(\.id))
+        let orphans = comments.filter { comment in
+            guard let parent = comment.parentID else { return false }
+            return !rootIDs.contains(parent)
+        }
+
+        return (roots + orphans)
+            .sorted { $0.createdAt < $1.createdAt }
+            .map { parent in
+                CommentThreadItem(
+                    comment: parent,
+                    replies: comments
+                        .filter { $0.parentID == parent.id }
+                        .sorted { $0.createdAt < $1.createdAt }
+                )
+            }
+    }
 }
 
 /// Likes and comments on posts — the social layer over `FeedService`'s
@@ -39,7 +82,9 @@ protocol SocialServicing: Sendable {
     /// A post's comments, oldest first — a conversation reads top to bottom.
     func comments(postID: UUID, limit: Int) async throws -> [PostComment]
 
-    func addComment(postID: UUID, authorID: UUID, body: String) async throws
+    /// `parentID` nil posts a root comment. The database refuses a reply to
+    /// a reply, so callers never need to check depth themselves.
+    func addComment(postID: UUID, authorID: UUID, body: String, parentID: UUID?) async throws
 
     /// Deletable by the comment's author or the post's author; the RLS
     /// policy decides, so this just issues the delete.
@@ -108,7 +153,7 @@ struct SocialService: SocialServicing {
         do {
             let rows: [CommentRow] = try await client
                 .from("post_comments")
-                .select("id, body, created_at, edited_at, author:profiles(*)")
+                .select("id, body, created_at, edited_at, parent_id, author:profiles(*)")
                 .eq("post_id", value: postID)
                 .order("created_at", ascending: true)
                 .limit(limit)
@@ -120,11 +165,16 @@ struct SocialService: SocialServicing {
         }
     }
 
-    func addComment(postID: UUID, authorID: UUID, body: String) async throws {
+    func addComment(postID: UUID, authorID: UUID, body: String, parentID: UUID?) async throws {
         do {
             try await client
                 .from("post_comments")
-                .insert(CommentInsert(postId: postID, authorId: authorID, body: body))
+                .insert(CommentInsert(
+                    postId: postID,
+                    authorId: authorID,
+                    body: body,
+                    parentId: parentID
+                ))
                 .execute()
         } catch {
             throw AppError.from(error)
@@ -199,12 +249,14 @@ struct CommentRow: Decodable, Equatable {
     let body: String
     let createdAt: Date
     let editedAt: Date?
+    let parentID: UUID?
     let author: UserProfile
 
     enum CodingKeys: String, CodingKey {
         case id, body, author
         case createdAt = "created_at"
         case editedAt = "edited_at"
+        case parentID = "parent_id"
     }
 }
 
@@ -226,10 +278,12 @@ private struct CommentInsert: Encodable {
     let postId: UUID
     let authorId: UUID
     let body: String
+    let parentId: UUID?
 
     enum CodingKeys: String, CodingKey {
         case postId = "post_id"
         case authorId = "author_id"
+        case parentId = "parent_id"
         case body
     }
 }
@@ -240,6 +294,7 @@ extension PostComment {
         body = row.body
         createdAt = row.createdAt
         editedAt = row.editedAt
+        parentID = row.parentID
         author = row.author
     }
 }

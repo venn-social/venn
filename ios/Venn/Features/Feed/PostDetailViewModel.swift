@@ -38,7 +38,9 @@ final class PostDetailViewModel {
         }
     }
 
-    func addComment(body: String, authorID: UUID) async {
+    /// `parentID` nil posts a root comment; otherwise a reply. The database
+    /// refuses a reply to a reply, so callers do not check depth themselves.
+    func addComment(body: String, authorID: UUID, parentID: UUID? = nil) async {
         guard case let .valid(clean) = Sanitize.caption(body) else {
             errorMessage = "Comments are 1–500 characters."
             return
@@ -47,7 +49,12 @@ final class PostDetailViewModel {
         submitting = true
         errorMessage = nil
         do {
-            try await service.addComment(postID: postID, authorID: authorID, body: clean)
+            try await service.addComment(
+                postID: postID,
+                authorID: authorID,
+                body: clean,
+                parentID: parentID
+            )
             await load()
         } catch let error as AppError {
             if case .rateLimited = error {
@@ -78,6 +85,7 @@ final class PostDetailViewModel {
                 body: trimmed,
                 createdAt: comment.createdAt,
                 editedAt: Date(),
+                parentID: comment.parentID,
                 author: comment.author
             )
         })

@@ -9,6 +9,8 @@ private actor FakeSocialService: SocialServicing {
     var loadError: (any Error)?
     var writeError: (any Error)?
     private(set) var addedBodies: [String] = []
+    /// Parents for each added comment, so a test can prove a reply is a reply.
+    private(set) var addedParents: [UUID?] = []
     private(set) var deletedIDs: [UUID] = []
 
     func seed(comments: [PostComment] = [], info: LikeInfo = .none) {
@@ -42,13 +44,26 @@ private actor FakeSocialService: SocialServicing {
         return comments
     }
 
-    func addComment(postID _: UUID, authorID _: UUID, body: String) async throws {
+    func addComment(
+        postID _: UUID,
+        authorID _: UUID,
+        body: String,
+        parentID: UUID?
+    ) async throws {
         if let writeError {
             throw writeError
         }
         addedBodies.append(body)
+        addedParents.append(parentID)
         comments.append(
-            PostComment(id: UUID(), body: body, createdAt: Date(), editedAt: nil, author: Self.author)
+            PostComment(
+                id: UUID(),
+                body: body,
+                createdAt: Date(),
+                editedAt: nil,
+                parentID: parentID,
+                author: Self.author
+            )
         )
     }
 
@@ -66,6 +81,7 @@ private actor FakeSocialService: SocialServicing {
                 body: body,
                 createdAt: comment.createdAt,
                 editedAt: Date(),
+                parentID: comment.parentID,
                 author: comment.author
             )
         }
@@ -96,12 +112,18 @@ private actor FakeSocialService: SocialServicing {
 @Suite("PostDetailViewModel")
 @MainActor
 struct PostDetailViewModelTests {
-    private func comment(_ body: String) -> PostComment {
+    private func comment(
+        _ body: String,
+        id: UUID = UUID(),
+        createdAt: Date = Date(),
+        parentID: UUID? = nil
+    ) -> PostComment {
         PostComment(
-            id: UUID(),
+            id: id,
             body: body,
-            createdAt: Date(),
+            createdAt: createdAt,
             editedAt: nil,
+            parentID: parentID,
             author: FakeSocialService.author
         )
     }
@@ -272,5 +294,100 @@ struct PostDetailViewModelTests {
             return
         }
         #expect(after.first?.body == "original")
+    }
+}
+
+/// Grouping a flat fetch into threads. Mirrors web's `toThreads` tests case
+/// for case — a conversation must read the same on both platforms.
+struct CommentThreadingTests {
+    private func at(_ id: String, minute: Int, parent: UUID? = nil) -> PostComment {
+        PostComment(
+            id: UUID(uuidString: "00000000-0000-0000-0000-\(String(format: "%012d", abs(id.hashValue % 1_000_000)))")
+                ?? UUID(),
+            body: id,
+            createdAt: Date(timeIntervalSince1970: TimeInterval(minute * 60)),
+            editedAt: nil,
+            parentID: parent,
+            author: FakeSocialService.author
+        )
+    }
+
+    @Test("replies group under their root, oldest first")
+    func groupsReplies() {
+        let root = at("root", minute: 0)
+        let later = at("b", minute: 2, parent: root.id)
+        let earlier = at("a", minute: 1, parent: root.id)
+
+        let threads = PostComment.threads(from: [root, later, earlier])
+
+        #expect(threads.count == 1)
+        #expect(threads[0].replies.map(\.body) == ["a", "b"])
+    }
+
+    @Test("roots read oldest first, like the conversation happened")
+    func ordersRoots() {
+        let threads = PostComment.threads(from: [at("second", minute: 5), at("first", minute: 1)])
+        #expect(threads.map(\.comment.body) == ["first", "second"])
+    }
+
+    @Test("a root with no replies is left alone")
+    func soloRoot() {
+        let threads = PostComment.threads(from: [at("solo", minute: 0)])
+        #expect(threads[0].replies.isEmpty)
+    }
+
+    @Test("a reply whose root is missing is promoted, not dropped")
+    func orphanSurvives() {
+        // Happens when a thread is paginated. Losing someone's words is worse
+        // than showing them slightly out of place.
+        let threads = PostComment.threads(from: [at("orphan", minute: 3, parent: UUID())])
+        #expect(threads.map(\.comment.body) == ["orphan"])
+    }
+
+    @Test("a reply is never nested under another reply")
+    func noSecondLevel() {
+        // The database refuses this, but the grouping must not invent it
+        // either if a row ever arrives that way.
+        let root = at("root", minute: 0)
+        let reply = at("a", minute: 1, parent: root.id)
+        let deep = at("b", minute: 2, parent: reply.id)
+
+        let threads = PostComment.threads(from: [root, reply, deep])
+
+        #expect(threads[0].replies.map(\.body) == ["a"])
+        #expect(threads.map(\.comment.body) == ["root", "b"])
+    }
+
+    @Test("no comments makes no threads")
+    func empty() {
+        #expect(PostComment.threads(from: []).isEmpty)
+    }
+}
+
+@MainActor
+struct CommentReplyPostingTests {
+    @Test("a reply is sent as a reply, not as a new root comment")
+    func replyCarriesItsParent() async {
+        // Dropping the parent would post a reply that reads as an unrelated
+        // remark — exactly the problem threading exists to fix.
+        let service = FakeSocialService()
+        let viewModel = PostDetailViewModel(postID: UUID(), service: service)
+        let parent = UUID()
+
+        await viewModel.addComment(body: "answering you", authorID: UUID(), parentID: parent)
+
+        let parents = await service.addedParents
+        #expect(parents == [parent])
+    }
+
+    @Test("a root comment carries no parent")
+    func rootHasNoParent() async {
+        let service = FakeSocialService()
+        let viewModel = PostDetailViewModel(postID: UUID(), service: service)
+
+        await viewModel.addComment(body: "first", authorID: UUID())
+
+        let parents = await service.addedParents
+        #expect(parents == [nil])
     }
 }

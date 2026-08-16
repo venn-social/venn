@@ -2,7 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { toUserProfile, type ProfileRow, type UserProfile } from "@/lib/profile";
 
 /** What happened. Mirrors the `notifications_kind_valid` CHECK. */
-export type NotificationKind = "like" | "comment" | "follow" | "follow_request";
+export type NotificationKind = "like" | "comment" | "follow" | "follow_request" | "reply";
 
 export interface AppNotification {
   id: string;
@@ -30,7 +30,7 @@ export interface NotificationRow {
   comment: { body: string } | null;
 }
 
-const KINDS: readonly string[] = ["like", "comment", "follow", "follow_request"];
+const KINDS: readonly string[] = ["like", "comment", "follow", "follow_request", "reply"];
 
 export function toNotification(row: NotificationRow): AppNotification | null {
   // A row whose actor vanished mid-flight would render as "someone", which
@@ -130,6 +130,11 @@ export function notificationSummary(notification: AppNotification): string {
       return `liked your post${about}`;
     case "comment":
       return `commented on your post${about}`;
+    case "reply":
+      // Not "commented on your post": a reply can land on a stranger's post,
+      // and telling someone you commented on a post they do not own is a
+      // small lie that makes the whole feed less trustworthy.
+      return `replied to your comment${about}`;
     case "follow":
       return "started following you";
     case "follow_request":
