@@ -56,11 +56,21 @@ create table public.posts (
   action public.post_action not null,
   created_at timestamptz not null default now()
 );
+-- The notifications migration attaches a like-notification trigger here, so
+-- the table has to exist even though these tests never touch likes.
+create table public.post_likes (
+  post_id uuid not null references public.posts (id) on delete cascade,
+  user_id uuid not null references public.profiles (id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (post_id, user_id)
+);
+
 create table public.rate_limits (key text not null, ts timestamptz not null default now());
 
 alter table public.profiles enable row level security;
 alter table public.media    enable row level security;
 alter table public.posts    enable row level security;
+alter table public.post_likes enable row level security;
 alter table public.rate_limits enable row level security;
 
 create policy profiles_select_all on public.profiles for select using (true);
