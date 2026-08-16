@@ -56,6 +56,17 @@ create table public.posts (
   action public.post_action not null,
   created_at timestamptz not null default now()
 );
+-- Same again for follows: the migration attaches a follow-notification
+-- trigger, and its status column is what tells an accepted follow from a
+-- pending request.
+create table public.follows (
+  follower_id uuid not null references public.profiles (id) on delete cascade,
+  followee_id uuid not null references public.profiles (id) on delete cascade,
+  status text not null default 'accepted',
+  created_at timestamptz not null default now(),
+  primary key (follower_id, followee_id)
+);
+
 -- The notifications migration attaches a like-notification trigger here, so
 -- the table has to exist even though these tests never touch likes.
 create table public.post_likes (
@@ -70,6 +81,7 @@ create table public.rate_limits (key text not null, ts timestamptz not null defa
 alter table public.profiles enable row level security;
 alter table public.media    enable row level security;
 alter table public.posts    enable row level security;
+alter table public.follows enable row level security;
 alter table public.post_likes enable row level security;
 alter table public.rate_limits enable row level security;
 
