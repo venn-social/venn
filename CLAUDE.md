@@ -23,9 +23,10 @@ The founding team is small and non-technical. The codebase is being treated like
 - **Dependencies:** Swift Package Manager only (declared in `ios/project.yml`). No CocoaPods, no Carthage.
 - **State:** local `@State` first → `@Observable` view-models scoped to a feature → top-level `@Observable` types injected via `.environment(...)` for cross-feature state. **No Redux-style global stores.**
 - **Testing:** Swift Testing (`import Testing`, `@Test`) for units; XCUITest for UI flows. Services and pure utilities are unit-tested; views are not.
+- **Database guarantees are tested too.** `supabase/tests/*.sql` are self-contained harnesses that build a base schema, apply the real migration with `\i`, and fail via `RAISE EXCEPTION`. They run on a plain `postgres:17-alpine` — no pgTAP, no Supabase stack — via the `RLS tests` workflow, on every PR touching `supabase/`. Anything enforced by a policy or a trigger belongs there, because the clients only mirror those rules and a mirror is not an enforcement.
 - **Lint/format:** [SwiftLint](https://github.com/realm/SwiftLint) (strict mode) + [SwiftFormat](https://github.com/nicklockwood/SwiftFormat). Pre-commit hooks enforce both via Husky.
 - **CI:** GitHub Actions on `macos-latest`. Lint, format check, prettier check (for docs), and tests run on every PR.
-- **Web:** Next.js (App Router, TypeScript) in `web/`, against the _same_ Supabase project as iOS — no second backend. Tailwind, styled from tokens mirroring `Theme.swift`. Vitest + React Testing Library for units, Playwright for E2E. **As of 2026-08-05 web has feature parity with iOS**: auth, onboarding, feed, navigation, profiles with shelves, editing, settings, follow lists, the Venn overlap, the composer, Explorer, and Year in Review. Phase specs live in `docs/superpowers/specs/`.
+- **Web:** Next.js (App Router, TypeScript) in `web/`, against the _same_ Supabase project as iOS — no second backend. Tailwind, styled from tokens mirroring `Theme.swift`. Vitest + React Testing Library for units, Playwright for E2E. **Web and iOS are at feature parity** (last checked 2026-08-16): auth including the emailed-code fallback, onboarding, feed, navigation, profiles with shelves, editing, settings, follow lists, the Venn overlap, the composer, Explorer, recommendations, comments with replies, and Last 12 Months. Phase specs live in `docs/superpowers/specs/`.
 
 ## Repo layout
 
@@ -53,7 +54,10 @@ venn/
 ├── web/                                   Next.js web app (Phase 1 in progress —
 │                                          see the Phase 1 spec linked above).
 │                                          Same Supabase backend as ios/.
-├── supabase/migrations/                   SQL migrations (unchanged from RN era).
+├── supabase/migrations/                   SQL migrations. Schema only — data
+│                                          corrections go in a re-runnable script,
+│                                          never as values in a migration.
+├── supabase/tests/                        RLS/trigger harnesses, run in CI.
 ├── docs/                                  WORKFLOW, ARCHITECTURE, CODING_STANDARDS, …
 ├── .github/                               CI workflows, PR + issue templates, CODEOWNERS.
 ├── .husky/                                Pre-commit + commit-msg hooks.
