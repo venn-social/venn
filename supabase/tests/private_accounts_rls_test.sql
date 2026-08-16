@@ -85,8 +85,13 @@ grant select, insert, update, delete on all tables in schema public to authentic
 -- rl_check (from 20260611230000_overlap_rpc.sql) — the migration's RPCs call it.
 create or replace function public.rl_check(_key text, _limit int, _window interval)
 returns boolean language plpgsql security definer set search_path = '' as $$
-declare _count int;
+declare _count int; _caller uuid := auth.uid();
 begin
+  -- Matches 20260816122000: a signed-in caller may only spend their own
+  -- allowance, so a forged key is refused rather than charged to its owner.
+  if _caller is not null and _key not like ('%:' || _caller::text) then
+    return false;
+  end if;
   insert into public.rate_limits (key, ts) values (_key, now());
   delete from public.rate_limits where ts < now() - _window;
   select count(*) into _count from public.rate_limits where key = _key and ts > now() - _window;
@@ -203,6 +208,16 @@ do $$ begin
   exception when insufficient_privilege then
     raise notice 'PASS T10: direct follow insert blocked by RLS';
   end;
+end $$; rollback;
+
+-- T11: a caller cannot spend somebody else's rate-limit allowance.
+begin; set local role authenticated; set local test.uid='00000000-0000-0000-0000-000000000003';
+do $$ begin
+  if public.rl_check('anything:00000000-0000-0000-0000-000000000002', 100, interval '1 minute')
+    then raise exception 'FAIL T11: forged rate-limit key was accepted'; end if;
+  if not public.rl_check('anything:00000000-0000-0000-0000-000000000003', 100, interval '1 minute')
+    then raise exception 'FAIL T11: own rate-limit key was refused'; end if;
+  raise notice 'PASS T11: rate-limit keys are scoped to the caller';
 end $$; rollback;
 
 \echo '>>> ALL TESTS PASSED'

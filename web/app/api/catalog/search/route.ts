@@ -38,8 +38,11 @@ export async function GET(request: NextRequest) {
   // Sliding window in Postgres, not in memory: Route Handlers run
   // serverless, so an in-process counter resets on cold start and isn't
   // shared between instances — it would enforce nothing.
-  const { data: allowed, error: limitError } = await supabase.rpc("rl_check", {
-    _key: `catalog_search:${user.id}`,
+  // rl_check_self, not rl_check: the key-taking version let any signed-in
+  // caller spend somebody else's allowance. This one derives the identity
+  // from auth.uid(), which cannot be forged from the client.
+  const { data: allowed, error: limitError } = await supabase.rpc("rl_check_self", {
+    _action: "catalog_search",
     _limit: 60,
     _window: "00:01:00"
   });
