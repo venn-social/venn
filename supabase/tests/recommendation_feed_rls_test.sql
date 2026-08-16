@@ -114,14 +114,17 @@ insert into public.media (id, kind, title, external_source, external_id) values
   ('aaaaaaaa-0000-0000-0000-0000000000a2','movie','PrivPick','tmdb','2'),
   ('aaaaaaaa-0000-0000-0000-0000000000a3','movie','PubPick', 'tmdb','3');
 
-insert into public.posts (author_id, media_id, action) values
-  -- The overlap that makes both look similar to viewer.
-  ('00000000-0000-0000-0000-000000000001','aaaaaaaa-0000-0000-0000-0000000000a1','logged'),
-  ('00000000-0000-0000-0000-000000000002','aaaaaaaa-0000-0000-0000-0000000000a1','logged'),
-  ('00000000-0000-0000-0000-000000000003','aaaaaaaa-0000-0000-0000-0000000000a1','logged'),
+insert into public.posts (author_id, media_id, action, rating) values
+  -- The overlap that makes both look similar to viewer. The viewer's is
+  -- rated, not merely logged: seeds require rating >= 3, because "more like
+  -- this" needs an opinion to work from, and something you only logged
+  -- expresses none.
+  ('00000000-0000-0000-0000-000000000001','aaaaaaaa-0000-0000-0000-0000000000a1','rated', 5),
+  ('00000000-0000-0000-0000-000000000002','aaaaaaaa-0000-0000-0000-0000000000a1','logged', null),
+  ('00000000-0000-0000-0000-000000000003','aaaaaaaa-0000-0000-0000-0000000000a1','logged', null),
   -- What each of them additionally likes, and might therefore recommend.
-  ('00000000-0000-0000-0000-000000000002','aaaaaaaa-0000-0000-0000-0000000000a2','rated'),
-  ('00000000-0000-0000-0000-000000000003','aaaaaaaa-0000-0000-0000-0000000000a3','rated');
+  ('00000000-0000-0000-0000-000000000002','aaaaaaaa-0000-0000-0000-0000000000a2','rated', 5),
+  ('00000000-0000-0000-0000-000000000003','aaaaaaaa-0000-0000-0000-0000000000a3','rated', 5);
 
 -- --- Tests -------------------------------------------------------------------
 
@@ -186,7 +189,8 @@ begin
 end $$; rollback;
 
 -- T5: the viewer's own activity still drives the feed, so T4 is not passing
--- merely because the feed is empty.
+-- merely because the feed is empty. Seeds come from rated rows only, which is
+-- why the viewer's overlap above carries a rating.
 begin; set local role authenticated; set local test.uid='00000000-0000-0000-0000-000000000001';
 do $$
 declare payload jsonb;
