@@ -107,6 +107,12 @@ end; $$;
 \i /mig3.sql
 \echo '>>> migrations applied OK'
 
+-- GRANT ON ALL TABLES only covers what exists at the time, and post_comments
+-- is created by the migration above — so the grant before it missed the one
+-- table these tests are about. The harnesses beside this one get away with a
+-- single grant because their migrations only alter existing tables.
+grant select, insert, update, delete on all tables in schema public to authenticated;
+
 -- --- Seed ---------------------------------------------------------------------
 insert into public.profiles (id, username) values
   ('00000000-0000-0000-0000-000000000001','poster'),
