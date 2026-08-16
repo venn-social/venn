@@ -126,6 +126,13 @@ struct MainView: View {
             menuSheet(for: destination)
         }
         .task { await ensureNotificationsLoaded() }
+        // Runs for as long as the shell is on screen; cancelling this task
+        // is what unsubscribes, so there is no channel left open behind a
+        // signed-out session.
+        .task {
+            await ensureNotificationsLoaded()
+            await notifications?.observeChanges()
+        }
         .task { await seedSearchLanguage() }
         // The picker writes to the profile; this is what makes the very next
         // search use it, rather than the change taking effect on relaunch.

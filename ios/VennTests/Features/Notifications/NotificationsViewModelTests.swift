@@ -167,6 +167,22 @@ final class FakeNotificationService: NotificationServicing, @unchecked Sendable 
     /// instead of the array.
     let seeded: [AppNotification]
     var unread = 0
+
+    /// Lets a test push change events without a network or a database.
+    private let changeStream = AsyncStream<Void>.makeStream()
+
+    func emitChange() {
+        changeStream.continuation.yield()
+    }
+
+    func finishChanges() {
+        changeStream.continuation.finish()
+    }
+
+    func changes() -> AsyncStream<Void> {
+        changeStream.stream
+    }
+
     var error: AppError?
     private(set) var notificationCalls = 0
     private(set) var unreadCalls = 0
@@ -199,5 +215,52 @@ final class FakeNotificationService: NotificationServicing, @unchecked Sendable 
             throw error
         }
         return seeded.filter(\.isUnread).count
+    }
+}
+
+/// The badge following changes as they land, rather than only when the shell
+/// reappears.
+@MainActor
+struct NotificationBadgeLiveTests {
+    @Test("a change re-reads the count instead of guessing at it")
+    func changeRefreshesBadge() async {
+        // Adding one locally cannot handle something marked read on another
+        // device; re-reading handles both directions.
+        let service = FakeNotificationService(notifications: [])
+        service.unread = 2
+        let viewModel = NotificationsViewModel(service: service)
+        await viewModel.refreshBadge()
+        #expect(viewModel.unreadCount == 2)
+
+        let observing = Task { await viewModel.observeChanges() }
+        service.unread = 5
+        service.emitChange()
+
+        // The loop is asynchronous; wait for it to land rather than sleeping.
+        var attempts = 0
+        while viewModel.unreadCount != 5, attempts < 50 {
+            try? await Task.sleep(for: .milliseconds(10))
+            attempts += 1
+        }
+        service.finishChanges()
+        await observing.value
+
+        #expect(viewModel.unreadCount == 5)
+    }
+
+    @Test("the observer stops when the stream ends")
+    func observerEndsCleanly() async {
+        // Cancelling the task is what unsubscribes; a loop that outlived it
+        // would keep a channel open behind a signed-out session.
+        let service = FakeNotificationService(notifications: [])
+        let viewModel = NotificationsViewModel(service: service)
+
+        let observing = Task { await viewModel.observeChanges() }
+        service.finishChanges()
+        await observing.value
+
+        // Finishing the stream ends the loop on its own; nothing had to be
+        // cancelled, which is what makes teardown safe.
+        #expect(!observing.isCancelled)
     }
 }

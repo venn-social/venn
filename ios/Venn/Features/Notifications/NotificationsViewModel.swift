@@ -51,6 +51,17 @@ final class NotificationsViewModel {
 
     /// Badge only. Cheap enough to call on every appearance of the shell,
     /// which is what keeps the count honest without loading the list.
+    /// Follow live changes for as long as the caller keeps this running.
+    ///
+    /// Re-reads the count on each change rather than adjusting it locally,
+    /// so something marked read on another device lands here correctly too.
+    /// Cancelled with the task that started it, which is what unsubscribes.
+    func observeChanges() async {
+        for await _ in service.changes() {
+            await refreshBadge()
+        }
+    }
+
     func refreshBadge() async {
         unreadCount = await (try? service.unreadCount()) ?? unreadCount
     }
