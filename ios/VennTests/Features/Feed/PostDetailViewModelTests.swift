@@ -9,6 +9,8 @@ private actor FakeSocialService: SocialServicing {
     var loadError: (any Error)?
     var writeError: (any Error)?
     private(set) var addedBodies: [String] = []
+    /// Parents for each added comment, so a test can prove a reply is a reply.
+    private(set) var addedParents: [UUID?] = []
     private(set) var deletedIDs: [UUID] = []
 
     func seed(comments: [PostComment] = [], info: LikeInfo = .none) {
@@ -42,18 +44,24 @@ private actor FakeSocialService: SocialServicing {
         return comments
     }
 
-    func addComment(postID _: UUID, authorID _: UUID, body: String) async throws {
+    func addComment(
+        postID _: UUID,
+        authorID _: UUID,
+        body: String,
+        parentID: UUID?
+    ) async throws {
         if let writeError {
             throw writeError
         }
         addedBodies.append(body)
+        addedParents.append(parentID)
         comments.append(
             PostComment(
                 id: UUID(),
                 body: body,
                 createdAt: Date(),
                 editedAt: nil,
-                parentID: nil,
+                parentID: parentID,
                 author: Self.author
             )
         )
@@ -353,5 +361,33 @@ struct CommentThreadingTests {
     @Test("no comments makes no threads")
     func empty() {
         #expect(PostComment.threads(from: []).isEmpty)
+    }
+}
+
+@MainActor
+struct CommentReplyPostingTests {
+    @Test("a reply is sent as a reply, not as a new root comment")
+    func replyCarriesItsParent() async {
+        // Dropping the parent would post a reply that reads as an unrelated
+        // remark — exactly the problem threading exists to fix.
+        let service = FakeSocialService()
+        let viewModel = PostDetailViewModel(postID: UUID(), service: service)
+        let parent = UUID()
+
+        await viewModel.addComment(body: "answering you", authorID: UUID(), parentID: parent)
+
+        let parents = await service.addedParents
+        #expect(parents == [parent])
+    }
+
+    @Test("a root comment carries no parent")
+    func rootHasNoParent() async {
+        let service = FakeSocialService()
+        let viewModel = PostDetailViewModel(postID: UUID(), service: service)
+
+        await viewModel.addComment(body: "first", authorID: UUID())
+
+        let parents = await service.addedParents
+        #expect(parents == [nil])
     }
 }
