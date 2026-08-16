@@ -73,6 +73,7 @@ jobs:
           sudo cp supabase/migrations/20260805200000_notifications.sql /mig2.sql
           sudo cp supabase/migrations/20260815100000_editable_comments.sql /mig3.sql
           sudo cp supabase/migrations/20260816100000_comment_replies.sql /mig4.sql
+          sudo cp supabase/migrations/20260816101000_reply_notification_target.sql /mig5.sql
           psql -h localhost -U postgres -d comment_policies_test \
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/comment_policies_rls_test.sql

@@ -16,12 +16,18 @@
 --   /mig2.sql  notifications  (the notify trigger and the target constraint)
 --   /mig3.sql  editable comments
 --   /mig4.sql  replies
+--   /mig5.sql  the reply notification target fix
 --
 -- The notifications migration is applied rather than stubbed on purpose. It
 -- carries the trigger that fires on a new comment AND the constraint that
 -- decides which target columns each kind may have — and it was that
 -- constraint, unwidened, that would have made every reply notification fail
 -- silently. Stubbing it would have removed the only thing T9 is for.
+--
+-- The widening ships as its own migration because migrations are append-only,
+-- and leaving it out is what T9 caught on the first run that got this far: the
+-- replies migration alone reproduces the bug exactly, notifying nobody with
+-- nothing in the logs.
 -- =============================================================================
 
 \set ON_ERROR_STOP on
@@ -114,6 +120,8 @@ end; $$;
 \i /mig3.sql
 \echo '>>> applying 20260816100000_comment_replies.sql'
 \i /mig4.sql
+\echo '>>> applying 20260816101000_reply_notification_target.sql'
+\i /mig5.sql
 \echo '>>> migrations applied OK'
 
 -- GRANT ON ALL TABLES only covers what exists at the time, and post_comments
