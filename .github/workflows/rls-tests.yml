@@ -1,0 +1,75 @@
+# =============================================================================
+# RLS tests — the database's privacy guarantees, checked on every PR.
+# =============================================================================
+# Two harnesses existed in supabase/tests/ and nothing ran them. They had been
+# executed by hand, once each, on the day the migration they cover shipped —
+# which verifies the code that shipped and nothing after it.
+#
+# Deliberately a plain postgres image rather than pgTAP or the full Supabase
+# stack. The harnesses build the base schema themselves, apply the real
+# migration with \i, and fail via RAISE EXCEPTION, so all that is needed is a
+# Postgres. The supabase/postgres image is ~6GB; this one is ~80MB and starts
+# in seconds.
+#
+# Only runs when something it could affect changes.
+# =============================================================================
+
+name: RLS tests
+
+on:
+  pull_request:
+    branches: [main]
+    paths: ["supabase/**", ".github/workflows/rls-tests.yml"]
+  push:
+    branches: [main]
+    paths: ["supabase/**", ".github/workflows/rls-tests.yml"]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  rls:
+    name: RLS harnesses
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+        ports:
+          - 5432:5432
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install psql
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends postgresql-client
+
+      # Each harness gets a fresh database. They build overlapping schemas —
+      # both create public.profiles — so sharing one would fail on the second.
+      - name: Private accounts RLS
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -c 'create database private_accounts_test'
+          sudo cp supabase/migrations/20260626120000_private_accounts.sql /mig.sql
+          psql -h localhost -U postgres -d private_accounts_test \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/private_accounts_rls_test.sql
+
+      - name: Recommendation feed RLS
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -c 'create database recommendation_feed_test'
+          sudo cp supabase/migrations/20260806120000_recommendations.sql /mig.sql
+          psql -h localhost -U postgres -d recommendation_feed_test \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/recommendation_feed_rls_test.sql
