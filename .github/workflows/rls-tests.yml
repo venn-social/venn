@@ -64,6 +64,18 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/private_accounts_rls_test.sql
 
+      - name: Comment policies RLS
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -c 'create database comment_policies_test'
+          sudo cp supabase/migrations/20260805100100_post_comments.sql /mig.sql
+          sudo cp supabase/migrations/20260815100000_editable_comments.sql /mig2.sql
+          sudo cp supabase/migrations/20260816100000_comment_replies.sql /mig3.sql
+          psql -h localhost -U postgres -d comment_policies_test \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/comment_policies_rls_test.sql
+
       - name: Recommendation feed RLS
         env:
           PGPASSWORD: postgres
