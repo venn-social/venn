@@ -1,5 +1,6 @@
+import { toUserProfile } from "@/lib/profile";
 import { describe, expect, it } from "vitest";
-import { toComment, toCommentCounts, toComments, type CommentRow } from "@/lib/comments";
+import { toComment, toCommentCounts, toComments, toThreads, type CommentRow, type PostComment } from "@/lib/comments";
 
 const author = {
   id: "u1",
@@ -97,5 +98,54 @@ describe("edited comments", () => {
       author
     });
     expect(comment?.editedAt).toBeNull();
+  });
+});
+
+describe("toThreads", () => {
+  function at(id: string, minute: number, parentId: string | null = null): PostComment {
+    return {
+      id,
+      body: id,
+      createdAt: new Date(`2026-08-16T10:${String(minute).padStart(2, "0")}:00Z`),
+      editedAt: null,
+      parentId,
+      author: toUserProfile(author)!
+    };
+  }
+
+  it("groups replies under their root, oldest first", () => {
+    const threads = toThreads([at("root", 0), at("b", 2, "root"), at("a", 1, "root")]);
+    expect(threads).toHaveLength(1);
+    expect(threads[0].replies.map((reply) => reply.id)).toEqual(["a", "b"]);
+  });
+
+  it("orders roots oldest first, like the conversation happened", () => {
+    const threads = toThreads([at("second", 5), at("first", 1)]);
+    expect(threads.map((thread) => thread.comment.id)).toEqual(["first", "second"]);
+  });
+
+  it("leaves a root with no replies alone", () => {
+    const threads = toThreads([at("solo", 0)]);
+    expect(threads[0].replies).toEqual([]);
+  });
+
+  it("promotes a reply whose root is missing rather than dropping it", () => {
+    // Happens when a thread is paginated. Losing someone's words is worse
+    // than showing them slightly out of place.
+    const threads = toThreads([at("orphan", 3, "not-here")]);
+    expect(threads.map((thread) => thread.comment.id)).toEqual(["orphan"]);
+  });
+
+  it("does not nest a reply under another reply", () => {
+    // The database refuses this, but the grouping must not invent it either
+    // if a row ever arrives that way.
+    const threads = toThreads([at("root", 0), at("a", 1, "root"), at("b", 2, "a")]);
+    expect(threads[0].replies.map((reply) => reply.id)).toEqual(["a"]);
+    // "b" has a parent that is not a root, so it surfaces as its own thread.
+    expect(threads.map((thread) => thread.comment.id)).toEqual(["root", "b"]);
+  });
+
+  it("returns nothing for no comments", () => {
+    expect(toThreads([])).toEqual([]);
   });
 });

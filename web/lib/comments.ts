@@ -7,7 +7,15 @@ export interface PostComment {
   createdAt: Date;
   /** Null until the text is changed. Set by the database, never the client. */
   editedAt: Date | null;
+  /** Null on a root comment. Replies are one level deep, enforced in the DB. */
+  parentId: string | null;
   author: UserProfile;
+}
+
+/** A root comment with its replies, oldest first — how a thread reads. */
+export interface CommentThreadItem {
+  comment: PostComment;
+  replies: PostComment[];
 }
 
 export interface CommentRow {
@@ -15,6 +23,7 @@ export interface CommentRow {
   body: string;
   created_at: string;
   edited_at?: string | null;
+  parent_id?: string | null;
   author: ProfileRow;
 }
 
@@ -28,6 +37,7 @@ export function toComment(row: CommentRow): PostComment | null {
     body: row.body,
     createdAt: new Date(row.created_at),
     editedAt: row.edited_at ? new Date(row.edited_at) : null,
+    parentId: row.parent_id ?? null,
     author: toUserProfile(row.author)
   };
 }
@@ -47,7 +57,7 @@ export async function fetchComments(
 ): Promise<PostComment[]> {
   const { data, error } = await client
     .from("post_comments")
-    .select("id, body, created_at, edited_at, author:profiles(*)")
+    .select("id, body, created_at, edited_at, parent_id, author:profiles(*)")
     .eq("post_id", postId)
     .order("created_at", { ascending: true })
     .limit(limit);
@@ -56,15 +66,44 @@ export async function fetchComments(
   return toComments(data);
 }
 
+/**
+ * Group a flat fetch into threads.
+ *
+ * Pure, and no recursion: replies are one level deep by database constraint,
+ * so a root and its replies is the whole shape. A reply whose parent is not
+ * in the list is promoted to a root rather than dropped — that happens when
+ * a thread is paginated, and losing someone's words is worse than showing
+ * them slightly out of place.
+ */
+export function toThreads(comments: PostComment[]): CommentThreadItem[] {
+  const roots = comments.filter((comment) => comment.parentId === null);
+  const rootIds = new Set(roots.map((root) => root.id));
+
+  const orphans = comments.filter(
+    (comment) => comment.parentId !== null && !rootIds.has(comment.parentId)
+  );
+
+  return [...roots, ...orphans]
+    .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
+    .map((comment) => ({
+      comment,
+      replies: comments
+        .filter((reply) => reply.parentId === comment.id)
+        .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
+    }));
+}
+
 export async function addComment(
   client: SupabaseClient,
   postId: string,
   authorId: string,
-  body: string
+  body: string,
+  /** Null for a root comment. The database refuses a reply to a reply. */
+  parentId: string | null = null
 ): Promise<void> {
   const { error } = await client
     .from("post_comments")
-    .insert({ post_id: postId, author_id: authorId, body });
+    .insert({ post_id: postId, author_id: authorId, body, parent_id: parentId });
   if (error) throw error;
 }
 

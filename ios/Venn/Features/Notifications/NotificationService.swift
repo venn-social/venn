@@ -8,12 +8,14 @@ enum NotificationKind: String, Codable, Hashable, Sendable {
     case comment
     case follow
     case followRequest = "follow_request"
+    case reply
 
     /// SF Symbol for the row's leading glyph.
     var systemImage: String {
         switch self {
         case .like: "heart.fill"
         case .comment: "bubble.right.fill"
+        case .reply: "arrowshape.turn.up.left.fill"
         case .follow: "person.fill.badge.plus"
         case .followRequest: "person.crop.circle.badge.questionmark"
         }
@@ -50,6 +52,10 @@ struct AppNotification: Identifiable, Equatable, Hashable, Sendable {
         return switch kind {
         case .like: "liked your post\(about)"
         case .comment: "commented on your post\(about)"
+        // Not "commented on your post": a reply can land on a stranger's
+        // post, and telling someone you commented on a post they do not own
+        // is a small lie that makes the whole feed less trustworthy.
+        case .reply: "replied to your comment\(about)"
         case .follow: "started following you"
         case .followRequest: "asked to follow you"
         }

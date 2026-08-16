@@ -13,6 +13,10 @@ struct PostDetailView: View {
     /// `draft` so opening an edit does not swallow a half-written comment.
     @State private var editingID: UUID?
     @State private var editDraft = ""
+    /// The comment being replied to, and the reply text. Separate from the
+    /// edit and composer drafts so opening one does not swallow another.
+    @State private var replyingTo: UUID?
+    @State private var replyDraft = ""
 
     var body: some View {
         ScrollView {
@@ -55,8 +59,20 @@ struct PostDetailView: View {
                         .font(Theme.Font.callout)
                         .foregroundStyle(Theme.Color.textSecondary)
                 } else {
-                    ForEach(comments) { comment in
-                        commentRow(comment, viewModel: viewModel)
+                    ForEach(PostComment.threads(from: comments)) { thread in
+                        VStack(alignment: .leading, spacing: Theme.Spacing.md) {
+                            commentRow(thread.comment, viewModel: viewModel, isReply: false)
+
+                            if replyingTo == thread.comment.id {
+                                replyEditor(thread.comment, viewModel: viewModel)
+                                    .padding(.leading, Theme.Spacing.xxl)
+                            }
+
+                            ForEach(thread.replies) { reply in
+                                commentRow(reply, viewModel: viewModel, isReply: true)
+                                    .padding(.leading, Theme.Spacing.xxl)
+                            }
+                        }
                     }
                 }
 
@@ -69,7 +85,11 @@ struct PostDetailView: View {
         }
     }
 
-    private func commentRow(_ comment: PostComment, viewModel: PostDetailViewModel) -> some View {
+    private func commentRow(
+        _ comment: PostComment,
+        viewModel: PostDetailViewModel,
+        isReply: Bool
+    ) -> some View {
         HStack(alignment: .top, spacing: Theme.Spacing.md) {
             VStack(alignment: .leading, spacing: Theme.Spacing.xxs) {
                 HStack(spacing: Theme.Spacing.sm) {
@@ -103,6 +123,15 @@ struct PostDetailView: View {
             // comment on your own post.
             if editingID != comment.id {
                 HStack(spacing: Theme.Spacing.md) {
+                    if !isReply {
+                        Button("Reply") {
+                            replyDraft = ""
+                            replyingTo = comment.id
+                        }
+                        .font(Theme.Font.caption)
+                        .foregroundStyle(Theme.Color.textSecondary)
+                    }
+
                     // Editing is the author's alone. Removing someone's
                     // comment from your own post is moderation; rewriting it
                     // is impersonation, so the post's author does not get it.
@@ -123,6 +152,45 @@ struct PostDetailView: View {
                         .foregroundStyle(Theme.Color.textSecondary)
                     }
                 }
+            }
+        }
+    }
+
+    private func replyEditor(
+        _ parent: PostComment,
+        viewModel: PostDetailViewModel
+    ) -> some View {
+        VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
+            TextField("Write a reply", text: $replyDraft, axis: .vertical)
+                .font(Theme.Font.callout)
+                .lineLimit(1...6)
+                .padding(Theme.Spacing.sm)
+                .background(
+                    Theme.Color.surfaceStrong,
+                    in: .rect(cornerRadius: Theme.Radius.sm)
+                )
+                .accessibilityIdentifier("comment_reply_field")
+
+            HStack(spacing: Theme.Spacing.md) {
+                Button("Reply") {
+                    let text = replyDraft
+                    replyingTo = nil
+                    replyDraft = ""
+                    Task {
+                        await viewModel.addComment(
+                            body: text,
+                            authorID: viewerID,
+                            parentID: parent.id
+                        )
+                    }
+                }
+                .font(Theme.Font.caption.weight(.semibold))
+                .foregroundStyle(Theme.Color.accent)
+                .disabled(replyDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+
+                Button("Cancel") { replyingTo = nil }
+                    .font(Theme.Font.caption)
+                    .foregroundStyle(Theme.Color.textSecondary)
             }
         }
     }
