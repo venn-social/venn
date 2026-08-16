@@ -84,10 +84,10 @@ create policy follows_select_all  on public.follows  for select using (true);
 -- `security invoker` — if they ever stop inheriting it, these tests fail.
 create policy posts_select_visible on public.posts for select using (
   auth.uid() = author_id
-  or exists (select 1 from public.profiles pr where pr.id = posts.author_id and pr.is_private = false)
+  or exists (select 1 from public.profiles pr where pr.id = posts.user_id and pr.is_private = false)
   or exists (
     select 1 from public.follows f
-     where f.followee_id = posts.author_id
+     where f.followee_id = posts.user_id
        and f.follower_id = auth.uid()
        and f.status = 'accepted'
   )
@@ -155,7 +155,7 @@ declare found int;
 begin
   select count(*) into found
     from public.similar_users(20) s
-   where s.author_id = '00000000-0000-0000-0000-000000000002';
+   where s.user_id = '00000000-0000-0000-0000-000000000002';
   if found <> 0 then raise exception 'FAIL T2: private stranger surfaced as a similar user'; end if;
   raise notice 'PASS T2: private stranger is not a similar user';
 end $$; rollback;
@@ -168,7 +168,7 @@ declare found int;
 begin
   select count(*) into found
     from public.similar_users(20) s
-   where s.author_id = '00000000-0000-0000-0000-000000000003';
+   where s.user_id = '00000000-0000-0000-0000-000000000003';
   if found <> 1 then raise exception 'FAIL T3: public stranger did not surface as a similar user'; end if;
   raise notice 'PASS T3: public stranger is a similar user';
 end $$; rollback;
@@ -208,7 +208,7 @@ declare found int;
 begin
   select count(*) into found
     from public.similar_users(20) s
-   where s.author_id = '00000000-0000-0000-0000-000000000002';
+   where s.user_id = '00000000-0000-0000-0000-000000000002';
   if found <> 1 then raise exception 'FAIL T6: accepted follow did not grant visibility'; end if;
   raise notice 'PASS T6: accepted follower is a similar user';
 end $$; rollback;
@@ -225,7 +225,7 @@ declare found int;
 begin
   select count(*) into found
     from public.similar_users(20) s
-   where s.author_id = '00000000-0000-0000-0000-000000000002';
+   where s.user_id = '00000000-0000-0000-0000-000000000002';
   if found <> 0 then raise exception 'FAIL T7: pending request granted visibility'; end if;
   raise notice 'PASS T7: pending request grants nothing';
 end $$; rollback;
