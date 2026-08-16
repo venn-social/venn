@@ -263,11 +263,18 @@ end $$; rollback;
 -- widened, and the notify trigger swallows exceptions — so a regression here
 -- is silent, and this is the only thing that would catch it.
 begin; set local role authenticated; set local test.uid='00000000-0000-0000-0000-000000000003';
-do $$ declare kinds text[]; begin
+do $$ begin
   insert into public.post_comments (post_id, author_id, body, parent_id)
   values ('bbbbbbbb-0000-0000-0000-0000000000b1','00000000-0000-0000-0000-000000000003',
           'answering you','cccccccc-0000-0000-0000-0000000000c1');
+end $$;
 
+-- Read as the recipient. notifications_select_own scopes rows to
+-- auth.uid() = recipient_id, so the replier cannot see what they caused —
+-- which is correct, and is why the first version of this test could not
+-- tell a missing notification from an invisible one.
+set local test.uid='00000000-0000-0000-0000-000000000002';
+do $$ declare kinds text[]; begin
   select array_agg(kind) into kinds
     from public.notifications
    where recipient_id = '00000000-0000-0000-0000-000000000002';
