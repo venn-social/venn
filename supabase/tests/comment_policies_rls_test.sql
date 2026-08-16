@@ -11,10 +11,17 @@
 -- postgres image, base schema built by hand, the REAL migrations applied with
 -- \i, and RAISE EXCEPTION for failures.
 --
--- Takes three migrations, in order, because each builds on the last:
+-- Takes four migrations, in order, because each builds on the last:
 --   /mig.sql   post_comments
---   /mig2.sql  editable comments
---   /mig3.sql  replies
+--   /mig2.sql  notifications  (the notify trigger and the target constraint)
+--   /mig3.sql  editable comments
+--   /mig4.sql  replies
+--
+-- The notifications migration is applied rather than stubbed on purpose. It
+-- carries the trigger that fires on a new comment AND the constraint that
+-- decides which target columns each kind may have — and it was that
+-- constraint, unwidened, that would have made every reply notification fail
+-- silently. Stubbing it would have removed the only thing T9 is for.
 -- =============================================================================
 
 \set ON_ERROR_STOP on
@@ -50,22 +57,11 @@ create table public.posts (
   created_at timestamptz not null default now()
 );
 create table public.rate_limits (key text not null, ts timestamptz not null default now());
-create table public.notifications (
-  id uuid primary key default gen_random_uuid(),
-  recipient_id uuid not null references public.profiles(id) on delete cascade,
-  actor_id uuid not null references public.profiles(id) on delete cascade,
-  kind text not null,
-  post_id uuid references public.posts(id) on delete cascade,
-  comment_id uuid,
-  read_at timestamptz,
-  created_at timestamptz not null default now()
-);
 
 alter table public.profiles enable row level security;
 alter table public.media    enable row level security;
 alter table public.posts    enable row level security;
 alter table public.rate_limits enable row level security;
-alter table public.notifications enable row level security;
 
 create policy profiles_select_all on public.profiles for select using (true);
 create policy media_select_all    on public.media    for select using (true);
@@ -87,24 +83,15 @@ begin
   return _count <= _limit;
 end; $$;
 
--- create_notification, so the notify trigger has something to call.
-create or replace function public.create_notification(
-  _recipient_id uuid, _actor_id uuid, _kind text,
-  _post_id uuid default null, _comment_id uuid default null
-) returns void language plpgsql security definer set search_path = '' as $$
-begin
-  if _recipient_id is null or _recipient_id = _actor_id then return; end if;
-  insert into public.notifications (recipient_id, actor_id, kind, post_id, comment_id)
-  values (_recipient_id, _actor_id, _kind, _post_id, _comment_id);
-end; $$;
-
 -- --- Run the REAL migrations, in order ----------------------------------------
 \echo '>>> applying 20260805100100_post_comments.sql'
 \i /mig.sql
-\echo '>>> applying 20260815100000_editable_comments.sql'
+\echo '>>> applying 20260805200000_notifications.sql'
 \i /mig2.sql
-\echo '>>> applying 20260816100000_comment_replies.sql'
+\echo '>>> applying 20260815100000_editable_comments.sql'
 \i /mig3.sql
+\echo '>>> applying 20260816100000_comment_replies.sql'
+\i /mig4.sql
 \echo '>>> migrations applied OK'
 
 -- GRANT ON ALL TABLES only covers what exists at the time, and post_comments
