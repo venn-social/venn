@@ -84,10 +84,10 @@ create policy follows_select_all  on public.follows  for select using (true);
 -- `security invoker` — if they ever stop inheriting it, these tests fail.
 create policy posts_select_visible on public.posts for select using (
   auth.uid() = author_id
-  or exists (select 1 from public.profiles pr where pr.id = posts.user_id and pr.is_private = false)
+  or exists (select 1 from public.profiles pr where pr.id = posts.author_id and pr.is_private = false)
   or exists (
     select 1 from public.follows f
-     where f.followee_id = posts.user_id
+     where f.followee_id = posts.author_id
        and f.follower_id = auth.uid()
        and f.status = 'accepted'
   )
