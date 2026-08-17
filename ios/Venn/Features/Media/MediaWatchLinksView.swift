@@ -1,21 +1,26 @@
 import SwiftUI
 
-/// Where you can watch this, for the device's region. Mirrors web's
+/// Where you can actually watch, read, or listen to this. Mirrors web's
 /// `WatchLinks.tsx` in behaviour and copy (CLAUDE.md rule 17).
 ///
-/// The region is always named. Streaming rights differ by country, so a
-/// bare list of providers is a claim we can't support — "on Netflix" is
-/// only ever true somewhere.
+/// Screen availability comes from TMDB and is real: these providers carry
+/// the title in this region, and the region is always named, because rights
+/// differ by country and "on Netflix" is only ever true somewhere.
+///
+/// Books and albums are a weaker claim and are labelled as one. No catalog
+/// we read holds availability for them, so their links run a search on each
+/// service rather than confirming it's stocked.
 struct MediaWatchLinksView: View {
     let links: [WatchLink]
     let regionName: String?
     let kind: MediaKind
 
+    private var searchOnly: Bool {
+        kind == .book || kind == .album
+    }
+
     var body: some View {
-        // Only screen media has availability data — TMDB is the one
-        // provider that carries it, so books and albums render nothing at
-        // all rather than an empty section.
-        if kind == .movie || kind == .show, !links.isEmpty {
+        if !links.isEmpty {
             MediaDetailSection(title: heading) {
                 VStack(alignment: .leading, spacing: Theme.Spacing.md) {
                     FlowLayout(spacing: Theme.Spacing.sm) {
@@ -24,7 +29,7 @@ struct MediaWatchLinksView: View {
                         }
                     }
 
-                    Text("Availability from TMDB. Rights change often and vary by country.")
+                    Text(footnote)
                         .font(Theme.Font.caption)
                         .foregroundStyle(Theme.Color.textSecondary)
                 }
@@ -33,18 +38,26 @@ struct MediaWatchLinksView: View {
     }
 
     private var heading: LocalizedStringKey {
-        if let regionName {
+        if searchOnly {
+            kind == .book ? "Where to read" : "Where to listen"
+        } else if let regionName {
             "Where to watch in \(regionName)"
         } else {
             "Where to watch"
         }
     }
 
+    private var footnote: LocalizedStringKey {
+        searchOnly
+            ? "These search each service — we can't tell whether it's stocked."
+            : "Availability from TMDB. Rights change often and vary by country."
+    }
+
     @ViewBuilder
     private func providerChip(_ link: WatchLink) -> some View {
         if let url = link.url {
             Link(destination: url) { chipBody(link) }
-                .accessibilityLabel("\(link.kind.label) on \(link.provider)")
+                .accessibilityLabel("\(link.kind.label(for: kind)) on \(link.provider)")
         } else {
             chipBody(link)
         }
@@ -64,7 +77,7 @@ struct MediaWatchLinksView: View {
             Text(link.provider)
                 .font(Theme.Font.footnote)
                 .foregroundStyle(Theme.Color.textPrimary)
-            Text(link.kind.label)
+            Text(link.kind.label(for: kind))
                 .font(Theme.Font.footnote)
                 .foregroundStyle(Theme.Color.textSecondary)
         }
@@ -76,7 +89,7 @@ struct MediaWatchLinksView: View {
     }
 }
 
-#Preview {
+#Preview("Screen") {
     MediaWatchLinksView(
         links: [
             WatchLink(provider: "Netflix", kind: .stream, url: nil, logoURL: nil),
@@ -84,6 +97,20 @@ struct MediaWatchLinksView: View {
         ],
         regionName: "United Kingdom",
         kind: .movie
+    )
+    .padding(Theme.Spacing.lg)
+}
+
+#Preview("Book") {
+    MediaWatchLinksView(
+        links: Destinations.readOrListenLinks(
+            kind: .book,
+            title: "Kafka on the Shore",
+            creator: "Haruki Murakami",
+            region: "GB"
+        ),
+        regionName: "United Kingdom",
+        kind: .book
     )
     .padding(Theme.Spacing.lg)
 }

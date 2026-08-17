@@ -14,12 +14,17 @@ struct WatchLink: Equatable, Hashable, Sendable {
     enum Kind: String, Equatable, Hashable, Sendable {
         case stream, rent, buy, link
 
-        var label: String {
+        /// How the entry reads in the UI.
+        ///
+        /// The media kind only matters for the catch-all: "Watch" is wrong
+        /// on a book, and a bare link there means we can search a shop, not
+        /// that it's stocked — so it reads "Find".
+        func label(for mediaKind: MediaKind? = nil) -> String {
             switch self {
             case .stream: "Stream"
             case .rent: "Rent"
             case .buy: "Buy"
-            case .link: "Watch"
+            case .link: mediaKind == .book || mediaKind == .album ? "Find" : "Watch"
             }
         }
     }
@@ -115,7 +120,33 @@ struct MediaDetailService: MediaDetailServicing {
         }
 
         detail.sourceURL = Self.sourceURL(source: source, kind: media.kind, externalID: externalID)
+        detail.watchLinks = Self.destinations(for: media, links: detail.watchLinks, region: region)
+        detail.watchRegion = region
         return detail
+    }
+
+    /// Where to actually watch, read, or listen to this.
+    ///
+    /// Screen availability comes from TMDB and is only re-pointed at the
+    /// providers themselves. Books and albums have no availability data at
+    /// any of our catalogs, so their links are built from the title and
+    /// creator instead.
+    static func destinations(
+        for media: Media,
+        links: [WatchLink],
+        region: String
+    ) -> [WatchLink] {
+        switch media.kind {
+        case .book, .album:
+            Destinations.readOrListenLinks(
+                kind: media.kind,
+                title: media.title,
+                creator: media.primaryCreator,
+                region: region
+            )
+        default:
+            Destinations.withProviderURLs(links, title: media.title, region: region)
+        }
     }
 
     private func tmdbDetail(

@@ -9,30 +9,32 @@ interface WatchLinksProps {
 }
 
 /**
- * Where you can watch this, for the region the request came from.
+ * Where you can actually watch, read, or listen to this.
  *
- * The region is always stated. Streaming rights differ by country, so a
- * bare list of providers is a claim we can't support — "on Netflix" is
- * only true somewhere.
+ * Screen availability comes from TMDB and is real: these providers carry
+ * the title in this region. The region is always stated, because rights
+ * differ by country and "on Netflix" is only true somewhere.
+ *
+ * Books and albums are a weaker claim and are labelled as one. No catalog
+ * we read holds availability for them, so their links run a search on each
+ * service rather than confirming it's stocked.
  */
 export function WatchLinks({ links, region, kind }: WatchLinksProps) {
-  // Only screen media has availability data; TMDB is the only provider
-  // that carries it, so books and albums render nothing at all rather
-  // than an empty section.
-  if (kind !== "movie" && kind !== "show") return null;
   if (links.length === 0) return null;
 
+  const searchOnly = kind === "book" || kind === "album";
   const where = regionName(region);
+  const heading = searchOnly
+    ? `Where to ${kind === "book" ? "read" : "listen"}`
+    : `Where to watch${where ? ` in ${where}` : ""}`;
 
   return (
     <section className="flex flex-col gap-2">
-      <h2 className="font-semibold text-(--color-text-primary)">
-        Where to watch{where ? ` in ${where}` : ""}
-      </h2>
+      <h2 className="font-semibold text-(--color-text-primary)">{heading}</h2>
 
       <ul className="flex flex-wrap gap-2">
         {links.map((link) => {
-          const label = `${watchKindLabel(link.kind)} on ${link.provider}`;
+          const label = `${watchKindLabel(link.kind, kind)} on ${link.provider}`;
           const content = (
             <span className="flex items-center gap-2 rounded-pill border border-(--color-separator) px-3 py-1.5 text-sm">
               {link.logoUrl && (
@@ -47,7 +49,9 @@ export function WatchLinks({ links, region, kind }: WatchLinksProps) {
                 />
               )}
               <span className="text-(--color-text-primary)">{link.provider}</span>
-              <span className="text-(--color-text-secondary)">{watchKindLabel(link.kind)}</span>
+              <span className="text-(--color-text-secondary)">
+                {watchKindLabel(link.kind, kind)}
+              </span>
             </span>
           );
 
@@ -66,7 +70,9 @@ export function WatchLinks({ links, region, kind }: WatchLinksProps) {
       </ul>
 
       <p className="text-xs text-(--color-text-secondary)">
-        Availability from TMDB. Rights change often and vary by country.
+        {searchOnly
+          ? "These search each service — we can't tell whether it's stocked."
+          : "Availability from TMDB. Rights change often and vary by country."}
       </p>
     </section>
   );
