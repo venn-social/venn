@@ -56,7 +56,7 @@ enum Destinations {
     ///
     /// Ordered: the first entry whose key the provider name starts with
     /// wins, so longer keys come first ("amazonprimevideo" before "amazon").
-    private static let screenProviders: [(key: String, url: (String, String) -> String)] = [
+    private static let screenProviders: [(key: String, url: @Sendable (String, String) -> String)] = [
         ("netflix", { query, _ in "https://www.netflix.com/search?q=\(query)" }),
         ("disneyplus", { query, _ in "https://www.disneyplus.com/browse/search?q=\(query)" }),
         ("appletv", { query, _ in "https://tv.apple.com/search?term=\(query)" }),
@@ -88,10 +88,10 @@ enum Destinations {
     }
 
     /// One place to read or listen, before the query is filled in.
-    private struct Destination {
+    private struct Destination: Sendable {
         let provider: String
         let kind: WatchLink.Kind
-        let url: (String, String) -> String
+        let url: @Sendable (String, String) -> String
     }
 
     /// Where to read a book. Same list for everyone; the storefront is
