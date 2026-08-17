@@ -22,13 +22,16 @@ struct ExplorerView: View {
 
     @State private var query = ""
     @State private var selectedCategory: ExplorerCategory = .all
-    @State private var viewModel: ExplorerViewModel?
+    @State private var path = NavigationPath()
+    /// The candidate currently being turned into a catalog row, so its
+    /// cell can show it is working rather than looking dead on tap.
+    @State private var opening: String?
     @State private var composerViewModel: ComposerViewModel?
     @State private var peopleViewModel: PeopleSearchViewModel?
     @State private var recommendations: RecommendationsViewModel?
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             Screen {
                 ScrollView {
                     VStack(alignment: .leading, spacing: Theme.Spacing.lg) {
@@ -73,9 +76,6 @@ struct ExplorerView: View {
         }
         .task { await ensureLoaded() }
         .onChange(of: selectedCategory) { _, newCategory in
-            if let kind = newCategory.browseKind {
-                Task { await viewModel?.load(kind: kind) }
-            }
             dispatchSearch(query: query, category: newCategory)
         }
         .onChange(of: query) { _, newQuery in
@@ -114,41 +114,13 @@ struct ExplorerView: View {
 
     // MARK: - Browse mode
 
+    /// The per-kind tabs, which now answer the same question the All tab
+    /// does. They used to list the newest rows in the catalog — what other
+    /// people happened to log, which belongs on a profile, not here.
     @ViewBuilder private var browseStack: some View {
-        if let viewModel {
-            switch viewModel.state {
-            case .loading:
-                DeferredLoadingView(caption: "Looking for something good…")
-            case let .loaded(media):
-                if media.isEmpty {
-                    browseEmptyView
-                } else {
-                    grid(media)
-                }
-            case let .error(reason):
-                ErrorStateView(reason: reason, unknownTitle: "Couldn't load recommendations") {
-                    if let kind = selectedCategory.browseKind {
-                        Task { await viewModel.load(kind: kind) }
-                    }
-                }
-            }
-        }
-    }
-
-    private func grid(_ media: [Media]) -> some View {
-        LazyVGrid(
-            columns: [
-                GridItem(.flexible(), spacing: Theme.Spacing.md),
-                GridItem(.flexible(), spacing: Theme.Spacing.md),
-            ],
-            spacing: Theme.Spacing.lg
-        ) {
-            ForEach(media) { item in
-                NavigationLink(value: item) {
-                    ExplorerMediaCell(media: item)
-                }
-                .buttonStyle(.plain)
-                .vennScrollDepth()
+        if let recommendations, let kind = selectedCategory.browseKind {
+            RecommendationsView(viewModel: recommendations, kind: kind) { candidate in
+                open(candidate)
             }
         }
     }
@@ -159,7 +131,7 @@ struct ExplorerView: View {
     @ViewBuilder private var recommendationsStack: some View {
         if let recommendations {
             RecommendationsView(viewModel: recommendations) { candidate in
-                composerViewModel?.pick(candidate)
+                open(candidate)
             }
         }
     }
@@ -215,14 +187,6 @@ struct ExplorerView: View {
         }
     }
 
-    private var browseEmptyView: some View {
-        EmptyStateView(
-            systemImage: "magnifyingglass",
-            title: "Nothing here yet",
-            message: "We don't have any \(selectedCategory.title.lowercased()) in the catalog yet."
-        )
-    }
-
     // MARK: - Search mode
 
     @ViewBuilder private var searchResultsStack: some View {
@@ -268,16 +232,51 @@ struct ExplorerView: View {
         )
     }
 
+    // MARK: - Opening a catalog result
+
+    /// Open a catalog result on its detail page.
+    ///
+    /// Tapping a recommendation used to open the composer, which re-ran the
+    /// search you had just done and made you pick the same thing again
+    /// before you could read anything about it — two taps to answer "what
+    /// is this", which is the first question. Mirrors web's
+    /// `useOpenCandidate` (rule 17).
+    ///
+    /// A catalog result has no row in `public.media` yet and so no detail
+    /// page to push, which is why it went to the composer at all.
+    /// `upsertMedia` is what logging would call moments later anyway and is
+    /// idempotent on (source, external id), so opening the same title twice
+    /// does not duplicate it. If the write fails we fall back to the
+    /// composer, which is the old behaviour and still better than a dead
+    /// tap.
+    private func open(_ candidate: MediaCandidate) {
+        guard opening == nil, let composerViewModel else { return }
+        opening = candidate.id
+
+        Task {
+            defer { opening = nil }
+            do {
+                let id = try await composerViewModel.upsertMedia(candidate)
+                path.append(Media(
+                    id: id,
+                    kind: candidate.kind,
+                    title: candidate.title,
+                    year: candidate.year,
+                    primaryCreator: candidate.primaryCreator,
+                    coverURL: candidate.coverURL,
+                    externalID: candidate.externalID,
+                    externalSource: candidate.externalSource,
+                    createdAt: Date()
+                ))
+            } catch {
+                composerViewModel.pick(candidate)
+            }
+        }
+    }
+
     // MARK: - Setup
 
     private func ensureLoaded() async {
-        if viewModel == nil {
-            let vm = ExplorerViewModel(service: ExplorerService(client: clientProvider.client))
-            viewModel = vm
-            if let kind = selectedCategory.browseKind {
-                await vm.load(kind: kind)
-            }
-        }
         if composerViewModel == nil {
             let tmdb = config.tmdbAPIKey.map { TMDBService(apiKey: $0, language: languageStore.current) }
             composerViewModel = ComposerViewModel(

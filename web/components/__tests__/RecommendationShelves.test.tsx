@@ -1,7 +1,16 @@
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { render, screen, waitFor } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
 import { RecommendationShelves } from "@/components/RecommendationShelves";
 import type { Shelf } from "@/lib/recommendations";
+
+const push = vi.fn();
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
+
+// Opening a catalog result creates its media row first, which is the whole
+// reason it can have a detail page at all.
+const upsertMedia = vi.fn(async () => "media-uuid");
+vi.mock("@/lib/compose", () => ({ upsertMedia: () => upsertMedia() }));
+vi.mock("@/lib/supabase/client", () => ({ createClient: () => ({}) }));
 
 function candidateShelf(source: Shelf["source"], seedTitle: string | null): Shelf {
   return {
@@ -43,11 +52,21 @@ describe("RecommendationShelves", () => {
     expect(screen.getByText("Trending this week")).toBeDefined();
   });
 
-  it("sends a catalog result to the composer, since it has no detail page yet", () => {
+  it("opens a catalog result on its detail page, not on a fresh search", () => {
+    // It used to link to /composer?q=<title>, which re-ran the search you
+    // had just done and made you pick the same item a second time.
     render(<RecommendationShelves shelves={[candidateShelf("trending", null)]} />);
-    const link = screen.getAllByRole("link")[0];
 
-    expect(link.getAttribute("href")).toBe("/composer?kind=movie&q=Title%201");
+    expect(screen.queryByRole("link")).toBeNull();
+    expect(screen.getAllByRole("button")[0]).toBeDefined();
+  });
+
+  it("creates the media row on the way through, then goes to it", async () => {
+    render(<RecommendationShelves shelves={[candidateShelf("trending", null)]} />);
+    screen.getAllByRole("button")[0].click();
+
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/media/media-uuid"));
+    expect(upsertMedia).toHaveBeenCalled();
   });
 
   it("renders nothing at all when there are no shelves", () => {

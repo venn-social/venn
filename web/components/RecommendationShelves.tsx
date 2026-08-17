@@ -1,7 +1,10 @@
+"use client";
+
 import Link from "next/link";
 import { MediaCover } from "@/components/MediaCover";
 import { shelfTitle } from "@/lib/recommendationCopy";
 import type { Shelf, ShelfItem } from "@/lib/recommendations";
+import { useOpenCandidate } from "@/lib/useOpenCandidate";
 
 interface RecommendationShelvesProps {
   shelves: Shelf[];
@@ -36,11 +39,16 @@ export function RecommendationShelves({ shelves }: RecommendationShelvesProps) {
 }
 
 /**
- * A catalog result is not in `public.media` yet, so it has no detail page
- * to open — it goes to the composer prefilled instead, which is also the
- * action someone wants after seeing something they like.
+ * Both sides of a shelf open the same thing: the item's detail page.
+ *
+ * A catalog result has no row in `public.media` yet, which is why this used
+ * to send you to the composer instead. `useOpenCandidate` creates the row
+ * on the way through, so "what is this" is one tap from either kind of
+ * item rather than two from one of them.
  */
 function ShelfCard({ item }: { item: ShelfItem }) {
+  const { open, openingId } = useOpenCandidate();
+
   if (item.kind === "media") {
     return (
       <Link href={`/media/${item.media.id}`} className="flex flex-col gap-1">
@@ -54,9 +62,11 @@ function ShelfCard({ item }: { item: ShelfItem }) {
 
   const { candidate } = item;
   return (
-    <Link
-      href={`/composer?kind=${candidate.kind}&q=${encodeURIComponent(candidate.title)}`}
-      className="flex flex-col gap-1"
+    <button
+      type="button"
+      onClick={() => void open(candidate)}
+      aria-busy={openingId === candidate.id}
+      className="flex flex-col gap-1 text-left"
     >
       <div className="flex h-[165px] items-center justify-center overflow-hidden rounded-md bg-(--color-surface-strong)">
         {candidate.coverUrl ? (
@@ -74,7 +84,7 @@ function ShelfCard({ item }: { item: ShelfItem }) {
         )}
       </div>
       <span className="line-clamp-2 text-xs text-(--color-text-secondary)">{candidate.title}</span>
-    </Link>
+    </button>
   );
 }
 

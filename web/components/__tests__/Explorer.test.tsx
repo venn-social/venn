@@ -5,6 +5,37 @@ import { Explorer } from "@/components/Explorer";
 const push = vi.fn();
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
 vi.mock("@/lib/supabase/client", () => ({ createClient: () => ({}) }));
+vi.mock("@/lib/compose", () => ({ upsertMedia: async () => "media-uuid" }));
+
+function shelfOf(title: string, kind: "movie" | "book") {
+  return {
+    source: "trending" as const,
+    seedTitle: null,
+    items: [
+      {
+        kind: "candidate" as const,
+        candidate: {
+          id: `tmdb:${kind}:${title}`,
+          title,
+          primaryCreator: null,
+          year: null,
+          coverUrl: null,
+          overview: null,
+          externalId: title,
+          externalSource: "tmdb" as const,
+          kind
+        }
+      }
+    ]
+  };
+}
+
+// One shelf holding both kinds, which is what the real feed produces and
+// what the per-kind filter actually has to cope with.
+const mixedShelf = {
+  ...shelfOf("A Film", "movie"),
+  items: [...shelfOf("A Film", "movie").items, ...shelfOf("A Book", "book").items]
+};
 
 const { searchProfiles, fetchRecentMedia } = vi.hoisted(() => ({
   searchProfiles: vi.fn(),
@@ -92,7 +123,9 @@ describe("Explorer", () => {
     expect(await screen.findByText("No one found")).toBeDefined();
   });
 
-  it("sends a picked media result to the composer with a prefill", async () => {
+  it("opens a picked search result on its detail page", async () => {
+    // It used to push /composer?q=<title>, which re-ran the search you had
+    // just done and made you pick the same thing again to read about it.
     render(<Explorer />);
     fireEvent.change(screen.getByPlaceholderText(/Search movies/), {
       target: { value: "past lives" }
@@ -101,12 +134,27 @@ describe("Explorer", () => {
     fireEvent.click(await screen.findByRole("button", { name: /Past Lives/ }));
 
     await waitFor(() => expect(push).toHaveBeenCalled());
-    expect(push.mock.calls[0][0]).toBe("/composer?kind=movie&q=Past+Lives");
+    expect(push.mock.calls[0][0]).toBe("/media/media-uuid");
   });
 
-  it("shows the empty-catalog state when a category has nothing to browse", async () => {
+  it("never shows Recently added, whatever the catalog holds", async () => {
+    // Per-kind tabs listed the newest rows in the catalog — what other
+    // people happened to log, which belongs on a profile page.
     render(<Explorer />);
     fireEvent.click(screen.getByRole("button", { name: "Movies" }));
-    expect(await screen.findByText("Nothing here yet")).toBeDefined();
+
+    expect(await screen.findByText("No recommendations yet")).toBeDefined();
+    expect(screen.queryByText("Recently added")).toBeNull();
+  });
+
+  it("shows the shelves for the kind chosen, and only those", async () => {
+    render(<Explorer shelves={[mixedShelf]} />);
+    fireEvent.click(screen.getByRole("button", { name: "Books" }));
+
+    expect(await screen.findByText("Trending this week")).toBeDefined();
+    // The title appears twice per card — as the cover placeholder and as
+    // the caption — so count cards, not text nodes.
+    expect(screen.getAllByText("A Book").length).toBeGreaterThan(0);
+    expect(screen.queryByText("A Film")).toBeNull();
   });
 });

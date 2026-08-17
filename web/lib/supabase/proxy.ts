@@ -7,6 +7,7 @@ import {
   PROFILE_COOKIE,
   PROFILE_COOKIE_MAX_AGE
 } from "@/lib/onboardingGate";
+import { supabaseAnonKey, supabaseUrl } from "@/lib/supabase/env";
 
 /**
  * Refreshes the Supabase session cookie on every request, and gates a
@@ -27,8 +28,8 @@ export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    supabaseUrl(),
+    supabaseAnonKey(),
     {
       cookies: {
         getAll() {

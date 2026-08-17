@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest";
 import type { MediaCandidate } from "@/lib/catalog/types";
-import type { MediaRow } from "@/lib/media";
+import { toMedia, type MediaRow } from "@/lib/media";
 import {
   assembleShelves,
+  shelfItemKind,
+  shelvesForKind,
   type CandidateShelf,
-  type RecommendationFeed
+  type RecommendationFeed,
+  type Shelf
 } from "@/lib/recommendations";
 
 function mediaRow(id: string, title: string): MediaRow {
@@ -201,5 +204,50 @@ describe("assembleShelves", () => {
     };
 
     expect(assembleShelves(feed, [])[0].items).toHaveLength(3);
+  });
+});
+
+describe("shelvesForKind", () => {
+  function shelf(items: Shelf["items"]): Shelf {
+    return { source: "trending", seedTitle: null, items };
+  }
+
+  const film = { kind: "candidate" as const, candidate: candidate("1", "A Film") };
+  const book = {
+    kind: "candidate" as const,
+    candidate: { ...candidate("2", "A Book"), kind: "book" as const }
+  };
+  const logged = toMedia(mediaRow("m1", "A Logged Film"));
+  if (!logged) throw new Error("fixture must convert");
+  const row = { kind: "media" as const, media: logged };
+
+  it("keeps only the items of the kind asked for", () => {
+    const [only] = shelvesForKind([shelf([film, book, row])], "movie");
+    expect(only.items.map((item) => shelfItemKind(item))).toEqual(["movie", "movie"]);
+  });
+
+  it("reads both sides of the union, not just candidates", () => {
+    const [books] = shelvesForKind([shelf([film, book, row])], "book");
+    expect(books.items).toHaveLength(1);
+    expect(shelfItemKind(books.items[0])).toBe("book");
+  });
+
+  it("drops a shelf that has nothing left rather than showing an empty row", () => {
+    expect(shelvesForKind([shelf([film, row])], "album")).toEqual([]);
+  });
+
+  it("keeps a shelf of one, unlike assembleShelves", () => {
+    // Three items is the bar across the whole catalog. Narrowed to one
+    // kind, the realistic choice is a short shelf or an empty tab — and the
+    // empty tab is what this change exists to remove.
+    const [thin] = shelvesForKind([shelf([film, book, row])], "book");
+    expect(thin.items).toHaveLength(1);
+  });
+
+  it("leaves the shelf's identity alone so headings still make sense", () => {
+    const named: Shelf = { source: "similar", seedTitle: "Her", items: [film, book] };
+    const [narrowed] = shelvesForKind([named], "movie");
+    expect(narrowed.source).toBe("similar");
+    expect(narrowed.seedTitle).toBe("Her");
   });
 });

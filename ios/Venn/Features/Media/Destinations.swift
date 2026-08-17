@@ -113,17 +113,17 @@ enum Destinations {
 
     /// Where to listen to an album.
     private static let albumDestinations: [Destination] = [
+        // Album-scoped: the bare /search/<q> lands on everything at once —
+        // songs, artists, playlists, podcasts — and the album is rarely the
+        // first thing you see.
         Destination(provider: "Spotify", kind: .stream) { query, _ in
-            "https://open.spotify.com/search/\(query)"
+            "https://open.spotify.com/search/\(query)/albums"
         },
         Destination(provider: "Apple Music", kind: .stream) { query, region in
             "https://music.apple.com/\(appleStorefront(region))/search?term=\(query)"
         },
         Destination(provider: "YouTube Music", kind: .stream) { query, _ in
             "https://music.youtube.com/search?q=\(query)"
-        },
-        Destination(provider: "Bandcamp", kind: .buy) { query, _ in
-            "https://bandcamp.com/search?q=\(query)"
         },
     ]
 

@@ -41,6 +41,14 @@ enum ShelfItem: Identifiable, Equatable, Sendable {
         case let .candidate(candidate): candidate.title
         }
     }
+
+    /// The media kind, whichever case this is.
+    var mediaKind: MediaKind {
+        switch self {
+        case let .media(media): media.kind
+        case let .candidate(candidate): candidate.kind
+        }
+    }
 }
 
 /// A shelf, ready to render.
@@ -153,5 +161,32 @@ enum RecommendationAssembler {
         }
 
         return shelves
+    }
+
+    /// The same shelves, narrowed to one media kind.
+    ///
+    /// Explorer's per-kind tabs used to show the newest rows in the
+    /// catalog — a list of what other people happened to log, which is the
+    /// profile page's job, not a recommendation. Filtering the shelves we
+    /// already built keeps every tab answering the question the All tab
+    /// answers. Mirrors web's `shelvesForKind` (rule 17).
+    ///
+    /// Unlike `assemble`, a surviving shelf needs only one item rather than
+    /// `minShelfItems`. Three is the bar when the whole catalog is in play;
+    /// narrowed to books alone the realistic choice is two recommendations
+    /// or none, and two beats an empty tab.
+    static func shelves(
+        _ shelves: [RecommendationShelf],
+        for kind: MediaKind
+    ) -> [RecommendationShelf] {
+        shelves.compactMap { shelf in
+            let items = shelf.items.filter { $0.mediaKind == kind }
+            guard !items.isEmpty else { return nil }
+            return RecommendationShelf(
+                source: shelf.source,
+                seedTitle: shelf.seedTitle,
+                items: items
+            )
+        }
     }
 }

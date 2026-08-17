@@ -98,24 +98,21 @@ describe("readOrListenLinks", () => {
       "Google Books"
     ]);
 
+    // Bandcamp is deliberately absent: it answers a plain search URL with
+    // a CAPTCHA, so the chip led to a puzzle rather than to the record.
     const albums = readOrListenLinks("album", "Kid A", "Radiohead", "GB");
-    expect(albums.map((l) => l.provider)).toEqual([
-      "Spotify",
-      "Apple Music",
-      "YouTube Music",
-      "Bandcamp"
-    ]);
+    expect(albums.map((l) => l.provider)).toEqual(["Spotify", "Apple Music", "YouTube Music"]);
   });
 
   it("includes the creator, because titles collide", () => {
     // "Kid A" alone is ambiguous on every music service.
     const [spotify] = readOrListenLinks("album", "Kid A", "Radiohead", "GB");
-    expect(spotify.url).toBe("https://open.spotify.com/search/Kid%20A%20Radiohead");
+    expect(spotify.url).toBe("https://open.spotify.com/search/Kid%20A%20Radiohead/albums");
   });
 
   it("works with no creator known", () => {
     const [spotify] = readOrListenLinks("album", "Kid A", null, "GB");
-    expect(spotify.url).toBe("https://open.spotify.com/search/Kid%20A");
+    expect(spotify.url).toBe("https://open.spotify.com/search/Kid%20A/albums");
   });
 
   it("points Kindle at the digital store and Amazon at print", () => {

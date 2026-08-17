@@ -132,7 +132,14 @@ const BOOK_DESTINATIONS: Destination[] = [
 
 /** Where to listen to an album. */
 const ALBUM_DESTINATIONS: Destination[] = [
-  { provider: "Spotify", kind: "stream", url: (q) => `https://open.spotify.com/search/${q}` },
+  {
+    provider: "Spotify",
+    kind: "stream",
+    // Album-scoped: the bare /search/<q> lands on everything at once —
+    // songs, artists, playlists, podcasts — and the album is rarely the
+    // first thing you see.
+    url: (q) => `https://open.spotify.com/search/${q}/albums`
+  },
   {
     provider: "Apple Music",
     kind: "stream",
@@ -142,8 +149,7 @@ const ALBUM_DESTINATIONS: Destination[] = [
     provider: "YouTube Music",
     kind: "stream",
     url: (q) => `https://music.youtube.com/search?q=${q}`
-  },
-  { provider: "Bandcamp", kind: "buy", url: (q) => `https://bandcamp.com/search?q=${q}` }
+  }
 ];
 
 /** Lowercased letters and digits only, so spelling and tier drop out. */
