@@ -209,4 +209,59 @@ struct RecommendationAssemblerTests {
             feed: feed, candidateShelves: []
         )[0].items.count == 3)
     }
+
+    // MARK: - Narrowing to one kind
+
+    private static let film = ShelfItem.candidate(candidate("1", kind: .movie))
+    private static let book = ShelfItem.candidate(candidate("2", kind: .book))
+    private static let row = ShelfItem.media(media(1))
+
+    private static func shelf(_ items: [ShelfItem]) -> RecommendationShelf {
+        RecommendationShelf(source: .trending, seedTitle: nil, items: items)
+    }
+
+    @Test("keeps only the items of the kind asked for")
+    func keepsOnlyTheKindAskedFor() {
+        let narrowed = RecommendationAssembler.shelves(
+            [Self.shelf([Self.film, Self.book, Self.row])], for: .movie
+        )
+        #expect(narrowed[0].items.map(\.mediaKind) == [.movie, .movie])
+    }
+
+    @Test("reads both sides of the union, not just candidates")
+    func readsBothSidesOfTheUnion() {
+        let books = RecommendationAssembler.shelves(
+            [Self.shelf([Self.film, Self.book, Self.row])], for: .book
+        )
+        #expect(books[0].items.count == 1)
+        #expect(books[0].items[0].mediaKind == .book)
+    }
+
+    @Test("drops a shelf that has nothing left rather than showing an empty row")
+    func dropsAnEmptiedShelf() {
+        #expect(RecommendationAssembler.shelves(
+            [Self.shelf([Self.film, Self.row])], for: .album
+        ).isEmpty)
+    }
+
+    @Test("keeps a shelf of one, unlike assembleShelves")
+    func keepsAThinShelf() {
+        // Three items is the bar across the whole catalog. Narrowed to one
+        // kind the realistic choice is a short shelf or an empty tab, and
+        // the empty tab is what this change exists to remove.
+        let thin = RecommendationAssembler.shelves(
+            [Self.shelf([Self.film, Self.book, Self.row])], for: .book
+        )
+        #expect(thin[0].items.count == 1)
+    }
+
+    @Test("leaves the shelf's identity alone so headings still make sense")
+    func keepsShelfIdentity() {
+        let named = RecommendationShelf(
+            source: .similar, seedTitle: "Her", items: [Self.film, Self.book]
+        )
+        let narrowed = RecommendationAssembler.shelves([named], for: .movie)
+        #expect(narrowed[0].source == .similar)
+        #expect(narrowed[0].seedTitle == "Her")
+    }
 }

@@ -144,6 +144,16 @@ final class ComposerViewModel {
         loggedMediaID = nil
     }
 
+    /// Put a catalog result into `public.media` and return its row id,
+    /// without logging anything about it.
+    ///
+    /// Explorer uses this to open a recommendation's detail page: a catalog
+    /// result exists nowhere in our database, so there is no detail page to
+    /// push until the row exists. Idempotent on (source, external id).
+    func upsertMedia(_ candidate: MediaCandidate) async throws -> UUID {
+        try await service.upsertMedia(candidate: candidate)
+    }
+
     /// Deselect — returns the UI to the search results list.
     func clearPick() {
         selectedCandidate = nil

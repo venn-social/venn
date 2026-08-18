@@ -69,6 +69,7 @@ export default async function FeedPage() {
             <PostActions
               postId={post.id}
               userId={user.id}
+              postAuthorId={post.author.id}
               likeCount={likes[post.id]?.likeCount ?? 0}
               likedByMe={likes[post.id]?.likedByMe ?? false}
               commentCount={commentCounts[post.id] ?? 0}

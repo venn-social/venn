@@ -1,7 +1,5 @@
 "use client";
 
-import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { CandidateList } from "@/components/CandidateList";
 import {
@@ -10,16 +8,14 @@ import {
   searchKindsFor,
   type ExploreCategory
 } from "@/components/CategoryChips";
-import { MediaCover } from "@/components/MediaCover";
 import { ProfileRow } from "@/components/ProfileRow";
 import type { MediaCandidate } from "@/lib/catalog/types";
-import { fetchRecentMedia } from "@/lib/explore";
-import type { Media } from "@/lib/media";
 import { searchProfiles } from "@/lib/people";
 import type { UserProfile } from "@/lib/profile";
 import { RecommendationShelves } from "@/components/RecommendationShelves";
-import type { Shelf } from "@/lib/recommendations";
+import { shelvesForKind, type Shelf } from "@/lib/recommendations";
 import { createClient } from "@/lib/supabase/client";
+import { useOpenCandidate } from "@/lib/useOpenCandidate";
 
 const SEARCH_DEBOUNCE_MS = 350;
 
@@ -30,12 +26,11 @@ interface ExplorerProps {
 
 /** Ports ExplorerView.swift: category chips over a search field. */
 export function Explorer({ shelves = [] }: ExplorerProps) {
-  const router = useRouter();
+  const { open: openCandidate } = useOpenCandidate();
   const [category, setCategory] = useState<ExploreCategory>("all");
   const [query, setQuery] = useState("");
   const [people, setPeople] = useState<UserProfile[]>([]);
   const [candidates, setCandidates] = useState<MediaCandidate[]>([]);
-  const [browse, setBrowse] = useState<Media[]>([]);
   const [searching, setSearching] = useState(false);
   const [error, setError] = useState("");
 
@@ -46,24 +41,8 @@ export function Explorer({ shelves = [] }: ExplorerProps) {
   const visiblePeople = trimmed.length === 0 ? [] : people;
   const visibleCandidates = trimmed.length === 0 ? [] : candidates;
   const browseKind = browseKindFor(category);
-
-  // Browse panel: only for the four single-kind categories.
-  useEffect(() => {
-    if (!browseKind) return;
-    let cancelled = false;
-
-    fetchRecentMedia(createClient(), browseKind)
-      .then((media) => {
-        if (!cancelled) setBrowse(media);
-      })
-      .catch(() => {
-        if (!cancelled) setBrowse([]);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [browseKind]);
+  // Derived, not fetched: the shelves are already here, just narrower.
+  const kindShelves = browseKind ? shelvesForKind(shelves, browseKind) : [];
 
   // Search. The effect owns only the debounced fetch.
   useEffect(() => {
@@ -101,11 +80,6 @@ export function Explorer({ shelves = [] }: ExplorerProps) {
     return () => clearTimeout(timer);
   }, [query, category]);
 
-  function openComposer(candidate: MediaCandidate) {
-    const params = new URLSearchParams({ kind: candidate.kind, q: candidate.title });
-    router.push(`/composer?${params.toString()}`);
-  }
-
   return (
     <div className="flex flex-col gap-4">
       <CategoryChips value={category} onChange={setCategory} />
@@ -140,23 +114,19 @@ export function Explorer({ shelves = [] }: ExplorerProps) {
         />
       )}
 
+      {/* Per-kind tabs answer the same question the All tab does. They used
+          to list the newest rows in the catalog, which is what other people
+          happened to log — the profile page's job, not Explorer's. */}
       {trimmed.length === 0 && browseKind && (
-        <section className="flex flex-col gap-3">
-          <h2 className="font-semibold text-(--color-text-primary)">Recently added</h2>
-          {browse.length === 0 ? (
-            <Prompt title="Nothing here yet" message="Search to find something to log." />
-          ) : (
-            <ul className="grid grid-cols-3 gap-2">
-              {browse.map((media) => (
-                <li key={media.id}>
-                  <Link href={`/media/${media.id}`}>
-                    <MediaCover media={media} />
-                  </Link>
-                </li>
-              ))}
-            </ul>
+        <>
+          <RecommendationShelves shelves={kindShelves} />
+          {kindShelves.length === 0 && (
+            <Prompt
+              title="No recommendations yet"
+              message="Log a few things you liked and they'll show up here."
+            />
           )}
-        </section>
+        </>
       )}
 
       {category === "people" && trimmed.length > 0 && !searching && (
@@ -175,7 +145,7 @@ export function Explorer({ shelves = [] }: ExplorerProps) {
         </>
       )}
 
-      {category !== "people" && <CandidateList candidates={visibleCandidates} onPick={openComposer} />}
+      {category !== "people" && <CandidateList candidates={visibleCandidates} onPick={(c) => void openCandidate(c)} />}
     </div>
   );
 }

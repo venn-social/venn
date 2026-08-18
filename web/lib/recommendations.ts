@@ -146,3 +146,30 @@ function itemKey(item: ShelfItem): string | null {
   if (!externalSource || !externalId) return null;
   return candidateId(externalSource, kind, externalId);
 }
+
+/** The media kind a shelf item is, whichever side of the union it is on. */
+export function shelfItemKind(item: ShelfItem): MediaKind {
+  return item.kind === "media" ? item.media.kind : item.candidate.kind;
+}
+
+/**
+ * The same shelves, narrowed to one media kind.
+ *
+ * Explorer's per-kind tabs used to show "Recently added" — the newest rows
+ * in the catalog, which is a list of what other people happened to log, not
+ * a recommendation. Filtering the shelves we already built keeps the tabs
+ * answering the same question the All tab answers.
+ *
+ * Unlike `assembleShelves`, a surviving shelf needs only one item rather
+ * than MIN_SHELF_ITEMS. A shelf of three is the bar when the whole catalog
+ * is in play; after narrowing to books alone the realistic choice is two
+ * recommendations or none, and two is worth more than an empty tab.
+ */
+export function shelvesForKind(shelves: Shelf[], kind: MediaKind): Shelf[] {
+  return shelves
+    .map((shelf) => ({
+      ...shelf,
+      items: shelf.items.filter((item) => shelfItemKind(item) === kind)
+    }))
+    .filter((shelf) => shelf.items.length > 0);
+}

@@ -107,7 +107,9 @@ struct DestinationsTests {
         let albums = Destinations.readOrListenLinks(
             kind: .album, title: "Kid A", creator: "Radiohead", region: "GB"
         )
-        #expect(albums.map(\.provider) == ["Spotify", "Apple Music", "YouTube Music", "Bandcamp"])
+        // Bandcamp is deliberately absent: it answers a plain search URL
+        // with a CAPTCHA, so the chip led to a puzzle rather than a record.
+        #expect(albums.map(\.provider) == ["Spotify", "Apple Music", "YouTube Music"])
     }
 
     @Test("includes the creator, because titles collide")
@@ -116,7 +118,8 @@ struct DestinationsTests {
         let links = Destinations.readOrListenLinks(
             kind: .album, title: "Kid A", creator: "Radiohead", region: "GB"
         )
-        #expect(links[0].url?.absoluteString == "https://open.spotify.com/search/Kid%20A%20Radiohead")
+        #expect(links[0].url?.absoluteString
+            == "https://open.spotify.com/search/Kid%20A%20Radiohead/albums")
     }
 
     @Test("works with no creator known")
@@ -124,7 +127,7 @@ struct DestinationsTests {
         let links = Destinations.readOrListenLinks(
             kind: .album, title: "Kid A", creator: nil, region: "GB"
         )
-        #expect(links[0].url?.absoluteString == "https://open.spotify.com/search/Kid%20A")
+        #expect(links[0].url?.absoluteString == "https://open.spotify.com/search/Kid%20A/albums")
     }
 
     @Test("points Kindle at the digital store and Amazon at print")

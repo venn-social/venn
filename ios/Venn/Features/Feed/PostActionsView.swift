@@ -1,7 +1,17 @@
 import SwiftUI
 
-/// Like button and comment count under a feed row. Mirrors web's
-/// `PostActions.tsx` in behaviour and copy (CLAUDE.md rule 17).
+/// Like button and comment count under a feed row, with the thread opening
+/// in place. Mirrors web's `PostActions.tsx` in behaviour and copy
+/// (CLAUDE.md rule 17).
+///
+/// Commenting used to mean pushing the permalink and coming back, which
+/// loses your place in the feed and turns a reply into a trip. The comments
+/// now expand under the post instead.
+///
+/// They load on first expand rather than with the feed: a feed screen holds
+/// many posts and most threads are never opened, so fetching them all up
+/// front would be the larger part of the cost, spent mostly on things
+/// nobody reads.
 ///
 /// Optimistic in both directions, unlike `FollowViewModel`: following has an
 /// outcome the client can't predict (a private account turns a follow into a
@@ -13,10 +23,13 @@ struct PostActionsView: View {
     let userID: UUID
     let commentCount: Int
     let service: any SocialServicing
-    /// Set in the feed, where the comment count is the way through to the
-    /// conversation. Nil on the permalink itself — the thread is already
-    /// below, and a link back to the current screen is a dead end.
+    /// Set in the feed, where tapping the tally opens the thread in place.
+    /// Nil on the permalink itself — the thread is already below, and
+    /// expanding a second copy of it would be nonsense.
     let postDestination: FeedPost?
+
+    @State private var expanded = false
+    @State private var commentsViewModel: PostDetailViewModel?
 
     @State private var liked: Bool
     @State private var likeCount: Int
@@ -40,6 +53,22 @@ struct PostActionsView: View {
     }
 
     var body: some View {
+        VStack(alignment: .leading, spacing: Theme.Spacing.md) {
+            controls
+
+            if expanded, let commentsViewModel, let postDestination {
+                Divider()
+                CommentThreadView(
+                    viewModel: commentsViewModel,
+                    viewerID: userID,
+                    postAuthorID: postDestination.post.authorID,
+                    showsHeading: false
+                )
+            }
+        }
+    }
+
+    private var controls: some View {
         HStack(spacing: Theme.Spacing.lg) {
             Button(action: toggleLike) {
                 HStack(spacing: Theme.Spacing.xs) {
@@ -61,11 +90,10 @@ struct PostActionsView: View {
             .disabled(working)
             .accessibilityLabel(liked ? "Unlike this post" : "Like this post")
 
-            if let postDestination {
-                NavigationLink(value: postDestination) {
-                    commentTally
-                }
-                .buttonStyle(.plain)
+            if postDestination != nil {
+                Button(action: toggleComments) { commentTally }
+                    .buttonStyle(.plain)
+                    .accessibilityHint(expanded ? "Hides the comments" : "Shows the comments")
             } else {
                 commentTally
             }
@@ -86,6 +114,16 @@ struct PostActionsView: View {
             }
         }
         .accessibilityLabel(commentCount == 1 ? "1 comment" : "\(commentCount) comments")
+    }
+
+    /// Open or close the thread, loading it the first time only.
+    private func toggleComments() {
+        expanded.toggle()
+        guard expanded, commentsViewModel == nil else { return }
+
+        let model = PostDetailViewModel(postID: postID, service: service)
+        commentsViewModel = model
+        Task { await model.load() }
     }
 
     private func toggleLike() {
