@@ -1,9 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { EMPTY_DETAIL, sourceUrlFor, type MediaDetail } from "@/lib/catalog/detail";
+import { readOrListenLinks, withProviderUrls } from "@/lib/catalog/destinations";
+import { EMPTY_DETAIL, sourceUrlFor, type MediaDetail, type WatchLink } from "@/lib/catalog/detail";
 import { fetchMusicBrainzDetail } from "@/lib/catalog/musicBrainz";
 import { fetchOpenLibraryDetail } from "@/lib/catalog/openLibrary";
 import { fetchTMDBDetail } from "@/lib/catalog/tmdb";
-import { toMedia, type Media, type MediaRow } from "@/lib/media";
+import { toMedia, type Media, type MediaKind, type MediaRow } from "@/lib/media";
 
 /** One catalog row by id. Null when it doesn't exist — the page 404s. */
 export async function fetchMediaById(
@@ -42,12 +43,35 @@ export async function loadMediaDetail(media: Media, region: string): Promise<Med
 
   try {
     const detail = await fetchFromProvider(media, region);
-    return { ...detail, sourceUrl };
+    return { ...detail, sourceUrl, ...destinations(media, detail.watchLinks, region) };
   } catch {
     // Still give them the link out, even if we couldn't enrich — and say
     // that we failed rather than implying the item simply has no detail.
-    return { ...EMPTY_DETAIL, sourceUrl, unavailable: true };
+    return { ...EMPTY_DETAIL, sourceUrl, unavailable: true, ...destinations(media, [], region) };
   }
+}
+
+/**
+ * Where to actually watch, read, or listen to this.
+ *
+ * Screen availability comes from TMDB and is only re-pointed at the
+ * providers themselves. Books and albums have no availability data at any
+ * of our catalogs, so their links are built from the title and creator —
+ * which is why they survive the provider being down, and why they're
+ * applied on the failure path too.
+ */
+function destinations(
+  media: Media,
+  links: WatchLink[],
+  region: string
+): Pick<MediaDetail, "watchLinks" | "watchRegion"> {
+  if (media.kind === "book" || media.kind === "album") {
+    return {
+      watchLinks: readOrListenLinks(media.kind, media.title, media.primaryCreator, region),
+      watchRegion: region
+    };
+  }
+  return { watchLinks: withProviderUrls(links, media.title, region), watchRegion: region };
 }
 
 function fetchFromProvider(media: Media, region: string): Promise<MediaDetail> {
@@ -78,8 +102,17 @@ export function formatRuntime(minutes: number | null): string | null {
   return `${hours}h ${rest}m`;
 }
 
-/** How an availability entry reads in the UI. */
-export function watchKindLabel(kind: "stream" | "rent" | "buy" | "link"): string {
+/**
+ * How an availability entry reads in the UI.
+ *
+ * The media kind only matters for the catch-all: "Watch" is wrong on a
+ * book, and a bare link there means we can search a shop, not that it's
+ * stocked — so it reads "Find".
+ */
+export function watchKindLabel(
+  kind: "stream" | "rent" | "buy" | "link",
+  mediaKind?: MediaKind
+): string {
   switch (kind) {
     case "stream":
       return "Stream";
@@ -88,7 +121,7 @@ export function watchKindLabel(kind: "stream" | "rent" | "buy" | "link"): string
     case "buy":
       return "Buy";
     default:
-      return "Watch";
+      return mediaKind === "book" || mediaKind === "album" ? "Find" : "Watch";
   }
 }
 
