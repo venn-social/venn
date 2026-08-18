@@ -146,9 +146,12 @@ struct FeedView: View {
         }
     }
 
-    /// Like button and comment tally. `id` forces a fresh view once the
-    /// counts arrive — `PostActionsView` seeds `@State` from its initial
-    /// values, so without this the feed would show zeros forever.
+    /// Like button, comment tally, and the thread when it is expanded.
+    ///
+    /// Deliberately *not* given a fresh identity when the counts arrive:
+    /// `PostActionsView` now watches `info` and reseeds itself. Re-creating
+    /// it would collapse an open comment thread and throw away the comments
+    /// it had loaded, every time the counts landed or the feed refreshed.
     private func actions(
         for feedPost: FeedPost,
         viewerID: UUID,
@@ -163,7 +166,6 @@ struct FeedView: View {
             service: SocialService(client: clientProvider.client),
             postDestination: feedPost
         )
-        .id(social)
     }
 
     private var emptyView: some View {
