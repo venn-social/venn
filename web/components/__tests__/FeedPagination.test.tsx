@@ -11,7 +11,21 @@ vi.mock("@/lib/supabase/client", () => ({
   createClient: () => ({})
 }));
 
-const { fetchFeedPage } = vi.hoisted(() => ({ fetchFeedPage: vi.fn() }));
+const { fetchFeedPage, fetchLikeInfo, fetchCommentCounts } = vi.hoisted(() => ({
+  fetchFeedPage: vi.fn(),
+  fetchLikeInfo: vi.fn(),
+  fetchCommentCounts: vi.fn()
+}));
+
+vi.mock("@/lib/likes", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/likes")>("@/lib/likes");
+  return { ...actual, fetchLikeInfo };
+});
+
+vi.mock("@/lib/comments", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/comments")>("@/lib/comments");
+  return { ...actual, fetchCommentCounts };
+});
 
 vi.mock("@/lib/feed", async () => {
   const actual = await vi.importActual<typeof import("@/lib/feed")>("@/lib/feed");
@@ -26,6 +40,8 @@ const observers: (() => void)[] = [];
 beforeEach(() => {
   observers.length = 0;
   fetchFeedPage.mockReset();
+  fetchLikeInfo.mockReset().mockResolvedValue({});
+  fetchCommentCounts.mockReset().mockResolvedValue({});
 
   vi.stubGlobal(
     "IntersectionObserver",
@@ -108,6 +124,35 @@ describe("FeedPagination", () => {
 
     await screen.findByText("Film 2");
     await waitFor(() => expect(fetchFeedPage).toHaveBeenCalledTimes(1));
+  });
+
+  it("gives later pages the same like and comment controls as the first", async () => {
+    // They had none: FeedRow was rendered without `actions`, so every post
+    // past page 1 was unlikeable and uncommentable.
+    fetchFeedPage.mockResolvedValue([post("2", "2026-07-31T10:00:00Z")]);
+    fetchLikeInfo.mockResolvedValue({ "2": { likeCount: 2, likedByMe: true } });
+    fetchCommentCounts.mockResolvedValue({ "2": 3 });
+
+    render(
+      <FeedPagination viewerId="viewer" initialCursor="2026-08-01T10:00:00Z" initialHasMore />
+    );
+
+    expect(await screen.findByText("Film 2")).toBeDefined();
+    await waitFor(() => expect(screen.getByRole("button", { name: /comment/i })).toBeDefined());
+    expect(screen.getByText("3")).toBeDefined();
+  });
+
+  it("still renders the page when the counts fail to load", async () => {
+    // Social counts are decoration; losing them must not cost the posts.
+    fetchFeedPage.mockResolvedValue([post("2", "2026-07-31T10:00:00Z")]);
+    fetchLikeInfo.mockRejectedValue(new Error("down"));
+    fetchCommentCounts.mockRejectedValue(new Error("down"));
+
+    render(
+      <FeedPagination viewerId="viewer" initialCursor="2026-08-01T10:00:00Z" initialHasMore />
+    );
+
+    expect(await screen.findByText("Film 2")).toBeDefined();
   });
 
   it("offers a retry when a page fails instead of failing silently", async () => {

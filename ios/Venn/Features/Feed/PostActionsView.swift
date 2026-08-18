@@ -21,6 +21,9 @@ import SwiftUI
 struct PostActionsView: View {
     let postID: UUID
     let userID: UUID
+    /// The server's view of the likes. Kept so the view can reseed itself
+    /// when the counts arrive, instead of being replaced wholesale.
+    let info: LikeInfo
     let commentCount: Int
     let service: any SocialServicing
     /// Set in the feed, where tapping the tally opens the thread in place.
@@ -45,6 +48,7 @@ struct PostActionsView: View {
     ) {
         self.postID = postID
         self.userID = userID
+        self.info = info
         self.commentCount = commentCount
         self.service = service
         self.postDestination = postDestination
@@ -55,6 +59,15 @@ struct PostActionsView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.md) {
             controls
+                // Seed from the counts when they arrive, rather than
+                // letting the feed hand this view a new identity to force
+                // it. Re-identifying would rebuild the whole view — losing
+                // an open thread and the comments it had already loaded —
+                // every time the counts landed or the feed refreshed.
+                .onChange(of: info) { _, latest in
+                    liked = latest.likedByMe
+                    likeCount = latest.likeCount
+                }
 
             if expanded, let commentsViewModel, let postDestination {
                 Divider()
