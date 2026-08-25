@@ -42,6 +42,14 @@ const PLANE = 120_000;
 const DRAG_SLOP = 4;
 /** How far you must roam before we go looking for more posts. */
 const FETCH_EVERY_PX = 2_400;
+/**
+ * Posts to have in hand before the plane settles.
+ *
+ * A screen holds roughly thirty cells, and showing thirty different covers
+ * needs at least thirty posts. One page is twenty, so the plane fills up
+ * front rather than waiting for you to wander into the repeats.
+ */
+const TARGET_POOL = 60;
 
 interface SpatialFeedProps {
   initialPosts: FeedPost[];
@@ -97,6 +105,28 @@ export function SpatialFeed({ initialPosts, initialCursor, initialHasMore }: Spa
     } finally {
       loading.current = false;
     }
+  }, []);
+
+  // Fill the pool before the plane settles, so there are enough distinct
+  // covers to fill a screen without repeating one.
+  useEffect(() => {
+    let cancelled = false;
+    async function fill() {
+      while (!cancelled && hasMore.current && posts.length < TARGET_POOL) {
+        const before = posts.length;
+        await loadMore();
+        // loadMore is a no-op while one is in flight; without this the
+        // loop would spin.
+        if (posts.length === before) break;
+      }
+    }
+    void fill();
+    return () => {
+      cancelled = true;
+    };
+    // Deliberately mount-only: this is the initial fill, and re-running it
+    // as the pool grows is what the distance-based fetch below is for.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Start in the middle, so there is as much plane behind you as ahead.
@@ -282,9 +312,20 @@ function columnOffset(col: number): number {
  * Which cells are on screen, and what each one holds.
  *
  * The post is chosen from the cell's own coordinates, so a spot's content
- * never changes while you pan. The two multipliers are coprime with each
- * other, which keeps neighbouring cells on different posts instead of
- * banding the plane into stripes of the same cover.
+ * never changes while you pan.
+ *
+ * Which post, though, is the whole difficulty. The obvious arithmetic —
+ * scatter the pool with a couple of multipliers — puts the same cover on
+ * screen twice constantly, because two cells collide whenever their
+ * coordinate difference happens to be a multiple of the pool size, and at
+ * small pool sizes that is most of them.
+ *
+ * Instead the pool is laid out as one block, sized so it is wider and
+ * taller than the viewport, and that block tiles the plane. A repeat is
+ * then always at least one full screen away in both directions: when the
+ * pool is big enough to fill a screen, you never see the same artwork
+ * twice at once. When it is not, the layout still spaces the repeats as
+ * far apart as the pool allows, which is the best available answer.
  */
 export function visibleCells(
   view: { left: number; top: number; width: number; height: number },
@@ -297,11 +338,35 @@ export function visibleCells(
   const firstRow = Math.floor(view.top / CELL_H) - OVERSCAN;
   const lastRow = Math.ceil((view.top + view.height) / CELL_H) + OVERSCAN;
 
+  // One larger than what fits in each direction, so a repeat sits off
+  // screen rather than at the far edge of it.
+  const wanted = {
+    w: Math.ceil(view.width / CELL_W) + 2,
+    h: Math.ceil(view.height / CELL_H) + 2
+  };
+
+  let blockW: number;
+  let blockH: number;
+  if (wanted.w * wanted.h <= poolSize) {
+    // Enough posts to fill a screen with no repeat at all.
+    blockW = wanted.w;
+    blockH = wanted.h;
+  } else {
+    // Not enough. Shrink the block keeping the viewport's proportions, so
+    // what repeats is as far away as it can be in *both* directions —
+    // taking the full width first would make the block one row tall and
+    // stack the same cover directly above itself.
+    const scale = Math.sqrt(poolSize / (wanted.w * wanted.h));
+    blockW = Math.max(1, Math.floor(wanted.w * scale));
+    blockH = Math.max(1, Math.floor(poolSize / blockW));
+  }
+
   const cells: { col: number; row: number; index: number }[] = [];
   for (let col = firstCol; col <= lastCol; col += 1) {
     for (let row = firstRow; row <= lastRow; row += 1) {
-      const raw = col * 7 + row * 11;
-      cells.push({ col, row, index: ((raw % poolSize) + poolSize) % poolSize });
+      const x = ((col % blockW) + blockW) % blockW;
+      const y = ((row % blockH) + blockH) % blockH;
+      cells.push({ col, row, index: x + y * blockW });
     }
   }
   return cells;

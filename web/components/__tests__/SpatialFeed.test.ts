@@ -62,13 +62,49 @@ describe("visibleCells", () => {
     }
   });
 
-  it("does not band the plane into stripes of one cover", () => {
-    // Neighbouring cells landing on the same post is what a naive
-    // (col + row) mapping produces, and it looks broken.
-    const cells = visibleCells(view, 12);
-    const neighbours = cells.filter((c) => c.col === 0 && c.row >= 0 && c.row <= 2);
-    const indexes = neighbours.map((c) => c.index);
+  it("never shows the same artwork twice on one screen, given enough posts", () => {
+    // The complaint this replaced a scattering formula to fix: the same
+    // covers kept landing near each other. With a pool big enough to fill
+    // a screen, a screenful must now be entirely distinct.
+    const screen = { left: 0, top: 0, width: 1100, height: 760 };
+    const onScreen = visibleCells(screen, 60).filter(
+      (c) => c.col >= 0 && c.col <= 5 && c.row >= 0 && c.row <= 2
+    );
+
+    const indexes = onScreen.map((c) => c.index);
     expect(new Set(indexes).size).toBe(indexes.length);
+  });
+
+  it("holds that promise wherever you have wandered to", () => {
+    // Distinctness must not be an accident of starting at the origin.
+    for (const [left, top] of [
+      [12_345, 67_890],
+      [-4_321, 9_876],
+      [1_000_000, -1_000_000]
+    ]) {
+      const cells = visibleCells({ left, top, width: 1100, height: 760 }, 60);
+      const firstCol = Math.floor(left / 190);
+      const firstRow = Math.floor(top / 290);
+      const onScreen = cells.filter(
+        (c) =>
+          c.col >= firstCol && c.col <= firstCol + 5 && c.row >= firstRow && c.row <= firstRow + 2
+      );
+      const indexes = onScreen.map((c) => c.index);
+      expect(new Set(indexes).size).toBe(indexes.length);
+    }
+  });
+
+  it("still spaces repeats as far as it can when there are too few posts", () => {
+    // Twelve posts cannot fill a thirty-cell screen, so repeats are
+    // arithmetic rather than a bug. Neighbours must still differ.
+    const cells = visibleCells({ left: 0, top: 0, width: 1100, height: 760 }, 12);
+    const at = (col: number, row: number) =>
+      cells.find((c) => c.col === col && c.row === row)?.index;
+
+    for (let col = 0; col <= 4; col += 1) {
+      expect(at(col, 0)).not.toBe(at(col + 1, 0));
+      expect(at(col, 0)).not.toBe(at(col, 1));
+    }
   });
 
   it("renders nothing rather than dividing by zero on an empty feed", () => {
