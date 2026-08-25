@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { ComposerLauncher } from "@/components/ComposerLauncher";
 import { PlusIcon } from "@/components/Icon";
 import { SideMenu } from "@/components/SideMenu";
 import { usePathname } from "next/navigation";
@@ -28,13 +29,18 @@ const TABS = [
 interface AppNavProps {
   /** Unread notifications. Rendered as a badge on Activity; 0 hides it. */
   unreadCount?: number;
+  /**
+   * The viewer, so the composer can open over the current page. Null falls
+   * back to the standalone route, which redirects if they are signed out.
+   */
+  userId?: string | null;
 }
 
-export function AppNav({ unreadCount = 0 }: AppNavProps) {
+export function AppNav({ unreadCount = 0, userId = null }: AppNavProps) {
   const pathname = usePathname();
 
   return (
-        // No bottom rule: the nav reads as floating over the page rather
+    // No bottom rule: the nav reads as floating over the page rather
     // than as a bar bolted to the top of it. The translucent ground
     // plus a blur keeps the labels legible while content passes
     // beneath, which a flat opaque strip with no edge could not.
@@ -63,15 +69,28 @@ export function AppNav({ unreadCount = 0 }: AppNavProps) {
           );
         })}
         <li>
-          <Link
-            href="/composer"
-            // Same pill, same accent — just the glyph instead of the word.
-            // The label moves to aria-label so it still announces as "Log".
-            aria-label="Log"
-            className="flex h-8 w-8 items-center justify-center rounded-pill bg-(--color-accent) text-(--color-on-accent)"
-          >
-            <PlusIcon size={18} />
-          </Link>
+          {/* Opens over whatever you are looking at. Logging is a detour by
+              nature — you are always in the middle of something else when
+              you decide to log — so being sent to a page and having to come
+              back was the wrong shape. Signed-out or scripted callers still
+              get the real route. */}
+          {userId ? (
+            <ComposerLauncher
+              userId={userId}
+              label="Log"
+              className="flex h-8 w-8 items-center justify-center rounded-pill bg-(--color-accent) text-(--color-on-accent)"
+            >
+              <PlusIcon size={18} />
+            </ComposerLauncher>
+          ) : (
+            <Link
+              href="/composer"
+              aria-label="Log"
+              className="flex h-8 w-8 items-center justify-center rounded-pill bg-(--color-accent) text-(--color-on-accent)"
+            >
+              <PlusIcon size={18} />
+            </Link>
+          )}
         </li>
       </ul>
     </nav>

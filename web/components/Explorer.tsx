@@ -2,13 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { CandidateList } from "@/components/CandidateList";
-import {
-  browseKindFor,
-  CategoryChips,
-  searchKindsFor,
-  type ExploreCategory
-} from "@/components/CategoryChips";
+import { browseKindFor, searchKindsFor, type ExploreCategory } from "@/components/CategoryChips";
 import { ProfileRow } from "@/components/ProfileRow";
+import { SearchPanel } from "@/components/SearchPanel";
 import type { MediaCandidate } from "@/lib/catalog/types";
 import { searchProfiles } from "@/lib/people";
 import type { UserProfile } from "@/lib/profile";
@@ -82,26 +78,13 @@ export function Explorer({ shelves = [] }: ExplorerProps) {
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Categories and search are one panel rather than two controls
-          stacked with a gap. They are a single act — pick a slice, then
-          narrow it — and the gap made them look like unrelated steps.
-          Bleeds to the column's edges and hangs from the very top of the
-          page, square where it meets the nav and rounded where it lets go
-          of it. The field carries no border of its own: the panel's edge
-          is already saying where it starts. */}
-      <div className="-mx-4 overflow-hidden rounded-b-2xl border border-t-0 border-(--color-separator) bg-(--color-background)">
-        <div className="px-4 pt-3">
-          <CategoryChips value={category} onChange={setCategory} />
-        </div>
-
-        <input
-          type="text"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder="Search movies, TV, music, books, people"
-          className="w-full bg-transparent px-4 py-3 text-sm text-(--color-text-primary) outline-none placeholder:text-(--color-text-secondary)"
-        />
-      </div>
+      <SearchPanel
+        category={category}
+        onCategoryChange={setCategory}
+        query={query}
+        onQueryChange={setQuery}
+        placeholder="Search movies, TV, music, books, people"
+      />
 
       {error && <p className="text-sm text-red-500">{error}</p>}
       {searching && <p className="text-(--color-text-secondary)">Searching…</p>}

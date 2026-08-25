@@ -39,7 +39,7 @@ beforeEach(() => {
 });
 
 async function pickTheMovie() {
-  fireEvent.change(screen.getByPlaceholderText("Search"), { target: { value: "past lives" } });
+  fireEvent.change(screen.getByPlaceholderText("Search movies, TV, music, books"), { target: { value: "past lives" } });
   fireEvent.click(await screen.findByRole("button", { name: /Past Lives/ }));
 }
 
@@ -89,7 +89,7 @@ describe("Composer", () => {
     render(<Composer userId="u1" initialKind="book" initialQuery="piranesi" />);
 
     expect(screen.getByDisplayValue("piranesi")).toBeDefined();
-    expect(screen.getByRole("button", { name: "Books" }).getAttribute("aria-pressed")).toBe("true");
+    expect(screen.getByRole("tab", { name: "Books" }).getAttribute("aria-selected")).toBe("true");
     // The prefilled query searches immediately, without retyping.
     expect(await screen.findByRole("button", { name: /Past Lives/ })).toBeDefined();
   });

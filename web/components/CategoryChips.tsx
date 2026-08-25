@@ -41,16 +41,23 @@ export function browseKindFor(category: ExploreCategory): MediaKind | null {
 interface CategoryChipsProps {
   value: ExploreCategory;
   onChange: (next: ExploreCategory) => void;
+  /**
+   * Categories to leave out. The composer drops "people": you cannot log a
+   * person, and offering the tab would lead somewhere with nothing to do.
+   */
+  exclude?: ExploreCategory[];
 }
 
-export function CategoryChips({ value, onChange }: CategoryChipsProps) {
+export function CategoryChips({ value, onChange, exclude = [] }: CategoryChipsProps) {
+  const shown = CATEGORIES.filter(({ category }) => !exclude.includes(category));
+
   return (
     // Underline tabs, matching the Collection / Watchlist control on the
     // profile. These pick which slice of the catalog you are looking at,
     // which is the same job those tabs do — a row of filled pills read as
     // six competing actions instead of one choice among six.
     <div role="tablist" aria-label="Search category" className="flex gap-4 border-b border-(--color-separator)">
-      {CATEGORIES.map(({ category, label }) => {
+      {shown.map(({ category, label }) => {
         const selected = value === category;
         return (
           <button

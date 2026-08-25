@@ -17,7 +17,7 @@ export default async function ExplorerPage() {
   const shelves = await loadShelves(supabase);
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-lg flex-col px-4 pt-0 pb-8">
+    <main className="mx-auto flex min-h-screen max-w-lg flex-col px-4 pt-5 pb-8">
       <Explorer shelves={shelves} />
     </main>
   );
