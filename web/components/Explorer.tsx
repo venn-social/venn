@@ -2,13 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { CandidateList } from "@/components/CandidateList";
-import {
-  browseKindFor,
-  CategoryChips,
-  searchKindsFor,
-  type ExploreCategory
-} from "@/components/CategoryChips";
+import { browseKindFor, searchKindsFor, type ExploreCategory } from "@/components/CategoryChips";
 import { ProfileRow } from "@/components/ProfileRow";
+import { SearchPanel } from "@/components/SearchPanel";
 import type { MediaCandidate } from "@/lib/catalog/types";
 import { searchProfiles } from "@/lib/people";
 import type { UserProfile } from "@/lib/profile";
@@ -82,14 +78,12 @@ export function Explorer({ shelves = [] }: ExplorerProps) {
 
   return (
     <div className="flex flex-col gap-4">
-      <CategoryChips value={category} onChange={setCategory} />
-
-      <input
-        type="text"
-        value={query}
-        onChange={(event) => setQuery(event.target.value)}
+      <SearchPanel
+        category={category}
+        onCategoryChange={setCategory}
+        query={query}
+        onQueryChange={setQuery}
         placeholder="Search movies, TV, music, books, people"
-        className="rounded-sm border border-(--color-separator) bg-(--color-surface-strong) px-3 py-2 text-(--color-text-primary) outline-none"
       />
 
       {error && <p className="text-sm text-red-500">{error}</p>}
@@ -145,7 +139,9 @@ export function Explorer({ shelves = [] }: ExplorerProps) {
         </>
       )}
 
-      {category !== "people" && <CandidateList candidates={visibleCandidates} onPick={(c) => void openCandidate(c)} />}
+      {category !== "people" && (
+        <CandidateList candidates={visibleCandidates} onPick={(c) => void openCandidate(c)} />
+      )}
     </div>
   );
 }

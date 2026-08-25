@@ -1,4 +1,5 @@
 import { AppNav } from "@/components/AppNav";
+import { LaunchSplash } from "@/components/LaunchSplash";
 import { fetchUnreadCount } from "@/lib/notifications";
 import { createClient } from "@/lib/supabase/server";
 
@@ -14,6 +15,9 @@ import { createClient } from "@/lib/supabase/server";
  */
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
 
   // A failed count must not take the whole shell down with it — every
   // signed-in page renders through here. No badge is the right fallback.
@@ -26,7 +30,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <>
-      <AppNav unreadCount={unreadCount} />
+      <LaunchSplash />
+      <AppNav unreadCount={unreadCount} userId={user?.id ?? null} />
       {children}
     </>
   );

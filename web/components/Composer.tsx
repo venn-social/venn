@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AddToListPicker } from "@/components/AddToListPicker";
 import { CandidateList } from "@/components/CandidateList";
+import { searchKindsFor, type ExploreCategory } from "@/components/CategoryChips";
+import { SearchPanel } from "@/components/SearchPanel";
 import { RatingChips } from "@/components/RatingChips";
 import type { MediaCandidate } from "@/lib/catalog/types";
 import {
@@ -17,12 +19,19 @@ import type { MediaKind } from "@/lib/media";
 import { sanitizeCaption } from "@/lib/sanitize";
 import { createClient } from "@/lib/supabase/client";
 
-const KINDS: { kind: MediaKind; label: string }[] = [
-  { kind: "movie", label: "Movies" },
-  { kind: "show", label: "Shows" },
-  { kind: "book", label: "Books" },
-  { kind: "album", label: "Albums" }
-];
+/** The tab that owns a kind, for callers that arrive with one already. */
+function categoryForKind(kind: MediaKind): ExploreCategory {
+  switch (kind) {
+    case "movie":
+      return "movies";
+    case "show":
+      return "tv";
+    case "album":
+      return "music";
+    default:
+      return "books";
+  }
+}
 
 const SEARCH_DEBOUNCE_MS = 350;
 
@@ -33,20 +42,26 @@ const SEARCH_DEBOUNCE_MS = 350;
 export function Composer({
   userId,
   initialKind = "movie",
-  initialQuery = ""
+  initialQuery = "",
+  initialPicked = null,
+  onDone
 }: {
   userId: string;
   initialKind?: MediaKind;
   initialQuery?: string;
+  /** Opened for a title that is already decided — skips straight to the form. */
+  initialPicked?: MediaCandidate | null;
+  /** Called when the composer has finished its job, so a host can close it. */
+  onDone?: () => void;
 }) {
   const router = useRouter();
   // Read once as initial state rather than synced: Explorer links here with
   // a prefill, but after that the composer owns its own state.
-  const [kind, setKind] = useState<MediaKind>(initialKind);
+  const [category, setCategory] = useState<ExploreCategory>(categoryForKind(initialKind));
   const [query, setQuery] = useState(initialQuery);
   const [candidates, setCandidates] = useState<MediaCandidate[]>([]);
   const [searching, setSearching] = useState(false);
-  const [picked, setPicked] = useState<MediaCandidate | null>(null);
+  const [picked, setPicked] = useState<MediaCandidate | null>(initialPicked);
   const [rating, setRating] = useState<RatingChoice | null>(null);
   const [caption, setCaption] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -73,12 +88,20 @@ export function Composer({
     const timer = setTimeout(async () => {
       setSearching(true);
       try {
-        const response = await fetch(
-          `/api/catalog/search?kind=${kind}&q=${encodeURIComponent(trimmed)}`
+        // "All" covers four kinds, so this is one request each rather than
+        // one request — the same shape Explorer uses for the same tabs.
+        const kinds = searchKindsFor(category);
+        const responses = await Promise.all(
+          kinds.map(async (mediaKind) => {
+            const response = await fetch(
+              `/api/catalog/search?kind=${mediaKind}&q=${encodeURIComponent(trimmed)}`
+            );
+            const json = await response.json();
+            if (!response.ok) throw new Error(json.error ?? "Search failed.");
+            return (json.candidates ?? []) as MediaCandidate[];
+          })
         );
-        const json = await response.json();
-        if (!response.ok) throw new Error(json.error ?? "Search failed.");
-        setCandidates(json.candidates ?? []);
+        setCandidates(responses.flat());
         setError("");
       } catch (searchError) {
         setCandidates([]);
@@ -89,7 +112,7 @@ export function Composer({
     }, SEARCH_DEBOUNCE_MS);
 
     return () => clearTimeout(timer);
-  }, [query, kind]);
+  }, [query, category]);
 
   async function submit(action: "log" | "watchlist") {
     if (!picked) return;
@@ -144,9 +167,7 @@ export function Composer({
           </h1>
           <p className="text-(--color-text-secondary)">
             {picked.title}{" "}
-            {logged.action === "watchlist"
-              ? "is on your watchlist."
-              : "is in your collection."}
+            {logged.action === "watchlist" ? "is on your watchlist." : "is in your collection."}
           </p>
         </div>
 
@@ -155,7 +176,10 @@ export function Composer({
         <div className="flex gap-3">
           <button
             type="button"
-            onClick={() => router.push("/feed")}
+            // In a sheet, Done means "put this away and give me back the
+            // page I was on". Only the standalone route has nowhere to
+            // return to, and there the feed is the right destination.
+            onClick={() => (onDone ? onDone() : router.push("/feed"))}
             className="rounded-pill bg-(--color-accent) px-4 py-2 font-semibold text-(--color-on-accent)"
           >
             Done
@@ -228,32 +252,15 @@ export function Composer({
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-xl font-semibold text-(--color-text-primary)">Log something</h1>
-
-      <div className="flex gap-2">
-        {KINDS.map((option) => (
-          <button
-            key={option.kind}
-            type="button"
-            aria-pressed={kind === option.kind}
-            onClick={() => setKind(option.kind)}
-            className={
-              kind === option.kind
-                ? "rounded-pill bg-(--color-accent) px-3 py-1.5 text-sm font-semibold text-(--color-on-accent)"
-                : "rounded-pill border border-(--color-separator) px-3 py-1.5 text-sm text-(--color-text-primary)"
-            }
-          >
-            {option.label}
-          </button>
-        ))}
-      </div>
-
-      <input
-        type="text"
-        value={query}
-        onChange={(event) => setQuery(event.target.value)}
-        placeholder="Search"
-        className="rounded-sm border border-(--color-separator) bg-(--color-surface-strong) px-3 py-2 text-(--color-text-primary) outline-none"
+      <SearchPanel
+        category={category}
+        onCategoryChange={setCategory}
+        query={query}
+        onQueryChange={setQuery}
+        placeholder="Search movies, TV, music, books"
+        // No "people" tab: you cannot log a person, and the tab would lead
+        // somewhere with nothing to do.
+        exclude={["people"]}
       />
 
       {error && <p className="text-sm text-red-500">{error}</p>}

@@ -1,11 +1,12 @@
 import { headers } from "next/headers";
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { DetailUnavailable } from "@/components/DetailUnavailable";
 import { MediaCover } from "@/components/MediaCover";
 import { StarIcon } from "@/components/Icon";
+import { ComposerLauncher } from "@/components/ComposerLauncher";
 import { WatchLinks } from "@/components/WatchLinks";
 import { regionFrom } from "@/lib/catalog/detail";
+import { candidateFromMedia } from "@/lib/catalog/types";
 import { fetchMediaById, formatRuntime, loadMediaDetail } from "@/lib/mediaDetail";
 import { mediaMetadata } from "@/lib/media";
 import { createClient } from "@/lib/supabase/server";
@@ -68,12 +69,13 @@ export default async function MediaPage({ params }: MediaPageProps) {
             )}
           </div>
 
-          <Link
-            href={`/composer?kind=${media.kind}&q=${encodeURIComponent(media.title)}`}
+          <ComposerLauncher
+            userId={user.id}
+            initialPicked={candidateFromMedia(media)}
             className="mt-2 self-start rounded-pill bg-(--color-accent) px-4 py-1.5 text-sm font-semibold text-(--color-on-accent)"
           >
             Log this
-          </Link>
+          </ComposerLauncher>
         </div>
       </div>
 

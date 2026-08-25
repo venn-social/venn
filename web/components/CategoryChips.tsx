@@ -41,23 +41,35 @@ export function browseKindFor(category: ExploreCategory): MediaKind | null {
 interface CategoryChipsProps {
   value: ExploreCategory;
   onChange: (next: ExploreCategory) => void;
+  /**
+   * Categories to leave out. The composer drops "people": you cannot log a
+   * person, and offering the tab would lead somewhere with nothing to do.
+   */
+  exclude?: ExploreCategory[];
 }
 
-export function CategoryChips({ value, onChange }: CategoryChipsProps) {
+export function CategoryChips({ value, onChange, exclude = [] }: CategoryChipsProps) {
+  const shown = CATEGORIES.filter(({ category }) => !exclude.includes(category));
+
   return (
-    <div className="flex flex-wrap gap-2">
-      {CATEGORIES.map(({ category, label }) => {
+    // Underline tabs, matching the Collection / Watchlist control on the
+    // profile. These pick which slice of the catalog you are looking at,
+    // which is the same job those tabs do — a row of filled pills read as
+    // six competing actions instead of one choice among six.
+    <div role="tablist" aria-label="Search category" className="flex gap-4 border-b border-(--color-separator)">
+      {shown.map(({ category, label }) => {
         const selected = value === category;
         return (
           <button
             key={category}
             type="button"
-            aria-pressed={selected}
+            role="tab"
+            aria-selected={selected}
             onClick={() => onChange(category)}
             className={
               selected
-                ? "rounded-pill bg-(--color-accent) px-3 py-1.5 text-sm font-semibold text-(--color-on-accent)"
-                : "rounded-pill border border-(--color-separator) px-3 py-1.5 text-sm text-(--color-text-primary)"
+                ? "-mb-px border-b-2 border-(--color-accent) pb-2 font-semibold text-(--color-text-primary)"
+                : "-mb-px border-b-2 border-transparent pb-2 text-(--color-text-secondary) hover:text-(--color-text-primary)"
             }
           >
             {label}

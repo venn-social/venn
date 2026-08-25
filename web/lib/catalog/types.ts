@@ -36,6 +36,40 @@ export function candidateId(
 }
 
 /**
+ * The catalog identity of a row we already have.
+ *
+ * A `Media` row and a `MediaCandidate` describe the same thing either side
+ * of being saved, and everything a candidate needs is already on the row.
+ * Letting the composer start from one means opening it for a specific
+ * title does not have to go back through a search to find what the caller
+ * was already looking at.
+ *
+ * Null for a hand-typed row, which has no catalog identity to rebuild.
+ */
+export function candidateFromMedia(media: {
+  kind: MediaKind;
+  title: string;
+  year: number | null;
+  primaryCreator: string | null;
+  coverUrl: string | null;
+  externalSource: ExternalSource | null;
+  externalId: string | null;
+}): MediaCandidate | null {
+  if (!media.externalSource || !media.externalId) return null;
+  return {
+    id: candidateId(media.externalSource, media.kind, media.externalId),
+    title: media.title,
+    primaryCreator: media.primaryCreator,
+    year: media.year,
+    coverUrl: media.coverUrl,
+    overview: null,
+    externalId: media.externalId,
+    externalSource: media.externalSource,
+    kind: media.kind
+  };
+}
+
+/**
  * Pulls a year out of the assorted date shapes these APIs return
  * ("2023-06-02", "2016-05", "1999"). Ports ExternalAPI.year(from:).
  */

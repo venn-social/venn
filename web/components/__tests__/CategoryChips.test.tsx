@@ -34,20 +34,20 @@ describe("CategoryChips", () => {
   it("renders all six categories with iOS's titles", () => {
     render(<CategoryChips value="all" onChange={() => {}} />);
     for (const label of ["All", "People", "Movies", "TV", "Music", "Books"]) {
-      expect(screen.getByRole("button", { name: label })).toBeDefined();
+      expect(screen.getByRole("tab", { name: label })).toBeDefined();
     }
   });
 
   it("reports the selected category", () => {
     const onChange = vi.fn();
     render(<CategoryChips value="all" onChange={onChange} />);
-    fireEvent.click(screen.getByRole("button", { name: "People" }));
+    fireEvent.click(screen.getByRole("tab", { name: "People" }));
     expect(onChange).toHaveBeenCalledWith("people");
   });
 
-  it("marks the current category as pressed", () => {
+  it("marks the current category as selected", () => {
     render(<CategoryChips value="books" onChange={() => {}} />);
-    expect(screen.getByRole("button", { name: "Books" }).getAttribute("aria-pressed")).toBe("true");
-    expect(screen.getByRole("button", { name: "All" }).getAttribute("aria-pressed")).toBe("false");
+    expect(screen.getByRole("tab", { name: "Books" }).getAttribute("aria-selected")).toBe("true");
+    expect(screen.getByRole("tab", { name: "All" }).getAttribute("aria-selected")).toBe("false");
   });
 });
