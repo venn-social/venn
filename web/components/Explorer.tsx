@@ -82,20 +82,26 @@ export function Explorer({ shelves = [] }: ExplorerProps) {
 
   return (
     <div className="flex flex-col gap-4">
-      <CategoryChips value={category} onChange={setCategory} />
+      {/* Categories and search are one panel rather than two controls
+          stacked with a gap. They are a single act — pick a slice, then
+          narrow it — and the gap made them look like unrelated steps.
+          Bleeds to the column's edges and hangs from the very top of the
+          page, square where it meets the nav and rounded where it lets go
+          of it. The field carries no border of its own: the panel's edge
+          is already saying where it starts. */}
+      <div className="-mx-4 overflow-hidden rounded-b-2xl border border-t-0 border-(--color-separator) bg-(--color-background)">
+        <div className="px-4 pt-3">
+          <CategoryChips value={category} onChange={setCategory} />
+        </div>
 
-      <input
-        type="text"
-        value={query}
-        onChange={(event) => setQuery(event.target.value)}
-        placeholder="Search movies, TV, music, books, people"
-        // Sits on the page's own ground rather than on a raised panel,
-        // so it reads as part of the page instead of a control bolted
-        // onto it. The hairline is all that is left to say where it
-        // starts, and it firms up on focus so the field is still
-        // obviously findable once you are typing in it.
-        className="rounded-pill border border-(--color-separator) bg-(--color-background) px-4 py-1.5 text-sm text-(--color-text-primary) outline-none placeholder:text-(--color-text-secondary) focus:border-(--color-text-secondary)"
-      />
+        <input
+          type="text"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Search movies, TV, music, books, people"
+          className="w-full bg-transparent px-4 py-3 text-sm text-(--color-text-primary) outline-none placeholder:text-(--color-text-secondary)"
+        />
+      </div>
 
       {error && <p className="text-sm text-red-500">{error}</p>}
       {searching && <p className="text-(--color-text-secondary)">Searching…</p>}
