@@ -30,22 +30,12 @@ describe("LaunchSplash", () => {
     expect(container.innerHTML).toBe("");
   });
 
-  it("shows the still mark instead of the video under Reduce Motion", () => {
-    stubMedia({ "(prefers-reduced-motion: reduce)": true });
+  it("shows the mark, and no video at all", () => {
+    // The video was dropped from both platforms; nothing should try to
+    // load one.
     const { container } = render(<LaunchSplash />);
 
     expect(container.querySelector("video")).toBeNull();
     expect(container.querySelector("svg")).not.toBeNull();
-  });
-
-  it("picks the video that matches the colour scheme", () => {
-    stubMedia({ "(prefers-color-scheme: dark)": true });
-    const { container } = render(<LaunchSplash />);
-    expect(container.querySelector("video")?.getAttribute("src")).toContain("dark");
-  });
-
-  it("uses the light video otherwise", () => {
-    const { container } = render(<LaunchSplash />);
-    expect(container.querySelector("video")?.getAttribute("src")).toContain("light");
   });
 });

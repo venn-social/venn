@@ -61,11 +61,26 @@ describe("ComposerLauncher", () => {
     open();
     // A click inside the sheet must not dismiss it, or picking a title
     // would close the thing you picked it in.
-    fireEvent.click(screen.getByRole("heading", { name: "Log something" }));
+    fireEvent.click(screen.getByRole("tab", { name: "Movies" }));
     expect(screen.getByRole("dialog")).toBeDefined();
 
     fireEvent.click(screen.getByRole("dialog"));
     expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  it("renders into the body, so a stacking context cannot trap it", () => {
+    // The nav is sticky with a z-index, which makes it a stacking context.
+    // A sheet opened from the plus button and rendered in place is sealed
+    // inside it, and no z-index of its own can lift it out.
+    const { container } = render(
+      <div style={{ position: "sticky", zIndex: 10 }}>
+        <ComposerLauncher userId="u1">Log this</ComposerLauncher>
+      </div>
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Log this" }));
+    expect(container.querySelector('[role="dialog"]')).toBeNull();
+    expect(document.body.querySelector('[role="dialog"]')).not.toBeNull();
   });
 
   it("names the trigger when it is only an icon", () => {

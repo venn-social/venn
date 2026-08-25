@@ -32,14 +32,17 @@ export function RatingChips({ value, onChange }: RatingChipsProps) {
             // Clicking the current choice clears it, so skipping needs no
             // separate control.
             onClick={() => onChange(selected ? null : choice)}
+            // The word said what the icon already says. It moves to the
+            // accessible name, which is the only place it was doing work.
+            aria-label={label}
+            title={label}
             className={
               selected
-                ? "flex items-center gap-1.5 rounded-pill border border-(--color-accent) bg-(--color-accent) px-4 py-2 font-semibold text-(--color-on-accent)"
-                : "flex items-center gap-1.5 rounded-pill border border-(--color-separator) px-4 py-2 font-semibold text-(--color-text-primary)"
+                ? "flex h-11 w-11 items-center justify-center rounded-pill bg-(--color-accent) text-(--color-on-accent)"
+                : "flex h-11 w-11 items-center justify-center rounded-pill border border-(--color-separator) text-(--color-text-secondary) hover:text-(--color-text-primary)"
             }
           >
             <Icon filled={selected && choice === "love"} />
-            {label}
           </button>
         );
       })}

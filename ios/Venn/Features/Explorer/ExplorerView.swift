@@ -98,18 +98,12 @@ struct ExplorerView: View {
 
     // MARK: - Categories
 
-    /// Wrapped in a horizontal ScrollView so all chips fit any screen width.
     private var categoryPicker: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            GlassSegmentedControl(
-                items: ExplorerCategory.allCases,
-                selection: $selectedCategory,
-                title: \.title,
-                systemImage: \.icon
-            )
-            .frame(minWidth: 640)
-        }
-        .scrollClipDisabled()
+        CategoryTabs(
+            items: ExplorerCategory.allCases,
+            selection: $selectedCategory,
+            title: \.title
+        )
     }
 
     // MARK: - Browse mode

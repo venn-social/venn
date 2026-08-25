@@ -1,8 +1,13 @@
 import SwiftUI
 
-/// A rounded search field with a leading magnifying glass and a clear
-/// button. Presentational — the owner decides what to do with `text`
-/// (filtering, querying). Used at the top of Explorer.
+/// A search field: a magnifying glass, the text, and a way to clear it.
+///
+/// One hairline underneath rather than a filled, rounded box. Mirrors web,
+/// where the field under the category tabs carries no border of its own —
+/// its placeholder says what it is, and a filled rectangle inside a screen
+/// of hairlines was the loudest thing on it.
+///
+/// Presentational: the owner decides what to do with `text`.
 struct SearchField: View {
     @Binding var text: String
     var prompt: LocalizedStringKey
@@ -31,9 +36,12 @@ struct SearchField: View {
             }
         }
         .font(Theme.Font.callout)
-        .padding(.horizontal, Theme.Spacing.md)
         .padding(.vertical, Theme.Spacing.sm + Theme.Spacing.xxs)
-        .background(Theme.Color.surface, in: .rect(cornerRadius: Theme.Radius.md))
+        .overlay(alignment: .bottom) {
+            Rectangle()
+                .fill(Theme.Color.separator)
+                .frame(height: 1)
+        }
         .accessibilityIdentifier("search_field")
     }
 }

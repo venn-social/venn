@@ -47,7 +47,7 @@ describe("Composer", () => {
   it("shows results for a query and lets one be picked", async () => {
     render(<Composer userId="u1" />);
     await pickTheMovie();
-    expect(await screen.findByRole("button", { name: "Log it" })).toBeDefined();
+    expect(await screen.findByRole("button", { name: "Log" })).toBeDefined();
   });
 
   it("logs a rated post when a sentiment is chosen", async () => {
@@ -55,7 +55,7 @@ describe("Composer", () => {
     await pickTheMovie();
 
     fireEvent.click(screen.getByRole("button", { name: /Love/ }));
-    fireEvent.click(screen.getByRole("button", { name: "Log it" }));
+    fireEvent.click(screen.getByRole("button", { name: "Log" }));
 
     await waitFor(() => expect(createPost).toHaveBeenCalled());
     expect(createPost.mock.calls[0][1]).toMatchObject({ action: "rated", rating: 5 });
@@ -65,7 +65,7 @@ describe("Composer", () => {
     render(<Composer userId="u1" />);
     await pickTheMovie();
 
-    fireEvent.click(screen.getByRole("button", { name: "Log it" }));
+    fireEvent.click(screen.getByRole("button", { name: "Log" }));
 
     await waitFor(() => expect(createPost).toHaveBeenCalled());
     expect(createPost.mock.calls[0][1]).toMatchObject({ action: "logged", rating: null });
@@ -75,7 +75,7 @@ describe("Composer", () => {
     render(<Composer userId="u1" />);
     await pickTheMovie();
 
-    fireEvent.click(screen.getByRole("button", { name: "Add to watchlist" }));
+    fireEvent.click(screen.getByRole("button", { name: "Watchlist" }));
 
     await waitFor(() => expect(createPost).toHaveBeenCalled());
     expect(createPost.mock.calls[0][1]).toMatchObject({
@@ -101,7 +101,7 @@ describe("Composer", () => {
     render(<Composer userId="u1" />);
     await pickTheMovie();
 
-    fireEvent.click(screen.getByRole("button", { name: "Log it" }));
+    fireEvent.click(screen.getByRole("button", { name: "Log" }));
 
     expect(await screen.findByText(/logging very fast/)).toBeDefined();
   });
@@ -111,10 +111,11 @@ describe("Composer", () => {
     render(<Composer userId="u1" />);
     await pickTheMovie();
 
-    fireEvent.click(screen.getByRole("button", { name: "Log it" }));
+    fireEvent.click(screen.getByRole("button", { name: "Log" }));
 
     expect(await screen.findByText("Logged")).toBeDefined();
-    expect(screen.getByText(/is in your collection/)).toBeDefined();
+    // The sentence went; the heading carries it now.
+    expect(screen.getByRole("heading", { name: "Logged" })).toBeDefined();
     expect(screen.getByRole("button", { name: "Also add to a list" })).toBeDefined();
   });
 
@@ -122,9 +123,9 @@ describe("Composer", () => {
     render(<Composer userId="u1" />);
     await pickTheMovie();
 
-    fireEvent.click(screen.getByRole("button", { name: "Add to watchlist" }));
+    fireEvent.click(screen.getByRole("button", { name: "Watchlist" }));
 
     expect(await screen.findByText("Saved")).toBeDefined();
-    expect(screen.getByText(/is on your watchlist/)).toBeDefined();
+    expect(screen.getByRole("heading", { name: "Saved" })).toBeDefined();
   });
 });
