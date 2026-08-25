@@ -2,17 +2,16 @@ import SwiftUI
 
 /// Full-screen brand splash shown once at app startup.
 ///
-/// `onCompletion` fires when the launch video finishes playing, or after a
-/// short hold for Reduce Motion users (who see `StaticLaunchMark` instead of
-/// the video). Owners drive splash dismissal off this callback rather than a
-/// hardcoded timer so the brand intro always plays to its natural end.
+/// Just the mark, held for a beat. There was a launch video here on both
+/// platforms; it did not look good and has been dropped, and what is left
+/// is the still mark that used to be the Reduce Motion fallback. A launch
+/// state still earns its place — the app has work to do before it can show
+/// anything — but it does not need a film to do it.
 struct LaunchVideoSplashView: View {
-    private static let reduceMotionHoldDuration: Duration = .seconds(1.5)
+    private static let holdDuration: Duration = .seconds(1.0)
 
     var onCompletion: (@MainActor () -> Void)?
 
-    @Environment(\.accessibilityReduceMotion)
-    private var reduceMotion
     @Environment(\.colorScheme)
     private var colorScheme
 
@@ -23,23 +22,12 @@ struct LaunchVideoSplashView: View {
             variant.backgroundColor
                 .ignoresSafeArea()
 
-            if reduceMotion {
-                StaticLaunchMark(color: variant.markColor)
-                    .task {
-                        try? await Task.sleep(for: Self.reduceMotionHoldDuration)
-                        guard !Task.isCancelled else { return }
-                        onCompletion?()
-                    }
-            } else {
-                VennVideoPlayer(
-                    resource: variant.launchVideo,
-                    backgroundColor: variant.uiBackgroundColor,
-                    onCompletion: onCompletion
-                )
-                .id(variant.launchVideo.name)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .ignoresSafeArea()
-            }
+            StaticLaunchMark(color: variant.markColor)
+                .task {
+                    try? await Task.sleep(for: Self.holdDuration)
+                    guard !Task.isCancelled else { return }
+                    onCompletion?()
+                }
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Venn loading")

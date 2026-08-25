@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AddToListPicker } from "@/components/AddToListPicker";
 import { CandidateList } from "@/components/CandidateList";
+import { ChevronLeftIcon } from "@/components/Icon";
 import { searchKindsFor, type ExploreCategory } from "@/components/CategoryChips";
 import { SearchPanel } from "@/components/SearchPanel";
 import { RatingChips } from "@/components/RatingChips";
@@ -165,10 +166,7 @@ export function Composer({
           <h1 className="text-xl font-semibold text-(--color-text-primary)">
             {logged.action === "watchlist" ? "Saved" : "Logged"}
           </h1>
-          <p className="text-(--color-text-secondary)">
-            {picked.title}{" "}
-            {logged.action === "watchlist" ? "is on your watchlist." : "is in your collection."}
-          </p>
+          <p className="text-(--color-text-secondary)">{picked.title}</p>
         </div>
 
         <AddToListPicker userId={userId} mediaId={logged.mediaId} />
@@ -194,9 +192,9 @@ export function Composer({
               setCaption("");
               setQuery("");
             }}
-            className="px-4 py-2 font-semibold text-(--color-text-secondary)"
+            className="px-2 py-2 font-semibold text-(--color-text-secondary) hover:text-(--color-text-primary)"
           >
-            Log something else
+            Log another
           </button>
         </div>
       </div>
@@ -209,9 +207,10 @@ export function Composer({
         <button
           type="button"
           onClick={() => setPicked(null)}
-          className="self-start text-sm font-semibold text-(--color-text-secondary)"
+          aria-label="Back"
+          className="-ml-1.5 self-start rounded-pill p-1.5 text-(--color-text-secondary) hover:text-(--color-text-primary)"
         >
-          ← Pick something else
+          <ChevronLeftIcon size={20} />
         </button>
 
         <h1 className="text-xl font-semibold text-(--color-text-primary)">{picked.title}</h1>
@@ -221,9 +220,9 @@ export function Composer({
         <textarea
           value={caption}
           onChange={(event) => setCaption(event.target.value)}
-          placeholder="Add a note (optional)"
-          rows={3}
-          className="resize-none rounded-sm border border-(--color-separator) bg-(--color-surface-strong) px-3 py-2 text-(--color-text-primary) outline-none"
+          placeholder="Add a note"
+          rows={2}
+          className="resize-none border-b border-(--color-separator) bg-transparent py-2 text-(--color-text-primary) outline-none placeholder:text-(--color-text-secondary) focus:border-(--color-text-secondary)"
         />
 
         {error && <p className="text-sm text-red-500">{error}</p>}
@@ -235,15 +234,15 @@ export function Composer({
             onClick={() => void submit("log")}
             className="rounded-pill bg-(--color-accent) px-4 py-2 font-semibold text-(--color-on-accent) disabled:opacity-50"
           >
-            {submitting ? "Saving…" : "Log it"}
+            {submitting ? "Saving…" : "Log"}
           </button>
           <button
             type="button"
             disabled={submitting}
             onClick={() => void submit("watchlist")}
-            className="rounded-pill border border-(--color-separator) px-4 py-2 font-semibold text-(--color-text-primary) disabled:opacity-50"
+            className="px-2 py-2 font-semibold text-(--color-text-secondary) hover:text-(--color-text-primary) disabled:opacity-50"
           >
-            Add to watchlist
+            Watchlist
           </button>
         </div>
       </div>

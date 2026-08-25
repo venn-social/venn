@@ -27,12 +27,23 @@ function signInErrorMessage(error: { code?: string; status?: number }): string {
   return "Couldn't send the magic link. Please try again.";
 }
 
+/**
+ * One hairline, no box, nothing filled in.
+ *
+ * The sign-in screen is the first thing anyone sees, and it was three
+ * nested rectangles — a card around a field that was itself a filled
+ * rectangle with its own border. The rule under the field is enough to say
+ * where to type, and it firms up on focus.
+ */
+const FIELD =
+  "w-full border-b border-(--color-separator) bg-transparent py-2 " +
+  "text-(--color-text-primary) outline-none placeholder:text-(--color-text-secondary) " +
+  "focus:border-(--color-text-secondary)";
+
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
-  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "verifying" | "error">(
-    "idle"
-  );
+  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "verifying" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState("");
   const [lastSentAt, setLastSentAt] = useState<number | null>(null);
   /** Ticks once a second so the countdown re-renders. */
@@ -56,8 +67,8 @@ export default function LoginPage() {
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
-      },
+        emailRedirectTo: `${window.location.origin}/auth/callback`
+      }
     });
 
     if (error) {
@@ -78,8 +89,8 @@ export default function LoginPage() {
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
-      },
+        emailRedirectTo: `${window.location.origin}/auth/callback`
+      }
     });
 
     if (error) {
@@ -103,7 +114,7 @@ export default function LoginPage() {
     const { error } = await supabase.auth.verifyOtp({
       email,
       token: code,
-      type: "email",
+      type: "email"
     });
 
     if (error) {
@@ -122,7 +133,7 @@ export default function LoginPage() {
       </div>
 
       {status === "sent" || status === "verifying" ? (
-        <div className="flex w-full max-w-sm flex-col items-center gap-3 rounded-lg border border-(--color-separator) p-4 text-center">
+        <div className="flex w-full max-w-sm flex-col items-center gap-4 text-center">
           <h2 className="text-lg font-semibold text-(--color-text-primary)">Check your inbox</h2>
           <p className="text-(--color-text-secondary)">
             We emailed a sign-in link to <strong>{email}</strong>. Tapping it verifies your email
@@ -137,7 +148,7 @@ export default function LoginPage() {
               onChange={(event) => setCode(event.target.value)}
               placeholder="Code from email"
               autoComplete="one-time-code"
-              className="rounded-sm border border-(--color-separator) bg-(--color-surface-strong) px-3 py-2 text-center text-(--color-text-primary) outline-none"
+              className={`${FIELD} text-center`}
             />
             {errorMessage && status === "sent" && (
               <p className="text-sm text-red-500">{errorMessage}</p>
@@ -172,10 +183,7 @@ export default function LoginPage() {
           </button>
         </div>
       ) : (
-        <form
-          onSubmit={handleSubmit}
-          className="flex w-full max-w-sm flex-col gap-3 rounded-lg border border-(--color-separator) p-4"
-        >
+        <form onSubmit={handleSubmit} className="flex w-full max-w-sm flex-col gap-4">
           <input
             type="email"
             required
@@ -183,11 +191,9 @@ export default function LoginPage() {
             onChange={(event) => setEmail(event.target.value)}
             placeholder="Email"
             autoComplete="email"
-            className="rounded-sm border border-(--color-separator) bg-(--color-surface-strong) px-3 py-2 text-(--color-text-primary) outline-none"
+            className={FIELD}
           />
-          {status === "error" && (
-            <p className="text-sm text-red-500">{errorMessage}</p>
-          )}
+          {status === "error" && <p className="text-sm text-red-500">{errorMessage}</p>}
           <button
             type="submit"
             disabled={status === "sending" || email.length === 0}
