@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { MediaCover } from "@/components/MediaCover";
+import { ScrollRow } from "@/components/ScrollRow";
 import { shelfTitle } from "@/lib/recommendationCopy";
 import type { Shelf, ShelfItem } from "@/lib/recommendations";
 import { useOpenCandidate } from "@/lib/useOpenCandidate";
@@ -25,13 +26,13 @@ export function RecommendationShelves({ shelves }: RecommendationShelvesProps) {
       {shelves.map((shelf) => (
         <section key={`${shelf.source}-${shelf.seedTitle ?? ""}`} className="flex flex-col gap-2">
           <h2 className="font-semibold text-(--color-text-primary)">{shelfTitle(shelf)}</h2>
-          <ul className="flex gap-3 overflow-x-auto pb-1">
+          <ScrollRow label={shelfTitle(shelf)}>
             {shelf.items.map((item) => (
-              <li key={itemKey(item)} className="w-[110px] shrink-0">
+              <div key={itemKey(item)} className="w-[110px] shrink-0">
                 <ShelfCard item={item} />
-              </li>
+              </div>
             ))}
-          </ul>
+          </ScrollRow>
         </section>
       ))}
     </div>

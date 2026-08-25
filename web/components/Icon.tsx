@@ -201,6 +201,38 @@ export function ChevronDownIcon(props: IconProps) {
   );
 }
 
+/** Scroll a horizontal row back. */
+export function ChevronLeftIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path
+        d="m15 6-6 6 6 6"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
+
+/** Scroll a horizontal row on. */
+export function ChevronRightIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path
+        d="m9 6 6 6-6 6"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
+
 /** Opens the secondary-surfaces panel. */
 export function MenuIcon(props: IconProps) {
   return (

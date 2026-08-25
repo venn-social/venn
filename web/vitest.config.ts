@@ -7,6 +7,10 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     globals: true,
+    // Stubs the browser APIs jsdom lacks (see the file). Without it, any
+    // suite rendering a component that observes its own size fails on a
+    // ReferenceError unrelated to what it was checking.
+    setupFiles: ["./vitest.setup.ts"],
     // Playwright owns e2e/ — its *.spec.ts files use @playwright/test's
     // own test()/expect(), which would otherwise collide with Vitest's
     // default *.spec.ts discovery.

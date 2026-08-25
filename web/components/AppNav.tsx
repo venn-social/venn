@@ -34,7 +34,11 @@ export function AppNav({ unreadCount = 0 }: AppNavProps) {
   const pathname = usePathname();
 
   return (
-    <nav className="sticky top-0 z-10 border-b border-(--color-separator) bg-(--color-background)">
+        // No bottom rule: the nav reads as floating over the page rather
+    // than as a bar bolted to the top of it. The translucent ground
+    // plus a blur keeps the labels legible while content passes
+    // beneath, which a flat opaque strip with no edge could not.
+    <nav className="sticky top-0 z-10 bg-(--color-background)/80 backdrop-blur-md">
       <ul className="mx-auto flex max-w-lg items-center gap-6 px-4 py-3">
         <li>
           <SideMenu unreadCount={unreadCount} />

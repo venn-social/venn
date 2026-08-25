@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
+import { FeedModeShell } from "@/components/FeedModeShell";
 import { FeedPagination } from "@/components/FeedPagination";
 import { FeedRow } from "@/components/FeedRow";
+import { SpatialFeed } from "@/components/SpatialFeed";
 import { PostActions } from "@/components/PostActions";
 import { fetchCommentCounts } from "@/lib/comments";
 import { fetchLikeInfo } from "@/lib/likes";
@@ -15,7 +17,7 @@ import { createClient } from "@/lib/supabase/server";
 export default async function FeedPage() {
   const supabase = await createClient();
   const {
-    data: { user },
+    data: { user }
   } = await supabase.auth.getUser();
 
   if (!user) {
@@ -59,29 +61,39 @@ export default async function FeedPage() {
   const commentCounts = commentResult.status === "fulfilled" ? commentResult.value : {};
 
   return (
-    <main className="mx-auto flex max-w-lg flex-col gap-10 px-4 py-8">
-      {posts.map((post) => (
-        <FeedRow
-          key={post.id}
-          post={post}
-          viewerId={user.id}
-          actions={
-            <PostActions
-              postId={post.id}
-              userId={user.id}
-              postAuthorId={post.author.id}
-              likeCount={likes[post.id]?.likeCount ?? 0}
-              likedByMe={likes[post.id]?.likedByMe ?? false}
-              commentCount={commentCounts[post.id] ?? 0}
-            />
-          }
+    <FeedModeShell
+      plane={
+        <SpatialFeed
+          initialPosts={posts}
+          initialCursor={lastPost.createdAt.toISOString()}
+          initialHasMore={posts.length >= FEED_PAGE_SIZE}
         />
-      ))}
-      <FeedPagination
-        viewerId={user.id}
-        initialCursor={lastPost.createdAt.toISOString()}
-        initialHasMore={posts.length >= FEED_PAGE_SIZE}
-      />
-    </main>
+      }
+    >
+      <main className="mx-auto flex max-w-lg flex-col gap-10 px-4 py-8">
+        {posts.map((post) => (
+          <FeedRow
+            key={post.id}
+            post={post}
+            viewerId={user.id}
+            actions={
+              <PostActions
+                postId={post.id}
+                userId={user.id}
+                postAuthorId={post.author.id}
+                likeCount={likes[post.id]?.likeCount ?? 0}
+                likedByMe={likes[post.id]?.likedByMe ?? false}
+                commentCount={commentCounts[post.id] ?? 0}
+              />
+            }
+          />
+        ))}
+        <FeedPagination
+          viewerId={user.id}
+          initialCursor={lastPost.createdAt.toISOString()}
+          initialHasMore={posts.length >= FEED_PAGE_SIZE}
+        />
+      </main>
+    </FeedModeShell>
   );
 }

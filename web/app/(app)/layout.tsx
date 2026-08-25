@@ -1,4 +1,5 @@
 import { AppNav } from "@/components/AppNav";
+import { LaunchSplash } from "@/components/LaunchSplash";
 import { fetchUnreadCount } from "@/lib/notifications";
 import { createClient } from "@/lib/supabase/server";
 
@@ -26,6 +27,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <>
+      <LaunchSplash />
       <AppNav unreadCount={unreadCount} />
       {children}
     </>
