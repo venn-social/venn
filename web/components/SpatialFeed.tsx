@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { StarIcon } from "@/components/Icon";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { FEED_PAGE_SIZE, fetchFeedPage, type FeedPost } from "@/lib/feed";
 import { createClient } from "@/lib/supabase/client";
@@ -250,8 +251,17 @@ function PlaneCard({ post, x, y }: { post: FeedPost; x: number; y: number }) {
             </span>
           )}
         </div>
-        <span className="truncate text-xs text-(--color-text-secondary)">
-          {post.author.displayName ?? post.author.username}
+        <span className="flex items-baseline gap-1.5 text-xs text-(--color-text-secondary)">
+          <span className="truncate">{post.author.displayName ?? post.author.username}</span>
+          {post.rating !== null && (
+            // Same treatment as the column: whose opinion it is and what
+            // they thought belong together, and a cover with no verdict
+            // beside it is just a picture.
+            <span className="ml-auto flex shrink-0 items-center gap-0.5 font-semibold text-(--color-text-primary)">
+              <StarIcon size={11} className="text-(--color-accent)" />
+              {post.rating.toFixed(1)}
+            </span>
+          )}
         </span>
       </Link>
     </div>

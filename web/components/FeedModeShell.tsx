@@ -1,5 +1,6 @@
 "use client";
 
+import { ListLayoutIcon, PlaneLayoutIcon } from "@/components/Icon";
 import { useStoredPreference } from "@/lib/browserState";
 
 export type FeedMode = "list" | "plane";
@@ -32,16 +33,30 @@ export function FeedModeShell({ children, plane }: FeedModeShellProps) {
 
   return (
     <>
+      {mode === "plane" ? plane : children}
+
+      {/* Floating, and at the bottom, because this is a preference you set
+          once and then want out of your way — not a heading the feed has
+          to open with. Sitting over the content also means the plane keeps
+          the whole viewport. */}
       <div
         role="group"
         aria-label="Feed layout"
-        className="mx-auto flex max-w-lg items-center gap-2 px-4 pt-4"
+        className="fixed bottom-5 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1 rounded-pill border border-(--color-separator) bg-(--color-background)/85 p-1 shadow-lg backdrop-blur-md"
       >
-        <Choice label="List" active={mode === "list"} onClick={() => choose("list")} />
-        <Choice label="Everywhere" active={mode === "plane"} onClick={() => choose("plane")} />
+        <Choice
+          label="List"
+          active={mode === "list"}
+          onClick={() => choose("list")}
+          icon={<ListLayoutIcon size={18} />}
+        />
+        <Choice
+          label="Everywhere"
+          active={mode === "plane"}
+          onClick={() => choose("plane")}
+          icon={<PlaneLayoutIcon size={18} />}
+        />
       </div>
-
-      {mode === "plane" ? plane : children}
     </>
   );
 }
@@ -49,24 +64,31 @@ export function FeedModeShell({ children, plane }: FeedModeShellProps) {
 function Choice({
   label,
   active,
-  onClick
+  onClick,
+  icon
 }: {
   label: string;
   active: boolean;
   onClick: () => void;
+  icon: React.ReactNode;
 }) {
   return (
     <button
       type="button"
       aria-pressed={active}
+      // The word is gone from the screen, so it has to survive here — this
+      // is the only thing naming the control for a screen reader, and
+      // "button, button" would be useless.
+      aria-label={label}
+      title={label}
       onClick={onClick}
       className={
         active
-          ? "rounded-pill bg-(--color-accent) px-3 py-1.5 text-sm font-semibold text-(--color-on-accent)"
-          : "rounded-pill border border-(--color-separator) px-3 py-1.5 text-sm text-(--color-text-primary)"
+          ? "flex h-9 w-9 items-center justify-center rounded-pill bg-(--color-accent) text-(--color-on-accent)"
+          : "flex h-9 w-9 items-center justify-center rounded-pill text-(--color-text-secondary) hover:text-(--color-text-primary)"
       }
     >
-      {label}
+      {icon}
     </button>
   );
 }

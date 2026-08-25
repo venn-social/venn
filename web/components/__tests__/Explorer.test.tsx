@@ -101,13 +101,13 @@ describe("Explorer", () => {
 
   it("shows the People prompt when that category is selected", () => {
     render(<Explorer />);
-    fireEvent.click(screen.getByRole("button", { name: "People" }));
+    fireEvent.click(screen.getByRole("tab", { name: "People" }));
     expect(screen.getByText("Find your people")).toBeDefined();
   });
 
   it("finds people and links each to their profile", async () => {
     render(<Explorer />);
-    fireEvent.click(screen.getByRole("button", { name: "People" }));
+    fireEvent.click(screen.getByRole("tab", { name: "People" }));
     fireEvent.change(screen.getByPlaceholderText(/Search movies/), { target: { value: "maya" } });
 
     const link = await screen.findByRole("link", { name: /Maya Okonkwo/ });
@@ -117,7 +117,7 @@ describe("Explorer", () => {
   it("says so when nobody matches", async () => {
     searchProfiles.mockResolvedValue([]);
     render(<Explorer />);
-    fireEvent.click(screen.getByRole("button", { name: "People" }));
+    fireEvent.click(screen.getByRole("tab", { name: "People" }));
     fireEvent.change(screen.getByPlaceholderText(/Search movies/), { target: { value: "zzz" } });
 
     expect(await screen.findByText("No one found")).toBeDefined();
@@ -141,7 +141,7 @@ describe("Explorer", () => {
     // Per-kind tabs listed the newest rows in the catalog — what other
     // people happened to log, which belongs on a profile page.
     render(<Explorer />);
-    fireEvent.click(screen.getByRole("button", { name: "Movies" }));
+    fireEvent.click(screen.getByRole("tab", { name: "Movies" }));
 
     expect(await screen.findByText("No recommendations yet")).toBeDefined();
     expect(screen.queryByText("Recently added")).toBeNull();
@@ -149,7 +149,7 @@ describe("Explorer", () => {
 
   it("shows the shelves for the kind chosen, and only those", async () => {
     render(<Explorer shelves={[mixedShelf]} />);
-    fireEvent.click(screen.getByRole("button", { name: "Books" }));
+    fireEvent.click(screen.getByRole("tab", { name: "Books" }));
 
     expect(await screen.findByText("Trending this week")).toBeDefined();
     // The title appears twice per card — as the cover placeholder and as

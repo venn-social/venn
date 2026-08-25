@@ -45,19 +45,24 @@ interface CategoryChipsProps {
 
 export function CategoryChips({ value, onChange }: CategoryChipsProps) {
   return (
-    <div className="flex flex-wrap gap-2">
+    // Underline tabs, matching the Collection / Watchlist control on the
+    // profile. These pick which slice of the catalog you are looking at,
+    // which is the same job those tabs do — a row of filled pills read as
+    // six competing actions instead of one choice among six.
+    <div role="tablist" aria-label="Search category" className="flex gap-4 border-b border-(--color-separator)">
       {CATEGORIES.map(({ category, label }) => {
         const selected = value === category;
         return (
           <button
             key={category}
             type="button"
-            aria-pressed={selected}
+            role="tab"
+            aria-selected={selected}
             onClick={() => onChange(category)}
             className={
               selected
-                ? "rounded-pill bg-(--color-accent) px-3 py-1.5 text-sm font-semibold text-(--color-on-accent)"
-                : "rounded-pill border border-(--color-separator) px-3 py-1.5 text-sm text-(--color-text-primary)"
+                ? "-mb-px border-b-2 border-(--color-accent) pb-2 font-semibold text-(--color-text-primary)"
+                : "-mb-px border-b-2 border-transparent pb-2 text-(--color-text-secondary) hover:text-(--color-text-primary)"
             }
           >
             {label}

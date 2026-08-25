@@ -233,6 +233,29 @@ export function ChevronRightIcon(props: IconProps) {
   );
 }
 
+/** The feed as a single column. */
+export function ListLayoutIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <rect x="4" y="5" width="16" height="4" rx="1.5" fill="currentColor" />
+      <rect x="4" y="11" width="16" height="4" rx="1.5" fill="currentColor" opacity="0.55" />
+      <rect x="4" y="17" width="16" height="3" rx="1.5" fill="currentColor" opacity="0.3" />
+    </Svg>
+  );
+}
+
+/** The feed as a plane that carries on in every direction. */
+export function PlaneLayoutIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <rect x="3" y="4" width="7" height="9" rx="1.5" fill="currentColor" />
+      <rect x="13" y="7" width="7" height="9" rx="1.5" fill="currentColor" opacity="0.7" />
+      <rect x="3" y="16" width="7" height="5" rx="1.5" fill="currentColor" opacity="0.45" />
+      <rect x="13" y="19" width="7" height="2" rx="1" fill="currentColor" opacity="0.25" />
+    </Svg>
+  );
+}
+
 /** Opens the secondary-surfaces panel. */
 export function MenuIcon(props: IconProps) {
   return (
