@@ -89,7 +89,12 @@ export function Explorer({ shelves = [] }: ExplorerProps) {
         value={query}
         onChange={(event) => setQuery(event.target.value)}
         placeholder="Search movies, TV, music, books, people"
-        className="rounded-sm border border-(--color-separator) bg-(--color-surface-strong) px-3 py-2 text-(--color-text-primary) outline-none"
+        // Sits on the page's own ground rather than on a raised panel,
+        // so it reads as part of the page instead of a control bolted
+        // onto it. The hairline is all that is left to say where it
+        // starts, and it firms up on focus so the field is still
+        // obviously findable once you are typing in it.
+        className="rounded-pill border border-(--color-separator) bg-(--color-background) px-4 py-1.5 text-sm text-(--color-text-primary) outline-none placeholder:text-(--color-text-secondary) focus:border-(--color-text-secondary)"
       />
 
       {error && <p className="text-sm text-red-500">{error}</p>}
@@ -145,7 +150,9 @@ export function Explorer({ shelves = [] }: ExplorerProps) {
         </>
       )}
 
-      {category !== "people" && <CandidateList candidates={visibleCandidates} onPick={(c) => void openCandidate(c)} />}
+      {category !== "people" && (
+        <CandidateList candidates={visibleCandidates} onPick={(c) => void openCandidate(c)} />
+      )}
     </div>
   );
 }

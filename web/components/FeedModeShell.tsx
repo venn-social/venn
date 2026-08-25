@@ -35,14 +35,15 @@ export function FeedModeShell({ children, plane }: FeedModeShellProps) {
     <>
       {mode === "plane" ? plane : children}
 
-      {/* Floating, and at the bottom, because this is a preference you set
-          once and then want out of your way — not a heading the feed has
-          to open with. Sitting over the content also means the plane keeps
-          the whole viewport. */}
+      {/* Floating, bottom left, because this is a preference you set once
+          and then want out of your way — not a heading the feed has to open
+          with. Off to one side rather than centred keeps it clear of the
+          column, which runs down the middle. Sitting over the content also
+          means the plane keeps the whole viewport. */}
       <div
         role="group"
         aria-label="Feed layout"
-        className="fixed bottom-5 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1 rounded-pill border border-(--color-separator) bg-(--color-background)/85 p-1 shadow-lg backdrop-blur-md"
+        className="fixed bottom-5 left-5 z-20 flex items-center gap-1 rounded-pill border border-(--color-separator) bg-(--color-background)/85 p-1 shadow-lg backdrop-blur-md"
       >
         <Choice
           label="List"
