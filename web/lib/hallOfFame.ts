@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { ratingToPost } from "@/lib/compose";
 import type { PostAction } from "@/lib/feed";
-import { toMedia, type Media, type MediaRow } from "@/lib/media";
+import { toLibraryItem, type LibraryItem, type LibraryItemRow } from "@/lib/library";
 
 /**
  * The Hall of Fame: the handful of things that represent you.
@@ -23,12 +23,6 @@ export interface MediaStanding {
   postId: string;
   action: PostAction;
   hallPosition: number | null;
-}
-
-export interface HallItem {
-  postId: string;
-  position: number;
-  media: Media;
 }
 
 interface StandingRow {
@@ -62,27 +56,29 @@ export async function fetchMediaStanding(
   return { postId: row.id, action: row.action, hallPosition: row.hall_position };
 }
 
-/** Someone's hall, in the order they arranged it. */
+/**
+ * Someone's hall, in the order they arranged it.
+ *
+ * Returns `LibraryItem`s, the same shape the collection and watchlist use,
+ * so the profile renders all three shelves through one grid rather than a
+ * second one that has to be kept looking like the first.
+ */
 export async function fetchHall(
   client: SupabaseClient,
   userId: string
-): Promise<HallItem[]> {
+): Promise<LibraryItem[]> {
   const { data, error } = await client
     .from("posts")
-    .select("id, hall_position, media(*)")
+    .select("id, action, rating, created_at, media!inner(*)")
     .eq("author_id", userId)
     .not("hall_position", "is", null)
     .order("hall_position", { ascending: true });
 
   if (error) throw error;
 
-  return (data ?? [])
-    .map((row) => {
-      const typed = row as unknown as { id: string; hall_position: number; media: MediaRow };
-      const media = typed.media ? toMedia(typed.media) : null;
-      return media ? { postId: typed.id, position: typed.hall_position, media } : null;
-    })
-    .filter((item): item is HallItem => item !== null);
+  return ((data ?? []) as unknown as LibraryItemRow[])
+    .map(toLibraryItem)
+    .filter((item): item is LibraryItem => item !== null);
 }
 
 /**

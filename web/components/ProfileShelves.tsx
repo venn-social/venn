@@ -18,9 +18,16 @@ import { useGridReorder } from "@/components/useGridReorder";
 import type { MediaKind } from "@/lib/media";
 import { createClient } from "@/lib/supabase/client";
 
-type Shelf = "collection" | "watchlist";
+type Shelf = "hall" | "collection" | "watchlist";
 
 interface ProfileShelvesProps {
+  /**
+   * The starred handful. Its tab only exists when it has something in it,
+   * and when it does it is where the profile opens — a profile should lead
+   * with what someone likes, and fall back to what they have seen only
+   * when they have not said.
+   */
+  hall?: LibraryItem[];
   collection: LibraryItem[];
   watchlist: LibraryItem[];
   /**
@@ -34,9 +41,9 @@ interface ProfileShelvesProps {
   canEdit?: boolean;
 }
 
-const TABS: { shelf: Shelf; label: string }[] = [
+const COLLECTION_TABS: { shelf: Shelf; label: string }[] = [
   { shelf: "collection", label: "Collection" },
-  { shelf: "watchlist", label: "Watchlist" },
+  { shelf: "watchlist", label: "Watchlist" }
 ];
 
 /**
@@ -49,21 +56,39 @@ const TABS: { shelf: Shelf; label: string }[] = [
  * round trip to discard rows we are holding.
  */
 export function ProfileShelves({
+  hall = [],
   collection,
   watchlist,
   emptyCollection,
   emptyWatchlist,
-  canEdit = false,
+  canEdit = false
 }: ProfileShelvesProps) {
   const router = useRouter();
-  const [shelf, setShelf] = useState<Shelf>("collection");
+  const tabs =
+    hall.length > 0
+      ? [{ shelf: "hall" as Shelf, label: "Starred" }, ...COLLECTION_TABS]
+      : COLLECTION_TABS;
+  // Starts on the hall when there is one. Read once rather than synced: if
+  // the last star is removed while you are looking at it, falling back is
+  // handled below rather than by resetting state from an effect, which
+  // React 19's set-state-in-effect rule rejects.
+  const [chosen, setChosen] = useState<Shelf | null>(null);
+  const shelf: Shelf =
+    chosen && (chosen !== "hall" || hall.length > 0)
+      ? chosen
+      : hall.length > 0
+        ? "hall"
+        : "collection";
+  const setShelf = setChosen;
   const [kind, setKind] = useState<KindFilter>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   /** The item whose rating is being edited, if any. */
   const [editingId, setEditingId] = useState<string | null>(null);
 
-  const items = shelf === "collection" ? collection : watchlist;
-  const emptyMessage = shelf === "collection" ? emptyCollection : emptyWatchlist;
+  const items = shelf === "hall" ? hall : shelf === "collection" ? collection : watchlist;
+  // The hall has no empty state: its tab only exists when it has items, so
+  // there is no way to arrive at an empty one.
+  const emptyMessage = shelf === "watchlist" ? emptyWatchlist : emptyCollection;
 
   const available = useMemo(
     () => new Set<MediaKind>(items.map((item) => item.media.kind)),
@@ -129,7 +154,7 @@ export function ProfileShelves({
   return (
     <section className="flex flex-col gap-3">
       <div role="tablist" className="flex gap-4 border-b border-(--color-separator)">
-        {TABS.map((tab) => {
+        {tabs.map((tab) => {
           const selected = shelf === tab.shelf;
           return (
             <button

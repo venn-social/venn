@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { EditableAvatar } from "@/components/EditableAvatar";
-import { HallOfFame } from "@/components/HallOfFame";
 import { ProfileShelves } from "@/components/ProfileShelves";
 import { fetchHall } from "@/lib/hallOfFame";
 import { fetchCollection, fetchWatchlist } from "@/lib/library";
@@ -69,9 +68,8 @@ export default async function ProfilePage() {
 
       {profile.bio && <p className="text-(--color-text-primary)">{profile.bio}</p>}
 
-      <HallOfFame items={hall} isOwner={true} />
-
       <ProfileShelves
+        hall={hall}
         collection={collectionResult}
         watchlist={watchlistResult}
         emptyCollection="Nothing in your collection yet."
