@@ -12,10 +12,42 @@ struct ProfileHeaderView: View {
     let following: Int
     var onTapFollowers: (() -> Void)?
     var onTapFollowing: (() -> Void)?
+    /// Set on your own profile: taps the avatar to edit. Nil elsewhere,
+    /// where the picture is just a picture.
+    var onTapAvatar: (() -> Void)?
+
+    /// The avatar, which on your own profile is also the way to edit it.
+    ///
+    /// A pen on the corner rather than a button under the bio. Mirrors web
+    /// (rule 17), where the pen appears on hover — there is no hover here,
+    /// so it simply shows. It sits on the corner rather than over the
+    /// picture because a scrim would have to hide what is underneath to
+    /// read as a state, and against a near-white initial it cannot.
+    @ViewBuilder private var avatar: some View {
+        let badge = AvatarBadge(name: name, avatarURL: avatarURL, size: 72)
+
+        if let onTapAvatar {
+            Button(action: onTapAvatar) {
+                badge.overlay(alignment: .bottomTrailing) {
+                    Image(systemName: "pencil")
+                        .font(.caption)
+                        .foregroundStyle(Theme.Color.textPrimary)
+                        .frame(width: 24, height: 24)
+                        .background(Theme.Color.background, in: .circle)
+                        .overlay { Circle().strokeBorder(Theme.Color.separator, lineWidth: 1) }
+                        .offset(x: 2, y: 2)
+                }
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Edit profile")
+        } else {
+            badge
+        }
+    }
 
     var body: some View {
         HStack(alignment: .top, spacing: Theme.Spacing.lg) {
-            AvatarBadge(name: name, avatarURL: avatarURL, size: 72)
+            avatar
 
             VStack(alignment: .leading, spacing: Theme.Spacing.xxs) {
                 Text(verbatim: name)

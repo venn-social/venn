@@ -94,7 +94,8 @@ struct ProfileView: View {
                         },
                         onTapFollowing: {
                             followListDestination = .init(userID: profile.id, kind: .following)
-                        }
+                        },
+                        onTapAvatar: { presentEditSheet() }
                     )
                     actionButtons
                     HStack {
@@ -141,11 +142,10 @@ struct ProfileView: View {
         .accessibilityLabel(label)
     }
 
+    /// Editing moved onto the avatar — a pen on the picture rather than a
+    /// permanent button under the bio for something you do rarely.
     private var actionButtons: some View {
-        HStack(spacing: Theme.Spacing.md) {
-            PrimaryButton(title: "Add") {}
-            SecondaryButton(title: "Edit profile") { presentEditSheet() }
-        }
+        PrimaryButton(title: "Add") {}
     }
 
     private func shelfGallery(_ snapshot: ProfileSnapshot) -> some View {

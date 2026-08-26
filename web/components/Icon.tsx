@@ -25,11 +25,7 @@ interface FillableIconProps extends IconProps {
 }
 
 /** Shared wrapper: one place for the viewBox and the a11y default. */
-function Svg({
-  size = 18,
-  className,
-  children
-}: IconProps & { children: React.ReactNode }) {
+function Svg({ size = 18, className, children }: IconProps & { children: React.ReactNode }) {
   return (
     <svg
       width={size}
@@ -252,6 +248,22 @@ export function PlaneLayoutIcon(props: IconProps) {
       <rect x="13" y="7" width="7" height="9" rx="1.5" fill="currentColor" opacity="0.7" />
       <rect x="3" y="16" width="7" height="5" rx="1.5" fill="currentColor" opacity="0.45" />
       <rect x="13" y="19" width="7" height="2" rx="1" fill="currentColor" opacity="0.25" />
+    </Svg>
+  );
+}
+
+/** Edit — shown over your own avatar. */
+export function PencilIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path
+        d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4Z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </Svg>
   );
 }

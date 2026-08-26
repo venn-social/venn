@@ -77,7 +77,9 @@ test.describe("side menu", () => {
 
     await expect(page.getByRole("link", { name: "Settings" })).toHaveCount(0);
     await expect(page.getByRole("link", { name: "Last 12 Months" })).toHaveCount(0);
-    // Edit profile stays — it belongs to the profile, not to the menu.
+    // Editing stays reachable from the profile, not the menu. It is the
+    // avatar itself now rather than a button, so this checks the accessible
+    // name rather than a visible label.
     await expect(page.getByRole("link", { name: "Edit profile" })).toBeVisible();
   });
 });
