@@ -46,9 +46,17 @@ create table public.posts (
 );
 
 -- --- Run the REAL migration --------------------------------------------------
+-- reorder_hall filters on auth.uid(), so the harness needs Supabase's.
+create schema if not exists auth;
+create or replace function auth.uid() returns uuid language sql stable as $$
+  select nullif(current_setting('test.uid', true), '')::uuid
+$$;
+
 \echo '>>> applying migration 20260826120000_hall_of_fame.sql'
 \i /mig.sql
-\echo '>>> migration applied OK'
+\echo '>>> applying migration 20260827120000_reorder_hall.sql'
+\i /mig2.sql
+\echo '>>> migrations applied OK'
 
 -- --- Seed --------------------------------------------------------------------
 insert into public.profiles (id, username) values
@@ -173,4 +181,59 @@ begin
   raise notice 'PASS T7: anything can leave the hall';
 end $$;
 
+-- T8: reordering survives a swap. A single UPDATE cannot do this — the
+-- unique index rejects the moment two rows both hold position 1 — which is
+-- the whole reason reorder_hall clears before it writes.
+do $$
+declare ids uuid[];
+begin
+  perform set_config('test.uid', '00000000-0000-0000-0000-000000000001', false);
+  update public.posts set hall_position = null where author_id = '00000000-0000-0000-0000-000000000001';
+  update public.posts set hall_position = 1
+   where author_id = '00000000-0000-0000-0000-000000000001'
+     and media_id = 'aaaaaaaa-0000-0000-0000-000000000001';
+  update public.posts set hall_position = 2
+   where author_id = '00000000-0000-0000-0000-000000000001'
+     and media_id = 'aaaaaaaa-0000-0000-0000-000000000002';
+
+  select array_agg(id order by hall_position desc) into ids
+    from public.posts
+   where author_id = '00000000-0000-0000-0000-000000000001'
+     and hall_position is not null;
+
+  perform public.reorder_hall(ids);
+
+  if (select hall_position from public.posts
+       where author_id = '00000000-0000-0000-0000-000000000001'
+         and media_id = 'aaaaaaaa-0000-0000-0000-000000000002') <> 1 then
+    raise exception 'FAIL T8: the swap did not take';
+  end if;
+  raise notice 'PASS T8: two items can swap places';
+end $$;
+
+-- T9: reordering cannot reach into someone else's hall. Run as ada,
+-- handing it grace's post ids — the author_id filter is what is under
+-- test, since RLS is not enabled in this harness.
+do $$
+declare before smallint;
+begin
+  -- Still ada, deliberately: this reorders grace's ids as ada.
+  perform set_config('test.uid', '00000000-0000-0000-0000-000000000001', false);
+  select hall_position into before from public.posts
+   where author_id = '00000000-0000-0000-0000-000000000002' and hall_position is not null
+   limit 1;
+
+  perform public.reorder_hall(array(
+    select id from public.posts where author_id = '00000000-0000-0000-0000-000000000002'
+  ));
+
+  if (select hall_position from public.posts
+       where author_id = '00000000-0000-0000-0000-000000000002' and hall_position is not null
+       limit 1) is distinct from before then
+    raise exception 'FAIL T9: another account''s hall was reordered';
+  end if;
+  raise notice 'PASS T9: only your own hall reorders';
+end $$;
+
 \echo 'ALL TESTS PASSED'
+

@@ -63,10 +63,7 @@ export async function fetchMediaStanding(
  * so the profile renders all three shelves through one grid rather than a
  * second one that has to be kept looking like the first.
  */
-export async function fetchHall(
-  client: SupabaseClient,
-  userId: string
-): Promise<LibraryItem[]> {
+export async function fetchHall(client: SupabaseClient, userId: string): Promise<LibraryItem[]> {
   const { data, error } = await client
     .from("posts")
     .select("id, action, rating, created_at, media!inner(*)")
@@ -146,5 +143,22 @@ export async function removeFromHall(
     .update({ hall_position: null })
     .eq("author_id", options.authorId)
     .eq("media_id", options.mediaId);
+  if (error) throw error;
+}
+
+/**
+ * Rewrite the order of the hall.
+ *
+ * Its own RPC rather than `reorderLibrary`, which writes `position` — the
+ * column the collection and watchlist are sorted by. The hall reads
+ * `hall_position`, so reordering it through the shelves' function moved
+ * covers on screen, wrote a column nothing was reading, and let the old
+ * order come back on the next load.
+ *
+ * Sends every id rather than the moved pair, so the server applies one
+ * statement and a failure cannot leave two covers claiming one slot.
+ */
+export async function reorderHall(client: SupabaseClient, postIds: string[]): Promise<void> {
+  const { error } = await client.rpc("reorder_hall", { _post_ids: postIds });
   if (error) throw error;
 }

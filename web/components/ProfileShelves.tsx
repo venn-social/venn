@@ -8,6 +8,7 @@ import { MediaKindFilter, type KindFilter } from "@/components/MediaKindFilter";
 import { MediaOverflowMenu } from "@/components/MediaOverflowMenu";
 import { RatingChips } from "@/components/RatingChips";
 import { ratingToPost, type RatingChoice } from "@/lib/compose";
+import { reorderHall } from "@/lib/hallOfFame";
 import {
   removeFromLibrary,
   reorderLibrary,
@@ -112,7 +113,10 @@ export function ProfileShelves({
 
   async function handleReorder(order: string[]) {
     try {
-      await reorderLibrary(createClient(), order);
+      // The hall is sorted by its own column, so it reorders through its
+      // own function. Sending a hall order to reorderLibrary writes the
+      // shelves' column instead, which reads as the drag being rejected.
+      await (shelf === "hall" ? reorderHall : reorderLibrary)(createClient(), order);
       router.refresh();
     } catch {
       // The grid keeps the arrangement on screen; a refresh would snap it
