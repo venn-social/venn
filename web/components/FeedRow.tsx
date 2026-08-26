@@ -33,7 +33,11 @@ export function FeedRow({ post, actions, viewerId = null }: FeedRowProps) {
     .join(" · ");
 
   return (
-    <article className="flex flex-col gap-3">
+    // The whole post is the width of its artwork, and centred. Insetting
+    // only the cover left the attribution, title and rating running wider
+    // than the thing they describe, which read as two elements that
+    // happened to be near each other rather than one post.
+    <article className="mx-auto flex w-[72%] flex-col gap-3">
       <div className="flex items-center gap-2">
         <Link href={`/${post.author.username}`} className="group flex items-center gap-2">
           <Avatar name={authorName} avatarUrl={post.author.avatarUrl} size={28} />
@@ -61,11 +65,9 @@ export function FeedRow({ post, actions, viewerId = null }: FeedRowProps) {
         )}
         <Link
           href={`/media/${post.media.id}`}
-          // Square, centred, at just under three quarters of the column.
-          // Full width made one post most of a screen; this leaves the
-          // feed feeling like a list of things rather than a slideshow of
-          // them.
-          className="mx-auto flex aspect-square w-[72%] items-center justify-center overflow-hidden rounded-md bg-(--color-surface-strong)"
+          // Square, and the full width of the post — which is itself
+          // inset, so this is where the post's width is actually decided.
+          className="flex aspect-square w-full items-center justify-center overflow-hidden rounded-md bg-(--color-surface-strong)"
         >
           {post.media.coverUrl ? (
             // eslint-disable-next-line @next/next/no-img-element -- see the Phase 3 spec on next/image
