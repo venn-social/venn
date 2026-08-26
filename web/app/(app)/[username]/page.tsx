@@ -64,7 +64,7 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
     [collection, watchlist, lists] = await Promise.all([
       fetchCollection(supabase, profile.id).catch(() => []),
       fetchWatchlist(supabase, profile.id).catch(() => []),
-      fetchListsFor(supabase, profile.id).catch(() => []),
+      fetchListsFor(supabase, profile.id).catch(() => [])
     ]);
   }
 
@@ -96,16 +96,14 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
         <LockedProfile username={profile.username} />
       ) : (
         <>
+          {/* No heading. A Venn diagram of two people's taste does not need
+              to be labelled "Your Venn" on a page that is already one
+              person's profile seen from another's. */}
           <section className="flex flex-col gap-3">
-            <h2 className="font-semibold text-(--color-text-primary)">Your Venn</h2>
             {overlapFailed ? (
-              <p className="text-(--color-text-secondary)">Couldn&apos;t load your Venn.</p>
+              <p className="text-(--color-text-secondary)">Couldn&apos;t load the overlap.</p>
             ) : overlap && (overlap.viewerTotal > 0 || overlap.otherTotal > 0) ? (
-              <VennOverlap
-                viewerLabel="Only you"
-                otherLabel={`Only @${profile.username}`}
-                summary={overlap}
-              />
+              <VennOverlap summary={overlap} />
             ) : (
               // Both sides empty: a 0/0 diagram reads as broken rather than
               // as "nothing logged yet". Same copy as PublicProfileView.
@@ -132,9 +130,7 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
                 {lists.map((list) => (
                   <li key={list.id}>
                     <Link href={`/lists/${list.id}`} className="flex flex-col gap-0.5 py-3">
-                      <span className="font-medium text-(--color-text-primary)">
-                        {list.title}
-                      </span>
+                      <span className="font-medium text-(--color-text-primary)">{list.title}</span>
                       {list.description && (
                         <span className="text-sm text-(--color-text-secondary)">
                           {list.description}

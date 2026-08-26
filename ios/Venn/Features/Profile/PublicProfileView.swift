@@ -4,7 +4,7 @@ import SwiftUI
 /// Reuses the signed-in profile's building blocks (header, shelf tabs,
 /// cover gallery) via the shared `ProfileViewModel`, plus the two surfaces
 /// that only exist for someone else: the Follow / Following button and the
-/// "Your Venn" taste overlap. Owner affordances (edit, add, settings) and
+/// the taste overlap. Owner affordances (edit, add, settings) and
 /// shelf tap-through stay absent.
 struct PublicProfileView: View {
     @Environment(SupabaseClientProvider.self)
@@ -130,25 +130,47 @@ struct PublicProfileView: View {
     /// the edge. "Requested" reuses the "Following" secondary-button
     /// treatment (styling polish for the locked-content state that goes
     /// with it lands separately).
+    /// Follow / Requested / Following, as one compact pill on the page's
+    /// own ground. Mirrors web (rule 17).
+    ///
+    /// Deliberately not `PrimaryButton`: an accent-filled, full-width
+    /// button made Follow the loudest thing on someone's profile, above
+    /// the person and above what they like, which is not the order of
+    /// importance. The states differ by weight of text, not by a block of
+    /// colour. `SecondaryButton` is left alone — it is shared with Cancel
+    /// and Skip, which do want that footprint.
     @ViewBuilder private var followButton: some View {
         if let followViewModel {
-            switch followViewModel.state {
-            case .following:
-                SecondaryButton(title: "Following", isEnabled: !followViewModel.isWorking) {
-                    Task { await toggleFollow() }
-                }
-            case .requested:
-                SecondaryButton(title: "Requested", isEnabled: !followViewModel.isWorking) {
-                    Task { await toggleFollow() }
-                }
-            case .notFollowing:
-                PrimaryButton(
-                    title: "Follow",
-                    isLoading: followViewModel.isWorking
-                ) {
-                    Task { await toggleFollow() }
-                }
+            let isFollowing = followViewModel.state != .notFollowing
+            let title: LocalizedStringKey = switch followViewModel.state {
+            case .following: "Following"
+            case .requested: "Requested"
+            case .notFollowing: "Follow"
             }
+
+            Button {
+                Task { await toggleFollow() }
+            } label: {
+                Text(title)
+                    .font(
+                        isFollowing
+                            ? Theme.Font.footnote
+                            : Theme.Font.footnote.weight(.semibold)
+                    )
+                    .foregroundStyle(
+                        isFollowing ? Theme.Color.textSecondary : Theme.Color.textPrimary
+                    )
+                    .padding(.horizontal, Theme.Spacing.lg)
+                    .padding(.vertical, Theme.Spacing.sm)
+                    .background(Theme.Color.background, in: .capsule)
+                    .overlay {
+                        Capsule().strokeBorder(Theme.Color.separator, lineWidth: 1)
+                    }
+                    .opacity(followViewModel.isWorking ? 0.5 : 1)
+            }
+            .buttonStyle(.plain)
+            .disabled(followViewModel.isWorking)
+            .accessibilityIdentifier("follow_button")
         }
     }
 
@@ -157,18 +179,17 @@ struct PublicProfileView: View {
         await viewModel?.refreshFollowCounts()
     }
 
-    // MARK: - Overlap ("Your Venn")
+    // MARK: - Overlap
 
     /// The product's signature: how the viewer's taste intersects this
     /// person's. Only renders for a signed-in viewer on someone else's
     /// profile — same condition as the follow button.
     @ViewBuilder private var overlapSection: some View {
         if let overlapViewModel {
+            // No heading. A Venn diagram of two people's taste does not
+            // need to be labelled "Your Venn" on a screen that is already
+            // one person's profile seen from another's.
             VStack(alignment: .leading, spacing: Theme.Spacing.md) {
-                Text("Your Venn")
-                    .font(Theme.Font.headline)
-                    .foregroundStyle(Theme.Color.textPrimary)
-
                 switch overlapViewModel.state {
                 case .loading:
                     ProgressView()
@@ -178,7 +199,7 @@ struct PublicProfileView: View {
                     overlapContent(summary)
                 case .error:
                     HStack {
-                        Text("Couldn't load your Venn.")
+                        Text("Couldn't load the overlap.")
                             .font(Theme.Font.callout)
                             .foregroundStyle(Theme.Color.textSecondary)
                         Spacer()
@@ -214,32 +235,24 @@ struct PublicProfileView: View {
         }
     }
 
-    /// One row per kind with shared items — "Movies in common · 3".
+    /// The shared kinds, as one line — "7 movies · 4 albums · 1 book".
+    ///
+    /// A row each, with an icon and a right-aligned count, was a table
+    /// restating what the diagram had already totalled. This says only
+    /// what kind of thing was shared.
     @ViewBuilder
     private func sharedKindRows(_ summary: OverlapSummary) -> some View {
         let shared = summary.kinds.filter { $0.sharedCount > 0 }
         if !shared.isEmpty {
-            VStack(spacing: Theme.Spacing.xs) {
-                ForEach(shared, id: \.kind) { slice in
-                    HStack(spacing: Theme.Spacing.sm) {
-                        Image(systemName: slice.kind.systemImage)
-                            .font(.caption)
-                            .foregroundStyle(Theme.Color.accent)
-                        Text(verbatim: "\(slice.kind.displayName.capitalized)s in common")
-                            .font(Theme.Font.callout)
-                            .foregroundStyle(Theme.Color.textPrimary)
-                        Spacer()
-                        Text(verbatim: "\(slice.sharedCount)")
-                            .font(Theme.Font.callout.weight(.semibold))
-                            .foregroundStyle(Theme.Color.textSecondary)
-                            .monospacedDigit()
-                    }
-                }
-            }
+            Text(verbatim: shared
+                .map { "\($0.sharedCount) \($0.kind.displayName)\($0.sharedCount == 1 ? "" : "s")" }
+                .joined(separator: " · "))
+                .font(Theme.Font.footnote)
+                .foregroundStyle(Theme.Color.textSecondary)
+                .frame(maxWidth: .infinity)
         }
     }
 
-    /// The signed-in user — the follower side of any edge created here.
     private var signedInUserID: UUID? {
         if case let .signedIn(session) = authState.status {
             session.user.id
