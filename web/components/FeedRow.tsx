@@ -33,7 +33,11 @@ export function FeedRow({ post, actions, viewerId = null }: FeedRowProps) {
     .join(" · ");
 
   return (
-    <article className="flex flex-col gap-3">
+    // The whole post is the width of its artwork, and centred. Insetting
+    // only the cover left the attribution, title and rating running wider
+    // than the thing they describe, which read as two elements that
+    // happened to be near each other rather than one post.
+    <article className="mx-auto flex w-[72%] flex-col gap-3">
       <div className="flex items-center gap-2">
         <Link href={`/${post.author.username}`} className="group flex items-center gap-2">
           <Avatar name={authorName} avatarUrl={post.author.avatarUrl} size={28} />
@@ -57,24 +61,35 @@ export function FeedRow({ post, actions, viewerId = null }: FeedRowProps) {
             renders null still runs its hooks, which made every feed test
             need a router it never used. */}
         {viewerId && viewerId !== post.author.id && (
-          <FeedItemMenu
-            mediaId={post.media.id}
-            mediaTitle={post.media.title}
-            viewerId={viewerId}
-          />
+          <FeedItemMenu mediaId={post.media.id} mediaTitle={post.media.title} viewerId={viewerId} />
         )}
         <Link
           href={`/media/${post.media.id}`}
-          className="flex h-[200px] items-center justify-center overflow-hidden rounded-md bg-(--color-surface-strong)"
+          // Square, and the full width of the post — which is itself
+          // inset, so this is where the post's width is actually decided.
+          className="flex aspect-square w-full items-center justify-center overflow-hidden rounded-md bg-(--color-surface-strong)"
         >
-        {post.media.coverUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element -- see the Phase 3 spec on next/image
-          <img
-            src={post.media.coverUrl}
-            alt=""
-            loading="lazy"
-            className="h-full w-full object-cover"
-          />
+          {post.media.coverUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element -- see the Phase 3 spec on next/image
+            <img
+              src={post.media.coverUrl}
+              alt=""
+              loading="lazy"
+              // Which part of a portrait cover survives the square.
+              //
+              // Detecting where the title sits in the artwork would need the
+              // image analysed — OCR or saliency on a canvas, cross-origin,
+              // per image, before first paint — which is a great deal of
+              // machinery for a guess. The kind is a free approximation:
+              // posters and jackets put their art above and their title
+              // along the bottom, and venn prints the title underneath the
+              // cover anyway, so keeping the art loses nothing that is not
+              // already on the screen in a more legible form. Album sleeves
+              // are square to begin with and lose nothing either way.
+              className={`h-full w-full object-cover ${
+                post.media.kind === "album" ? "object-center" : "object-top"
+              }`}
+            />
           ) : (
             <span className="px-4 text-center text-(--color-text-secondary)">
               {post.media.title}
