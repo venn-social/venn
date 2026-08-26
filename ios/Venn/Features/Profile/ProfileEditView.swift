@@ -14,6 +14,8 @@ struct ProfileEditView: View {
 
     @FocusState private var focusedField: Field?
     @State private var pickedItem: PhotosPickerItem?
+    /// The photo being positioned, if any.
+    @State private var cropping: CroppablePhoto?
     @State private var pickedPreview: UIImage?
 
     private enum Field {
@@ -133,13 +135,27 @@ struct ProfileEditView: View {
         .onChange(of: pickedItem) { _, item in
             guard let item else { return }
             Task {
+                // Straight to the cropper. What used to happen here — crop
+                // centre-out and hope — is now the starting position
+                // rather than the answer.
                 guard let data = try? await item.loadTransferable(type: Data.self),
-                      let image = UIImage(data: data),
-                      let jpeg = AvatarImage.jpegData(from: image)
+                      let image = UIImage(data: data)
                 else { return }
-                viewModel.selectedAvatarData = jpeg
-                pickedPreview = UIImage(data: jpeg)
+                cropping = CroppablePhoto(image: image)
             }
+        }
+        .sheet(item: $cropping) { photo in
+            AvatarCropperView(
+                image: photo.image,
+                onCancel: { cropping = nil },
+                onConfirm: { jpeg in
+                    viewModel.selectedAvatarData = jpeg
+                    pickedPreview = UIImage(data: jpeg)
+                    cropping = nil
+                    pickedItem = nil
+                }
+            )
+            .presentationDetents([.large])
         }
     }
 

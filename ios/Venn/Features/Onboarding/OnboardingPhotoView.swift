@@ -11,6 +11,8 @@ struct OnboardingPhotoView: View {
 
     @State private var pickedItem: PhotosPickerItem?
     @State private var pickedPreview: UIImage?
+    /// The photo being positioned, if any.
+    @State private var cropping: CroppablePhoto?
 
     var body: some View {
         Screen {
@@ -98,13 +100,27 @@ struct OnboardingPhotoView: View {
         .onChange(of: pickedItem) { _, item in
             guard let item else { return }
             Task {
+                // Same cropper the edit screen uses. Choosing a photo is
+                // one act, and it should not go differently depending on
+                // which door you came in.
                 guard let data = try? await item.loadTransferable(type: Data.self),
-                      let image = UIImage(data: data),
-                      let jpeg = AvatarImage.jpegData(from: image)
+                      let image = UIImage(data: data)
                 else { return }
-                viewModel.selectedJPEG = jpeg
-                pickedPreview = UIImage(data: jpeg)
+                cropping = CroppablePhoto(image: image)
             }
+        }
+        .sheet(item: $cropping) { photo in
+            AvatarCropperView(
+                image: photo.image,
+                onCancel: { cropping = nil },
+                onConfirm: { jpeg in
+                    viewModel.selectedJPEG = jpeg
+                    pickedPreview = UIImage(data: jpeg)
+                    cropping = nil
+                    pickedItem = nil
+                }
+            )
+            .presentationDetents([.large])
         }
     }
 }
