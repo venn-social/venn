@@ -25,7 +25,8 @@ describe("SideMenu", () => {
     // array is the easy way to change it by accident.
     render(<SideMenu />);
     open();
-    const labels = screen.getAllByRole("link").map((link) => link.textContent);
+    // Icons now, so the name lives in aria-label rather than in text.
+    const labels = screen.getAllByRole("link").map((link) => link.getAttribute("aria-label"));
     expect(labels).toEqual(["Settings", "Lists", "Activity", "Last 12 Months"]);
   });
 
@@ -48,16 +49,20 @@ describe("SideMenu", () => {
     expect(screen.getByRole("button", { name: "More, 3 unread" })).toBeTruthy();
   });
 
-  it("badges Activity inside the panel too", () => {
+  it("badges Activity on the wheel too", () => {
+    // A dot rather than a number: the wheel is icons, and the toggle's own
+    // label carries the exact count for anyone who needs it.
     render(<SideMenu unreadCount={3} />);
     open();
-    expect(screen.getByRole("link", { name: /Activity/ }).textContent).toContain("3");
+    const activity = screen.getByRole("link", { name: "Activity" });
+    expect(activity.querySelector("span[aria-hidden]")).not.toBeNull();
   });
 
-  it("caps the visible badge rather than letting it stretch the row", () => {
-    render(<SideMenu unreadCount={42} />);
+  it("shows no badge when there is nothing unread", () => {
+    render(<SideMenu unreadCount={0} />);
     open();
-    expect(screen.getByRole("link", { name: /Activity/ }).textContent).toContain("9+");
+    const activity = screen.getByRole("link", { name: "Activity" });
+    expect(activity.querySelector("span[aria-hidden]")).toBeNull();
   });
 
   it("announces the exact count even when the badge is capped", () => {

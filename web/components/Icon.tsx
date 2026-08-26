@@ -284,6 +284,70 @@ export function BookmarkIcon({ filled = false, ...props }: FillableIconProps) {
   );
 }
 
+/** Settings. Sliders rather than a cog — a cog at 19px reads as a sun. */
+export function GearIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path
+        d="M4 7h16M4 12h16M4 17h16"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={2}
+        strokeLinecap="round"
+      />
+      <circle cx="9" cy="7" r="2" fill="currentColor" />
+      <circle cx="15" cy="12" r="2" fill="currentColor" />
+      <circle cx="8" cy="17" r="2" fill="currentColor" />
+    </Svg>
+  );
+}
+
+/** Lists. */
+export function ListIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path
+        d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={2}
+        strokeLinecap="round"
+      />
+    </Svg>
+  );
+}
+
+/** Activity. */
+export function BellIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path
+        d="M18 8a6 6 0 1 0-12 0c0 7-3 8-3 8h18s-3-1-3-8M13.7 21a2 2 0 0 1-3.4 0"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
+
+/** Last 12 Months. */
+export function ChartIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path
+        d="M4 20V10m5 10V4m5 16v-7m5 7V8"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={2}
+        strokeLinecap="round"
+      />
+    </Svg>
+  );
+}
+
 /** Opens the secondary-surfaces panel. */
 export function MenuIcon(props: IconProps) {
   return (
