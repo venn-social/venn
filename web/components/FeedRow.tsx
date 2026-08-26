@@ -57,24 +57,37 @@ export function FeedRow({ post, actions, viewerId = null }: FeedRowProps) {
             renders null still runs its hooks, which made every feed test
             need a router it never used. */}
         {viewerId && viewerId !== post.author.id && (
-          <FeedItemMenu
-            mediaId={post.media.id}
-            mediaTitle={post.media.title}
-            viewerId={viewerId}
-          />
+          <FeedItemMenu mediaId={post.media.id} mediaTitle={post.media.title} viewerId={viewerId} />
         )}
         <Link
           href={`/media/${post.media.id}`}
-          className="flex h-[200px] items-center justify-center overflow-hidden rounded-md bg-(--color-surface-strong)"
+          // Square, centred, at just under three quarters of the column.
+          // Full width made one post most of a screen; this leaves the
+          // feed feeling like a list of things rather than a slideshow of
+          // them.
+          className="mx-auto flex aspect-square w-[72%] items-center justify-center overflow-hidden rounded-md bg-(--color-surface-strong)"
         >
-        {post.media.coverUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element -- see the Phase 3 spec on next/image
-          <img
-            src={post.media.coverUrl}
-            alt=""
-            loading="lazy"
-            className="h-full w-full object-cover"
-          />
+          {post.media.coverUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element -- see the Phase 3 spec on next/image
+            <img
+              src={post.media.coverUrl}
+              alt=""
+              loading="lazy"
+              // Which part of a portrait cover survives the square.
+              //
+              // Detecting where the title sits in the artwork would need the
+              // image analysed — OCR or saliency on a canvas, cross-origin,
+              // per image, before first paint — which is a great deal of
+              // machinery for a guess. The kind is a free approximation:
+              // posters and jackets put their art above and their title
+              // along the bottom, and venn prints the title underneath the
+              // cover anyway, so keeping the art loses nothing that is not
+              // already on the screen in a more legible form. Album sleeves
+              // are square to begin with and lose nothing either way.
+              className={`h-full w-full object-cover ${
+                post.media.kind === "album" ? "object-center" : "object-top"
+              }`}
+            />
           ) : (
             <span className="px-4 text-center text-(--color-text-secondary)">
               {post.media.title}
