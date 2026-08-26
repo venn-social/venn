@@ -72,7 +72,7 @@ export default async function FeedPage() {
     >
       {/* Extra room at the foot: the layout switch floats over the page,
           and without it the switch would sit on top of the last post. */}
-      <main className="mx-auto flex max-w-lg flex-col gap-10 px-4 pt-8 pb-28 lg:max-w-2xl">
+      <main className="mx-auto flex max-w-lg lg:max-w-2xl flex-col gap-10 px-4 pt-8 pb-28">
         {posts.map((post) => (
           <FeedRow
             key={post.id}

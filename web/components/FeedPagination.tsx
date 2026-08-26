@@ -70,7 +70,7 @@ export function FeedPagination({
     try {
       const next = await fetchFeedPage(createClient(), {
         before: new Date(cursor),
-        limit: FEED_PAGE_SIZE
+        limit: FEED_PAGE_SIZE,
       });
 
       // A short page means the feed is exhausted. This counts rows kept
