@@ -77,7 +77,13 @@ export function SideMenu({ unreadCount = 0 }: SideMenuProps) {
         // than the viewport, which is why it landed behind the page.
         createPortal(
           <>
-            {/* Click-away. Not a focus trap: the panel is four links, and a
+            {/* Click-away, and nothing else. Deliberately invisible: it
+                used to dim the page behind it, which made opening four
+                links feel like leaving the screen you were on. The panel
+                sits over the page; the page carries on looking like
+                itself.
+
+                Not a focus trap either — the panel is four links, and a
                 trap that has to be escaped is worse than one that closes.
                 Starts below the bar, so the nav stays visible and usable
                 with the menu open. */}
@@ -86,14 +92,14 @@ export function SideMenu({ unreadCount = 0 }: SideMenuProps) {
               aria-hidden="true"
               tabIndex={-1}
               onClick={() => setOpen(false)}
-              className="fixed inset-x-0 bottom-0 z-40 cursor-default bg-black/20"
+              className="fixed inset-x-0 bottom-0 z-40 cursor-default"
               style={{ top: NAV_HEIGHT }}
             />
             <div
               id="side-menu"
               // Hangs from under the bar rather than covering it. Opening
               // the menu should not hide the thing you opened it from.
-              className="fixed left-0 z-40 flex w-56 flex-col gap-1 border-r border-(--color-separator) bg-(--color-background) p-4"
+              className="fixed left-0 z-40 flex w-56 flex-col gap-1 border-r border-(--color-separator) bg-(--color-background) p-4 shadow-lg"
               style={{ top: NAV_HEIGHT, height: `calc(100dvh - ${NAV_HEIGHT})` }}
             >
               {ITEMS.map((item) => {
