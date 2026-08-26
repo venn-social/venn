@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AddToListPicker } from "@/components/AddToListPicker";
 import { CandidateList } from "@/components/CandidateList";
-import { ChevronLeftIcon } from "@/components/Icon";
+import { ChevronLeftIcon, StarIcon } from "@/components/Icon";
 import { searchKindsFor, type ExploreCategory } from "@/components/CategoryChips";
 import { SearchPanel } from "@/components/SearchPanel";
 import { RatingChips } from "@/components/RatingChips";
@@ -18,6 +18,7 @@ import {
 } from "@/lib/compose";
 import type { MediaKind } from "@/lib/media";
 import { sanitizeCaption } from "@/lib/sanitize";
+import { addToHall } from "@/lib/hallOfFame";
 import { createClient } from "@/lib/supabase/client";
 
 /** The tab that owns a kind, for callers that arrive with one already. */
@@ -65,6 +66,8 @@ export function Composer({
   const [picked, setPicked] = useState<MediaCandidate | null>(initialPicked);
   const [rating, setRating] = useState<RatingChoice | null>(null);
   const [caption, setCaption] = useState("");
+  /** Put it on the profile as well as in the collection. */
+  const [starred, setStarred] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   // Set once something is logged — the media row now exists, so it can go
@@ -146,6 +149,20 @@ export function Composer({
       // Stay put and offer the list step rather than bouncing to the
       // feed: logging and listing are the same thought, and sending the
       // user away makes them navigate back to finish it.
+      // Starring is a second write rather than a column on the first: the
+      // free slot has to be found, and the hall can be full, which is a
+      // thing to say rather than a thing to fail on.
+      if (starred && action === "log") {
+        const placed = await addToHall(supabase, {
+          authorId: userId,
+          mediaId,
+          standing: { postId: "", action: postAction, hallPosition: null }
+        });
+        if (placed.full) {
+          setError("Logged, but your profile already holds twelve — take one out to add this.");
+        }
+      }
+
       setLogged({ mediaId, action });
       router.refresh();
     } catch (submitError) {
@@ -168,6 +185,11 @@ export function Composer({
           </h1>
           <p className="text-(--color-text-secondary)">{picked.title}</p>
         </div>
+
+        {/* The log succeeded and the star did not, which is a caveat rather
+            than a failure — so it belongs here, on the confirmation, not on
+            the form that has already been left behind. */}
+        {error && <p className="text-sm text-red-500">{error}</p>}
 
         <AddToListPicker userId={userId} mediaId={logged.mediaId} />
 
@@ -215,7 +237,29 @@ export function Composer({
 
         <h1 className="text-xl font-semibold text-(--color-text-primary)">{picked.title}</h1>
 
-        <RatingChips value={rating} onChange={setRating} />
+        <div className="flex items-center gap-3">
+          <RatingChips value={rating} onChange={setRating} />
+
+          {/* Starring is a statement about you, not about the thing, so it
+              sits apart from the sentiments rather than among them. It
+              applies to Log only: the database refuses to keep something
+              you have not got to yet in a hall of things you loved, so
+              Watchlist ignores it. */}
+          <button
+            type="button"
+            aria-pressed={starred}
+            aria-label={starred ? "On your profile" : "Add to your profile"}
+            title={starred ? "On your profile" : "Add to your profile"}
+            onClick={() => setStarred((was) => !was)}
+            className={
+              starred
+                ? "ml-auto flex h-11 w-11 items-center justify-center rounded-pill bg-(--color-accent) text-(--color-on-accent)"
+                : "ml-auto flex h-11 w-11 items-center justify-center rounded-pill border border-(--color-separator) text-(--color-text-secondary) hover:text-(--color-text-primary)"
+            }
+          >
+            <StarIcon size={18} filled={starred} />
+          </button>
+        </div>
 
         <textarea
           value={caption}

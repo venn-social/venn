@@ -7,6 +7,13 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), refresh: vi.fn() })
 }));
 
+const { addToHall } = vi.hoisted(() => ({ addToHall: vi.fn() }));
+
+vi.mock("@/lib/hallOfFame", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/hallOfFame")>("@/lib/hallOfFame");
+  return { ...actual, addToHall };
+});
+
 const { upsertMedia, createPost } = vi.hoisted(() => ({
   upsertMedia: vi.fn(),
   createPost: vi.fn()
@@ -127,5 +134,52 @@ describe("Composer", () => {
 
     expect(await screen.findByText("Saved")).toBeDefined();
     expect(screen.getByRole("heading", { name: "Saved" })).toBeDefined();
+  });
+});
+
+describe("starring on the way in", () => {
+  beforeEach(() => {
+    addToHall.mockReset().mockResolvedValue({ added: true, full: false });
+  });
+
+  async function pickSomething() {
+    render(<Composer userId="u1" />);
+    fireEvent.change(screen.getByPlaceholderText("Search for anything"), {
+      target: { value: "past lives" }
+    });
+    fireEvent.click(await screen.findByRole("button", { name: /Past Lives/ }));
+  }
+
+  it("does not star unless asked", async () => {
+    await pickSomething();
+    fireEvent.click(screen.getByRole("button", { name: "Log" }));
+    await waitFor(() => expect(createPost).toHaveBeenCalled());
+    expect(addToHall).not.toHaveBeenCalled();
+  });
+
+  it("stars what you logged when the star is on", async () => {
+    await pickSomething();
+    fireEvent.click(screen.getByRole("button", { name: "Add to your profile" }));
+    fireEvent.click(screen.getByRole("button", { name: "Log" }));
+    await waitFor(() => expect(addToHall).toHaveBeenCalled());
+  });
+
+  it("leaves the watchlist alone, which cannot hold a starred thing", async () => {
+    // The database refuses to keep something you have not got to yet in a
+    // hall of things you loved, so the star simply does not apply here.
+    await pickSomething();
+    fireEvent.click(screen.getByRole("button", { name: "Add to your profile" }));
+    fireEvent.click(screen.getByRole("button", { name: "Watchlist" }));
+    await waitFor(() => expect(createPost).toHaveBeenCalled());
+    expect(addToHall).not.toHaveBeenCalled();
+  });
+
+  it("says so when the profile is already full, without losing the log", async () => {
+    addToHall.mockResolvedValue({ added: false, full: true });
+    await pickSomething();
+    fireEvent.click(screen.getByRole("button", { name: "Add to your profile" }));
+    fireEvent.click(screen.getByRole("button", { name: "Log" }));
+
+    expect(await screen.findByText(/already holds twelve/)).toBeDefined();
   });
 });
