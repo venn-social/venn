@@ -36,27 +36,37 @@ const ITEMS = [
 /**
  * How far the icons sit from the button they came out of.
  *
- * Chosen with the arc below so adjacent icons clear each other: four 44px
- * icons over 90 degrees need roughly 60px of chord between them, which is
- * what this radius gives. Tighter and they overlap.
+ * Close enough that the four read as one control rather than four things
+ * scattered near each other, and far enough that 40px icons do not touch.
  */
-const RADIUS = 118;
+const RADIUS = 112;
+/** Icon diameter, and the margin kept between the wheel and the edges. */
+const ICON = 40;
+/** Height of the nav the wheel must stay clear of. */
+const NAV = 56;
+const EDGE = 10;
 /**
  * The arc they occupy, in degrees either side of straight down.
  *
- * Symmetric and downward: an arc that swept up put the last icon back
- * under the nav it came from, which is the one place it must not go.
+ * Downward, because an arc that swept up put the last icon back under the
+ * nav it came from — the one place it must not go.
  */
-const ARC_START = -45;
-const ARC_END = 45;
+const ARC_START = -38;
+const ARC_END = 38;
 /** Gap between each icon leaving the centre. The spin. */
 const STAGGER_MS = 55;
+
+/** Keeps a value inside a range, however the arithmetic came out. */
+function clamp(value: number, low: number, high: number): number {
+  return Math.min(high, Math.max(low, value));
+}
 
 export function SideMenu({ unreadCount = 0 }: { unreadCount?: number }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   /** Where the wheel comes out of, measured when it opens. */
   const [origin, setOrigin] = useState({ x: 0, y: 0 });
+  const [viewport, setViewport] = useState({ width: 0, height: 0 });
   /** Set a frame after opening, so the icons animate from the centre out. */
   const [unfurled, setUnfurled] = useState(false);
   const toggle = useRef<HTMLButtonElement>(null);
@@ -82,6 +92,7 @@ export function SideMenu({ unreadCount = 0 }: { unreadCount?: number }) {
   function show() {
     const box = toggle.current?.getBoundingClientRect();
     if (box) setOrigin({ x: box.left + box.width / 2, y: box.top + box.height / 2 });
+    setViewport({ width: window.innerWidth, height: window.innerHeight });
     setUnfurled(false);
     setOpen(true);
   }
@@ -90,6 +101,19 @@ export function SideMenu({ unreadCount = 0 }: { unreadCount?: number }) {
     setUnfurled(false);
     setOpen(false);
   }
+
+  // Where the fan is centred. Normally the button, but slid inward when
+  // that would put part of the arc off the screen — the button sits near
+  // the left edge, and on a phone the leftmost icon's natural place is off
+  // it entirely. Sliding the whole fan keeps the spacing; clamping each
+  // icon separately, which is what this replaced, collapsed them into a
+  // pile against the edge.
+  const reach = Math.sin((Math.max(-ARC_START, ARC_END) * Math.PI) / 180) * RADIUS;
+  const margin = reach + EDGE + ICON / 2;
+  const hub = {
+    x: viewport.width > margin * 2 ? clamp(origin.x, margin, viewport.width - margin) : origin.x,
+    y: Math.max(origin.y, NAV + EDGE + ICON / 2)
+  };
 
   return (
     <>
@@ -130,8 +154,8 @@ export function SideMenu({ unreadCount = 0 }: { unreadCount?: number }) {
                 const radians = (spread * Math.PI) / 180;
                 // Measured from straight down, so the wheel opens into the
                 // page rather than off the top of it.
-                const x = Math.sin(radians) * RADIUS;
-                const y = Math.cos(radians) * RADIUS;
+                const x = hub.x + Math.sin(radians) * RADIUS;
+                const y = hub.y + Math.cos(radians) * RADIUS;
                 const active = pathname === item.href;
                 const badged = item.href === "/notifications" && liveUnread > 0;
 
@@ -144,16 +168,16 @@ export function SideMenu({ unreadCount = 0 }: { unreadCount?: number }) {
                     title={item.label}
                     onClick={hide}
                     style={{
-                      left: origin.x,
-                      top: origin.y,
+                      left: x,
+                      top: y,
                       transform: unfurled
-                        ? `translate(-50%, -50%) translate(${x}px, ${y}px) rotate(0deg) scale(1)`
-                        : "translate(-50%, -50%) rotate(-120deg) scale(0.3)",
+                        ? "translate(-50%, -50%) rotate(0deg) scale(1)"
+                        : `translate(-50%, -50%) translate(${origin.x - x}px, ${origin.y - y}px) rotate(-120deg) scale(0.3)`,
                       opacity: unfurled ? 1 : 0,
                       transitionDelay: `${index * STAGGER_MS}ms`
                     }}
                     className={[
-                      "pointer-events-auto absolute flex h-11 w-11 items-center justify-center",
+                      "pointer-events-auto absolute flex h-10 w-10 items-center justify-center",
                       "rounded-pill border border-(--color-separator) bg-(--color-background) shadow-lg",
                       // Reduce Motion gets the icons without the spin — the
                       // wheel is decoration, the four links are not.
