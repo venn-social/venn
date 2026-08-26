@@ -49,7 +49,7 @@ export default async function MediaPage({ params }: MediaPageProps) {
   const runtime = formatRuntime(detail.runtime);
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-lg flex-col gap-6 px-4 py-8">
+    <main className="mx-auto flex min-h-screen max-w-lg lg:max-w-2xl flex-col gap-6 px-4 py-8">
       <div className="flex gap-4">
         <div className="w-[120px] shrink-0">
           <MediaCover media={media} />

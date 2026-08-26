@@ -55,7 +55,7 @@ export function LikeButton({ postId, userId, initialCount, initialLiked }: LikeB
       disabled={isPending}
       aria-pressed={liked}
       aria-label={liked ? "Unlike this post" : "Like this post"}
-      className="flex items-center gap-1.5 text-sm text-(--color-text-secondary) disabled:opacity-60"
+      className="flex items-center gap-1.5 text-sm text-(--color-text-secondary) transition-colors hover:text-(--color-text-primary) disabled:opacity-60"
     >
       <HeartIcon filled={liked} className={liked ? "text-(--color-like)" : ""} />
       {count > 0 && <span className="tabular-nums">{count}</span>}

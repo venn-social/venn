@@ -83,7 +83,7 @@ export function Explorer({ shelves = [] }: ExplorerProps) {
         onCategoryChange={setCategory}
         query={query}
         onQueryChange={setQuery}
-        placeholder="Search movies, TV, music, books, people"
+        placeholder="Search for anything"
       />
 
       {error && <p className="text-sm text-red-500">{error}</p>}

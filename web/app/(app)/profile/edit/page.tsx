@@ -19,7 +19,7 @@ export default async function ProfileEditPage() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-lg flex-col px-4 py-8">
+    <main className="mx-auto flex min-h-screen max-w-lg lg:max-w-2xl flex-col px-4 py-8">
       <ProfileEditForm
         userId={user.id}
         initialDisplayName={profile.displayName ?? ""}

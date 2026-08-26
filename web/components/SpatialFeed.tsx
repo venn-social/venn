@@ -265,7 +265,7 @@ function PlaneCard({ post, x, y }: { post: FeedPost; x: number; y: number }) {
         draggable={false}
         className="group flex h-full flex-col gap-1.5"
       >
-        <div className="flex flex-1 items-center justify-center overflow-hidden rounded-md bg-(--color-surface-strong)">
+        <div className="relative flex flex-1 items-center justify-center overflow-hidden rounded-md bg-(--color-surface-strong) transition-transform duration-200 ease-out group-hover:z-10 motion-safe:group-hover:scale-[1.04]">
           {post.media.coverUrl ? (
             // eslint-disable-next-line @next/next/no-img-element -- see the Phase 3 spec on next/image
             <img
@@ -273,7 +273,7 @@ function PlaneCard({ post, x, y }: { post: FeedPost; x: number; y: number }) {
               alt={post.media.title}
               loading="lazy"
               draggable={false}
-              className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-[1.03]"
+              className="h-full w-full object-cover transition-transform duration-300 ease-out motion-safe:group-hover:scale-[1.06]"
             />
           ) : (
             <span className="px-2 text-center text-xs text-(--color-text-secondary)">

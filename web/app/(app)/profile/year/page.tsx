@@ -20,7 +20,7 @@ export default async function YearInReviewPage() {
   } catch (error) {
     const rateLimited = (error as { code?: string } | null)?.code === "P0429";
     return (
-      <main className="mx-auto flex min-h-screen max-w-lg flex-col gap-4 px-4 py-8">
+      <main className="mx-auto flex min-h-screen max-w-lg lg:max-w-2xl flex-col gap-4 px-4 py-8">
         <h1 className="text-xl font-semibold text-(--color-text-primary)">Last 12 Months</h1>
         <p className="text-(--color-text-secondary)">
           {rateLimited ? "Too many requests — give it a moment." : "Couldn't load your stats."}
@@ -32,7 +32,7 @@ export default async function YearInReviewPage() {
   const total = totalConsumed(summary.kinds);
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-lg flex-col gap-6 px-4 py-8">
+    <main className="mx-auto flex min-h-screen max-w-lg lg:max-w-2xl flex-col gap-6 px-4 py-8">
       <h1 className="text-xl font-semibold text-(--color-text-primary)">Last 12 Months</h1>
 
       {total === 0 ? (

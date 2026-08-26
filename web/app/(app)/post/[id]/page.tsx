@@ -45,7 +45,7 @@ export default async function PostPage({ params }: PostPageProps) {
   const comments = commentResult.status === "fulfilled" ? commentResult.value : [];
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-lg flex-col gap-6 px-4 py-8">
+    <main className="mx-auto flex min-h-screen max-w-lg lg:max-w-2xl flex-col gap-6 px-4 py-8">
       <FeedRow post={post} />
 
       <div className="flex items-center gap-4 border-y border-(--color-separator) py-3">

@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { Avatar } from "@/components/Avatar";
-import { resizeToJPEG } from "@/lib/avatarImage";
+import { AvatarCropper } from "@/components/AvatarCropper";
 import { uploadAvatar } from "@/lib/onboarding";
 import { sanitizeBio, sanitizeDisplayName } from "@/lib/sanitize";
 import { updateProfile } from "@/lib/profile";
@@ -37,26 +37,29 @@ export function ProfileEditForm({
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [pickedPhoto, setPickedPhoto] = useState<Blob | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  /** The photo being positioned, if any. */
+  const [cropping, setCropping] = useState<File | null>(null);
 
   const overLimit = bio.length > BIO_LIMIT;
 
-  async function handlePhotoChange(event: React.ChangeEvent<HTMLInputElement>) {
+  function handlePhotoChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) return;
     setError("");
+    // Straight to the cropper. What used to happen here — crop centre-out
+    // and hope — is now the starting position rather than the answer.
+    setCropping(file);
+    // So picking the same file twice still opens it.
+    event.target.value = "";
+  }
 
-    try {
-      // Decoding is where an unsupported or corrupt file gives out.
-      const jpeg = await resizeToJPEG(file);
-      setPickedPhoto(jpeg);
-      setPreviewUrl((previous) => {
-        if (previous) URL.revokeObjectURL(previous);
-        return URL.createObjectURL(jpeg);
-      });
-    } catch {
-      setPickedPhoto(null);
-      setError("Couldn't read that photo. Try another one.");
-    }
+  function handleCropped(jpeg: Blob) {
+    setCropping(null);
+    setPickedPhoto(jpeg);
+    setPreviewUrl((previous) => {
+      if (previous) URL.revokeObjectURL(previous);
+      return URL.createObjectURL(jpeg);
+    });
   }
 
   async function handleSubmit(event: React.FormEvent) {
@@ -104,15 +107,26 @@ export function ProfileEditForm({
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <h1 className="text-xl font-semibold text-(--color-text-primary)">Edit profile</h1>
 
-      <div className="flex items-center gap-3">
-        <Avatar name={displayName} avatarUrl={previewUrl ?? initialAvatarUrl} size={72} />
-        <button
-          type="button"
-          onClick={() => fileInputRef.current?.click()}
-          className="font-semibold text-(--color-accent)"
-        >
-          Change photo
-        </button>
+      {cropping ? (
+        <AvatarCropper
+          file={cropping}
+          onCancel={() => setCropping(null)}
+          onConfirm={handleCropped}
+        />
+      ) : (
+        <div className="flex items-center gap-3">
+          <Avatar name={displayName} avatarUrl={previewUrl ?? initialAvatarUrl} size={72} />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="font-semibold text-(--color-accent)"
+          >
+            Change photo
+          </button>
+        </div>
+      )}
+
+      <div className="hidden">
         <input
           ref={fileInputRef}
           type="file"

@@ -256,7 +256,7 @@ export function Composer({
         onCategoryChange={setCategory}
         query={query}
         onQueryChange={setQuery}
-        placeholder="Search movies, TV, music, books"
+        placeholder="Search for anything"
         // No "people" tab: you cannot log a person, and the tab would lead
         // somewhere with nothing to do.
         exclude={["people"]}

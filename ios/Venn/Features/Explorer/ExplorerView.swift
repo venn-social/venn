@@ -35,7 +35,7 @@ struct ExplorerView: View {
             Screen {
                 ScrollView {
                     VStack(alignment: .leading, spacing: Theme.Spacing.lg) {
-                        SearchField(text: $query, prompt: "Search movies, TV, music, books, people")
+                        SearchField(text: $query, prompt: "Search for anything")
                         categoryPicker
                         if query.isEmpty {
                             if selectedCategory.browseKind != nil {

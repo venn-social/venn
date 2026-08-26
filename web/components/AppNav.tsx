@@ -44,8 +44,8 @@ export function AppNav({ unreadCount = 0, userId = null }: AppNavProps) {
     // than as a bar bolted to the top of it. The translucent ground
     // plus a blur keeps the labels legible while content passes
     // beneath, which a flat opaque strip with no edge could not.
-    <nav className="sticky top-0 z-10 bg-(--color-background)/80 backdrop-blur-md">
-      <ul className="mx-auto flex max-w-lg items-center gap-6 px-4 py-3">
+    <nav className="sticky top-0 z-30 bg-(--color-background)/80 backdrop-blur-md">
+      <ul className="mx-auto flex max-w-lg items-center gap-6 px-4 py-3 lg:max-w-4xl xl:max-w-6xl">
         <li>
           <SideMenu unreadCount={unreadCount} />
         </li>
