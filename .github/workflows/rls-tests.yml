@@ -78,6 +78,16 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/comment_policies_rls_test.sql
 
+      - name: Hall of Fame constraints
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -c 'create database hall_of_fame_test'
+          sudo cp supabase/migrations/20260826120000_hall_of_fame.sql /mig.sql
+          psql -h localhost -U postgres -d hall_of_fame_test \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/hall_of_fame_test.sql
+
       - name: Recommendation feed RLS
         env:
           PGPASSWORD: postgres

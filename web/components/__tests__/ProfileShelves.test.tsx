@@ -127,3 +127,85 @@ describe("ProfileShelves", () => {
     expect(screen.getByRole("menuitem", { name: "Remove" })).toBeTruthy();
   });
 });
+
+describe("the Starred tab", () => {
+  const starred = [item("s1", "A Favourite", "movie")];
+
+  it("does not exist when nothing is starred", () => {
+    // A tab that is always empty is a tab that always disappoints.
+    render(
+      <ProfileShelves
+        collection={[item("c1", "Logged", "movie")]}
+        watchlist={[]}
+        emptyCollection="none"
+        emptyWatchlist="none"
+      />
+    );
+    expect(screen.queryByRole("tab", { name: "Starred" })).toBeNull();
+  });
+
+  it("opens on Starred when there is one", () => {
+    // A profile should lead with what someone likes, and fall back to what
+    // they have seen only when they have not said.
+    render(
+      <ProfileShelves
+        hall={starred}
+        collection={[item("c1", "Logged", "movie")]}
+        watchlist={[]}
+        emptyCollection="none"
+        emptyWatchlist="none"
+      />
+    );
+
+    expect(screen.getByRole("tab", { name: "Starred" }).getAttribute("aria-selected")).toBe("true");
+    expect(screen.getByText("A Favourite")).toBeDefined();
+    expect(screen.queryByText("Logged")).toBeNull();
+  });
+
+  it("puts Starred first, before Collection", () => {
+    render(
+      <ProfileShelves
+        hall={starred}
+        collection={[]}
+        watchlist={[]}
+        emptyCollection="none"
+        emptyWatchlist="none"
+      />
+    );
+    expect(screen.getAllByRole("tab").map((t) => t.textContent)).toEqual([
+      "Starred",
+      "Collection",
+      "Watchlist"
+    ]);
+  });
+
+  it("still lets you reach the collection", () => {
+    render(
+      <ProfileShelves
+        hall={starred}
+        collection={[item("c1", "Logged", "movie")]}
+        watchlist={[]}
+        emptyCollection="none"
+        emptyWatchlist="none"
+      />
+    );
+
+    fireEvent.click(screen.getByRole("tab", { name: "Collection" }));
+    expect(screen.getByText("Logged")).toBeDefined();
+    expect(screen.queryByText("A Favourite")).toBeNull();
+  });
+
+  it("opens on Collection when nothing is starred", () => {
+    render(
+      <ProfileShelves
+        collection={[item("c1", "Logged", "movie")]}
+        watchlist={[]}
+        emptyCollection="none"
+        emptyWatchlist="none"
+      />
+    );
+    expect(screen.getByRole("tab", { name: "Collection" }).getAttribute("aria-selected")).toBe(
+      "true"
+    );
+  });
+});

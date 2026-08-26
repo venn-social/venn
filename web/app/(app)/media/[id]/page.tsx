@@ -3,10 +3,10 @@ import { notFound, redirect } from "next/navigation";
 import { DetailUnavailable } from "@/components/DetailUnavailable";
 import { MediaCover } from "@/components/MediaCover";
 import { StarIcon } from "@/components/Icon";
-import { ComposerLauncher } from "@/components/ComposerLauncher";
+import { MediaActions } from "@/components/MediaActions";
 import { WatchLinks } from "@/components/WatchLinks";
 import { regionFrom } from "@/lib/catalog/detail";
-import { candidateFromMedia } from "@/lib/catalog/types";
+import { fetchMediaStanding } from "@/lib/hallOfFame";
 import { fetchMediaById, formatRuntime, loadMediaDetail } from "@/lib/mediaDetail";
 import { mediaMetadata } from "@/lib/media";
 import { createClient } from "@/lib/supabase/server";
@@ -38,6 +38,14 @@ export default async function MediaPage({ params }: MediaPageProps) {
     notFound();
   }
 
+  // What this viewer has already done with it. Non-critical: the page is
+  // worth reading whether or not we can say, so a failure leaves the
+  // controls in their untouched state rather than taking the page down.
+  const standing = await fetchMediaStanding(supabase, {
+    userId: user.id,
+    mediaId: media.id
+  }).catch(() => null);
+
   // The provider is called in-process rather than over HTTP to our own
   // API. Building an outbound URL from the request's Host header and
   // forwarding the session cookie to it would let a spoofed Host ship that
@@ -50,12 +58,12 @@ export default async function MediaPage({ params }: MediaPageProps) {
 
   return (
     <main className="mx-auto flex min-h-screen max-w-lg lg:max-w-2xl flex-col gap-6 px-4 py-8">
-      <div className="flex gap-4">
+      <div className="flex items-start gap-4">
         <div className="w-[120px] shrink-0">
           <MediaCover media={media} />
         </div>
 
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-1 flex-col gap-1">
           <h1 className="text-xl font-semibold text-(--color-text-primary)">{media.title}</h1>
           {metadata && <p className="text-(--color-text-secondary)">{metadata}</p>}
 
@@ -68,15 +76,12 @@ export default async function MediaPage({ params }: MediaPageProps) {
               </span>
             )}
           </div>
-
-          <ComposerLauncher
-            userId={user.id}
-            initialPicked={candidateFromMedia(media)}
-            className="mt-2 self-start rounded-pill bg-(--color-accent) px-4 py-1.5 text-sm font-semibold text-(--color-on-accent)"
-          >
-            Log this
-          </ComposerLauncher>
         </div>
+
+        {/* Top right, and three of them: what you have already done with a
+            title is the first thing you want to know when you open it, and
+            a single "Log this" button answered none of it. */}
+        <MediaActions userId={user.id} mediaId={media.id} initialStanding={standing} />
       </div>
 
       {detail.unavailable && <DetailUnavailable />}

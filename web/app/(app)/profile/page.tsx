@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { EditableAvatar } from "@/components/EditableAvatar";
 import { ProfileShelves } from "@/components/ProfileShelves";
+import { fetchHall } from "@/lib/hallOfFame";
 import { fetchCollection, fetchWatchlist } from "@/lib/library";
 import { createClient } from "@/lib/supabase/server";
 import { fetchFollowCounts, fetchProfile } from "@/lib/profile";
@@ -35,10 +36,11 @@ export default async function ProfilePage() {
 
   // Shelves are non-critical: a failed library query should thin the page
   // out, not replace the whole profile with an error.
-  const [counts, collectionResult, watchlistResult] = await Promise.all([
+  const [counts, collectionResult, watchlistResult, hall] = await Promise.all([
     fetchFollowCounts(supabase, user.id),
     fetchCollection(supabase, user.id).catch(() => []),
-    fetchWatchlist(supabase, user.id).catch(() => [])
+    fetchWatchlist(supabase, user.id).catch(() => []),
+    fetchHall(supabase, user.id).catch(() => [])
   ]);
 
   return (
@@ -67,6 +69,7 @@ export default async function ProfilePage() {
       {profile.bio && <p className="text-(--color-text-primary)">{profile.bio}</p>}
 
       <ProfileShelves
+        hall={hall}
         collection={collectionResult}
         watchlist={watchlistResult}
         emptyCollection="Nothing in your collection yet."

@@ -25,13 +25,13 @@ test.describe("side menu", () => {
     await page.goto("/feed");
     await page.getByRole("button", { name: /More/ }).click();
 
+    // Icons on a wheel now, so the names live in aria-label rather than in
+    // text. The order is still load-bearing.
     const menu = page.locator("#side-menu");
-    await expect(menu.getByRole("link")).toHaveText([
-      "Settings",
-      "Lists",
-      "Activity",
-      "Last 12 Months"
-    ]);
+    const labels = await menu.getByRole("link").evaluateAll((links) =>
+      links.map((link) => link.getAttribute("aria-label"))
+    );
+    expect(labels).toEqual(["Settings", "Lists", "Activity", "Last 12 Months"]);
   });
 
   test("each entry actually reaches its screen", async ({ page }) => {
