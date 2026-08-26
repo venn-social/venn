@@ -57,26 +57,25 @@ export function FeedRow({ post, actions, viewerId = null }: FeedRowProps) {
             renders null still runs its hooks, which made every feed test
             need a router it never used. */}
         {viewerId && viewerId !== post.author.id && (
-          <FeedItemMenu
-            mediaId={post.media.id}
-            mediaTitle={post.media.title}
-            viewerId={viewerId}
-          />
+          <FeedItemMenu mediaId={post.media.id} mediaTitle={post.media.title} viewerId={viewerId} />
         )}
         <Link
           href={`/media/${post.media.id}`}
-          className="flex h-[200px] items-center justify-center overflow-hidden rounded-md bg-(--color-surface-strong)"
+          // No fixed height, and nothing cropped. Artwork arrives in every
+          // shape there is — a square album, a tall poster, a wide still —
+          // and forcing them all through one letterbox threw away the part
+          // of the image that made it worth looking at. The feed is now as
+          // uneven as the things in it.
+          // A minimum height, because a cover whose URL has died renders at
+          // zero and takes the whole card down to a line of text. Losing
+          // the picture is unavoidable; losing the post is not.
+          className="flex min-h-[120px] items-center justify-center overflow-hidden rounded-md bg-(--color-surface-strong)"
         >
-        {post.media.coverUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element -- see the Phase 3 spec on next/image
-          <img
-            src={post.media.coverUrl}
-            alt=""
-            loading="lazy"
-            className="h-full w-full object-cover"
-          />
+          {post.media.coverUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element -- see the Phase 3 spec on next/image
+            <img src={post.media.coverUrl} alt="" loading="lazy" className="h-auto w-full" />
           ) : (
-            <span className="px-4 text-center text-(--color-text-secondary)">
+            <span className="px-4 py-10 text-center text-(--color-text-secondary)">
               {post.media.title}
             </span>
           )}
