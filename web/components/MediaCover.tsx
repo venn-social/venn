@@ -19,10 +19,14 @@ interface MediaCoverProps {
  * Pointer-only: `hover` never resolves on a touchscreen, so nothing here
  * costs a phone anything, and the transform is skipped outright for anyone
  * who has asked for less motion.
+ *
+ * It lifts by exactly one layer, not ten. Enough to clear the tiles beside
+ * it, and nowhere near the chrome — an earlier version used the same layer
+ * as the nav, so a hovered cover painted straight over it.
  */
 export function MediaCover({ media }: MediaCoverProps) {
   return (
-    <div className="group relative flex aspect-[2/3] items-center justify-center overflow-hidden rounded-sm bg-(--color-surface-strong) transition-transform duration-200 ease-out hover:z-10 motion-safe:hover:scale-[1.04]">
+    <div className="group relative flex aspect-[2/3] items-center justify-center overflow-hidden rounded-sm bg-(--color-surface-strong) transition-transform duration-200 ease-out hover:z-[1] motion-safe:hover:scale-[1.04]">
       {media.coverUrl ? (
         // eslint-disable-next-line @next/next/no-img-element -- see the component doc comment
         <img

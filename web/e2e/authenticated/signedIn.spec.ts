@@ -54,7 +54,7 @@ test.describe("signed in", () => {
 
   test("explorer search reaches the catalog APIs", async ({ page }) => {
     await page.goto("/explorer");
-    await page.getByPlaceholder("Search movies, TV, music, books, people").fill("past lives");
+    await page.getByPlaceholder("Search for anything").fill("past lives");
 
     // The search endpoint requires a session; signed out it 401s. Getting
     // past "Searching…" to a settled state is the assertion.
@@ -77,7 +77,7 @@ test.describe("signed in", () => {
     // payload leaves Explorer working rather than blanking it.
     await page.goto("/explorer");
 
-    await expect(page.getByPlaceholder("Search movies, TV, music, books, people")).toBeVisible();
+    await expect(page.getByPlaceholder("Search for anything")).toBeVisible();
     await expect(page.getByText("Couldn't load")).toHaveCount(0);
   });
 

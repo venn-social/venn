@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { resizeToJPEG } from "@/lib/avatarImage";
+import { AvatarCropper } from "@/components/AvatarCropper";
 import { uploadAvatar } from "@/lib/onboarding";
 import { createClient } from "@/lib/supabase/client";
 
@@ -16,23 +16,26 @@ export function OnboardingPhotoStep({ userId, onComplete }: OnboardingPhotoStepP
   const [uploading, setUploading] = useState(false);
   const [failed, setFailed] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  /** The photo being positioned, if any. */
+  const [cropping, setCropping] = useState<File | null>(null);
 
-  async function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
+  function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) return;
     setFailed(false);
-    try {
-      // Decoding is where an unsupported or corrupt file gives out, not upload.
-      const jpeg = await resizeToJPEG(file);
-      setPickedBlob(jpeg);
-      setPreviewUrl((previous) => {
-        if (previous) URL.revokeObjectURL(previous);
-        return URL.createObjectURL(jpeg);
-      });
-    } catch {
-      setPickedBlob(null);
-      setFailed(true);
-    }
+    // Same cropper the edit screen uses. Choosing a photo is one act, and
+    // it should not go differently depending on which door you came in.
+    setCropping(file);
+    event.target.value = "";
+  }
+
+  function handleCropped(jpeg: Blob) {
+    setCropping(null);
+    setPickedBlob(jpeg);
+    setPreviewUrl((previous) => {
+      if (previous) URL.revokeObjectURL(previous);
+      return URL.createObjectURL(jpeg);
+    });
   }
 
   async function handleContinue() {
@@ -62,7 +65,15 @@ export function OnboardingPhotoStep({ userId, onComplete }: OnboardingPhotoStepP
         </p>
       </div>
 
-      <div className="flex justify-center">
+      {cropping && (
+        <AvatarCropper
+          file={cropping}
+          onCancel={() => setCropping(null)}
+          onConfirm={handleCropped}
+        />
+      )}
+
+      <div className={cropping ? "hidden" : "flex justify-center"}>
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
