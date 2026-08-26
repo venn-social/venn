@@ -82,15 +82,15 @@ export function PostActions({
           onClick={() => void toggle()}
           aria-expanded={expanded}
           aria-controls={`comments-${postId}`}
-          className="flex items-center gap-1.5 text-sm text-(--color-text-secondary)"
+          // Built exactly like the like button beside it: the glyph, the
+          // tally when there is one, and the words only where a screen
+          // reader needs them. "0 comments" written out was the loudest
+          // thing on a quiet post.
+          aria-label={shown === 1 ? "1 comment" : `${shown} comments`}
+          className="flex items-center gap-1.5 text-sm text-(--color-text-secondary) transition-colors hover:text-(--color-text-primary)"
         >
           <CommentIcon />
-          <span>
-            {shown > 0 ? shown : ""}{" "}
-            <span className={shown > 0 ? "sr-only" : ""}>
-              {shown === 1 ? "comment" : "comments"}
-            </span>
-          </span>
+          {shown > 0 && <span className="tabular-nums">{shown}</span>}
         </button>
       </div>
 
