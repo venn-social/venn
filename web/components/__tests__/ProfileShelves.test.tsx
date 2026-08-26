@@ -209,3 +209,85 @@ describe("the Starred tab", () => {
     );
   });
 });
+
+describe("reordering from the menu", () => {
+  const three = [
+    item("a", "First", "movie"),
+    item("b", "Second", "movie"),
+    item("c", "Third", "movie")
+  ];
+
+  function shelf(canEdit = true) {
+    return render(
+      <ProfileShelves
+        collection={three}
+        watchlist={[]}
+        emptyCollection="none"
+        emptyWatchlist="none"
+        canEdit={canEdit}
+      />
+    );
+  }
+
+  it("offers Reorder in the menu, beside Edit and Remove", () => {
+    // Dragging was invisible until you tried it, and on a grid of covers
+    // it competed with the tap that opens one.
+    shelf();
+    fireEvent.click(screen.getByRole("button", { name: "Options for First" }));
+    expect(screen.getByRole("menuitem", { name: "Reorder" })).toBeDefined();
+  });
+
+  it("does not offer it to someone looking at your profile", () => {
+    shelf(false);
+    expect(screen.queryByRole("button", { name: "Options for First" })).toBeNull();
+  });
+
+  it("does not offer it when there is nothing to reorder against", () => {
+    render(
+      <ProfileShelves
+        collection={[item("a", "Only", "movie")]}
+        watchlist={[]}
+        emptyCollection="none"
+        emptyWatchlist="none"
+        canEdit
+      />
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Options for Only" }));
+    expect(screen.queryByRole("menuitem", { name: "Reorder" })).toBeNull();
+  });
+
+  it("says what to do once something is held", () => {
+    shelf();
+    fireEvent.click(screen.getByRole("button", { name: "Options for First" }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "Reorder" }));
+    expect(screen.getByText("Tap where it should go")).toBeDefined();
+  });
+
+  it("turns the other covers into destinations, and leaves the held one alone", () => {
+    shelf();
+    fireEvent.click(screen.getByRole("button", { name: "Options for First" }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "Reorder" }));
+
+    expect(screen.getByRole("button", { name: /Move here, before Second/ })).toBeDefined();
+    expect(screen.queryByRole("button", { name: /Move here, before First/ })).toBeNull();
+  });
+
+  it("puts it back down on Cancel", () => {
+    shelf();
+    fireEvent.click(screen.getByRole("button", { name: "Options for First" }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "Reorder" }));
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+
+    expect(screen.queryByText("Tap where it should go")).toBeNull();
+    expect(screen.queryByRole("button", { name: /Move here/ })).toBeNull();
+  });
+
+  it("puts it back down on Escape", () => {
+    shelf();
+    fireEvent.click(screen.getByRole("button", { name: "Options for First" }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "Reorder" }));
+    fireEvent.keyDown(window, { key: "Escape" });
+
+    expect(screen.queryByText("Tap where it should go")).toBeNull();
+  });
+});
