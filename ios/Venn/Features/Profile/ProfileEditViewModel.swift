@@ -34,7 +34,7 @@ final class ProfileEditViewModel {
     var displayName: String
     var bio: String
     /// JPEG bytes of a newly picked avatar, already downscaled by the view
-    /// (`AvatarImage.jpegData`). Nil = avatar untouched this session.
+    /// (`AvatarCropperView`). Nil = avatar untouched this session.
     var selectedAvatarData: Data?
     var state: State = .editing
 

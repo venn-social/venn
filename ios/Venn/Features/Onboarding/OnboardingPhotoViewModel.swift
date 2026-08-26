@@ -14,7 +14,7 @@ final class OnboardingPhotoViewModel {
         case done
     }
 
-    /// Upload-ready JPEG bytes, set by the view after `AvatarImage`
+    /// Upload-ready JPEG bytes, set by the view after `AvatarCropperView`
     /// processing. Nil until a photo is picked.
     var selectedJPEG: Data?
     private(set) var state: State = .picking
