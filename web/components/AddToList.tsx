@@ -8,6 +8,7 @@ import { upsertMedia } from "@/lib/compose";
 import { addToList } from "@/lib/lists";
 import type { MediaKind } from "@/lib/media";
 import { createClient } from "@/lib/supabase/client";
+import { FIELD_CLASS } from "@/lib/formField";
 
 const KINDS: { kind: MediaKind; label: string }[] = [
   { kind: "movie", label: "Movies" },
@@ -118,7 +119,7 @@ export function AddToList({ listId, nextPosition }: AddToListProps) {
         onChange={(event) => setQuery(event.target.value)}
         placeholder="Search for anything"
         disabled={adding}
-        className="rounded-sm border border-(--color-separator) bg-(--color-surface-strong) px-3 py-2 text-(--color-text-primary) outline-none disabled:opacity-60"
+        className={`${FIELD_CLASS} disabled:opacity-60`}
       />
 
       {error && <p className="text-sm text-red-500">{error}</p>}

@@ -13,6 +13,7 @@ import {
 import { shortRelativeTime } from "@/lib/relativeTime";
 import { sanitizeCaption } from "@/lib/sanitize";
 import { createClient } from "@/lib/supabase/client";
+import { FIELD_CLASS } from "@/lib/formField";
 
 interface CommentThreadProps {
   postId: string;
@@ -203,7 +204,7 @@ export function CommentThread({
                 rows={2}
                 maxLength={500}
                 aria-label="Edit your comment"
-                className="rounded-sm border border-(--color-separator) bg-(--color-surface-strong) px-3 py-2 text-(--color-text-primary) outline-none"
+                className={FIELD_CLASS}
               />
               <span className="flex gap-2">
                 <button
@@ -260,7 +261,7 @@ export function CommentThread({
                     rows={2}
                     maxLength={500}
                     aria-label={`Reply to ${comment.author.displayName ?? comment.author.username}`}
-                    className="rounded-sm border border-(--color-separator) bg-(--color-surface-strong) px-3 py-2 text-(--color-text-primary) outline-none"
+                    className={FIELD_CLASS}
                   />
                   <span className="flex gap-2">
                     <button
@@ -297,7 +298,7 @@ export function CommentThread({
           onChange={(event) => setBody(event.target.value)}
           placeholder="Add a comment"
           rows={2}
-          className="resize-none rounded-sm border border-(--color-separator) bg-(--color-surface-strong) px-3 py-2 text-(--color-text-primary) outline-none"
+          className={`${FIELD_CLASS} resize-none`}
         />
         {error && <p className="text-sm text-red-500">{error}</p>}
         <button

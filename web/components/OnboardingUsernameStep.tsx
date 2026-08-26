@@ -10,6 +10,7 @@ import {
 } from "@/lib/sanitize";
 import { createClient } from "@/lib/supabase/client";
 import { CheckIcon, CrossIcon } from "@/components/Icon";
+import { FIELD_CLASS } from "@/lib/formField";
 
 interface OnboardingUsernameStepProps {
   userId: string;
@@ -144,7 +145,7 @@ export function OnboardingUsernameStep({ userId, onComplete }: OnboardingUsernam
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
         <div className="flex flex-col gap-1">
-          <div className="flex items-center gap-1 rounded-sm border border-(--color-separator) bg-(--color-surface-strong) px-3 py-2">
+          <div className="flex items-center gap-1 border-b border-(--color-separator) py-2 focus-within:border-(--color-text-secondary)">
             <span className="text-(--color-text-secondary)">@</span>
             <input
               type="text"
@@ -167,7 +168,7 @@ export function OnboardingUsernameStep({ userId, onComplete }: OnboardingUsernam
           onChange={(event) => setDisplayName(event.target.value)}
           placeholder="Display name (optional)"
           autoComplete="name"
-          className="rounded-sm border border-(--color-separator) bg-(--color-surface-strong) px-3 py-2 text-(--color-text-primary) outline-none"
+          className={FIELD_CLASS}
         />
 
         {submitError && <p className="text-sm text-red-500">{submitError}</p>}

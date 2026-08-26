@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { canResend, resendSecondsRemaining } from "@/lib/auth";
+import { FIELD_CLASS } from "@/lib/formField";
 import { createClient } from "@/lib/supabase/client";
 
 /**
@@ -26,19 +27,6 @@ function signInErrorMessage(error: { code?: string; status?: number }): string {
   }
   return "Couldn't send the magic link. Please try again.";
 }
-
-/**
- * One hairline, no box, nothing filled in.
- *
- * The sign-in screen is the first thing anyone sees, and it was three
- * nested rectangles — a card around a field that was itself a filled
- * rectangle with its own border. The rule under the field is enough to say
- * where to type, and it firms up on focus.
- */
-const FIELD =
-  "w-full border-b border-(--color-separator) bg-transparent py-2 " +
-  "text-(--color-text-primary) outline-none placeholder:text-(--color-text-secondary) " +
-  "focus:border-(--color-text-secondary)";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -148,7 +136,7 @@ export default function LoginPage() {
               onChange={(event) => setCode(event.target.value)}
               placeholder="Code from email"
               autoComplete="one-time-code"
-              className={`${FIELD} text-center`}
+              className={`${FIELD_CLASS} text-center`}
             />
             {errorMessage && status === "sent" && (
               <p className="text-sm text-red-500">{errorMessage}</p>
@@ -191,7 +179,7 @@ export default function LoginPage() {
             onChange={(event) => setEmail(event.target.value)}
             placeholder="Email"
             autoComplete="email"
-            className={FIELD}
+            className={FIELD_CLASS}
           />
           {status === "error" && <p className="text-sm text-red-500">{errorMessage}</p>}
           <button

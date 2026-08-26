@@ -5,6 +5,7 @@ import { useState } from "react";
 import { createList } from "@/lib/lists";
 import { normalise } from "@/lib/sanitize";
 import { createClient } from "@/lib/supabase/client";
+import { FIELD_CLASS } from "@/lib/formField";
 
 const TITLE_LIMIT = 60;
 const DESCRIPTION_LIMIT = 500;
@@ -67,14 +68,14 @@ export function CreateListForm({ userId }: { userId: string }) {
         value={title}
         onChange={(event) => setTitle(event.target.value)}
         placeholder="List name"
-        className="rounded-sm border border-(--color-separator) bg-(--color-surface-strong) px-3 py-2 text-(--color-text-primary) outline-none"
+        className={FIELD_CLASS}
       />
       <textarea
         value={description}
         onChange={(event) => setDescription(event.target.value)}
         placeholder="What's this list about? (optional)"
         rows={2}
-        className="resize-none rounded-sm border border-(--color-separator) bg-(--color-surface-strong) px-3 py-2 text-(--color-text-primary) outline-none"
+        className={`${FIELD_CLASS} resize-none`}
       />
 
       <label className="flex items-center gap-2 text-sm text-(--color-text-secondary)">
