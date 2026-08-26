@@ -268,6 +268,22 @@ export function PencilIcon(props: IconProps) {
   );
 }
 
+/** Saved for later. */
+export function BookmarkIcon({ filled = false, ...props }: FillableIconProps) {
+  return (
+    <Svg {...props}>
+      <path
+        d="M6 4h12v16l-6-4-6 4V4Z"
+        fill={filled ? "currentColor" : "none"}
+        stroke="currentColor"
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
+
 /** Opens the secondary-surfaces panel. */
 export function MenuIcon(props: IconProps) {
   return (

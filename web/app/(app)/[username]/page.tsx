@@ -3,9 +3,11 @@ import { notFound, redirect } from "next/navigation";
 import { Avatar } from "@/components/Avatar";
 import { FollowButton } from "@/components/FollowButton";
 import { LockedProfile } from "@/components/LockedProfile";
+import { HallOfFame } from "@/components/HallOfFame";
 import { ProfileShelves } from "@/components/ProfileShelves";
 import { VennOverlap } from "@/components/VennOverlap";
 import { fetchFollowStatus } from "@/lib/follow";
+import { fetchHall, type HallItem } from "@/lib/hallOfFame";
 import { fetchCollection, fetchWatchlist, type LibraryItem } from "@/lib/library";
 import { fetchListsFor, type UserList } from "@/lib/lists";
 import { fetchOverlap } from "@/lib/overlap";
@@ -52,6 +54,7 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
   let overlapFailed = false;
   let collection: LibraryItem[] = [];
   let watchlist: LibraryItem[] = [];
+  let hall: HallItem[] = [];
   let lists: UserList[] = [];
   // Gated server-side: a locked profile's shelves are never fetched, so
   // they never reach the browser at all. RLS is still the real boundary.
@@ -61,9 +64,10 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
     } catch {
       overlapFailed = true;
     }
-    [collection, watchlist, lists] = await Promise.all([
+    [collection, watchlist, hall, lists] = await Promise.all([
       fetchCollection(supabase, profile.id).catch(() => []),
       fetchWatchlist(supabase, profile.id).catch(() => []),
+      fetchHall(supabase, profile.id).catch(() => []),
       fetchListsFor(supabase, profile.id).catch(() => [])
     ]);
   }
@@ -112,6 +116,8 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
               </p>
             )}
           </section>
+
+          <HallOfFame items={hall} isOwner={false} />
 
           <ProfileShelves
             collection={collection}
