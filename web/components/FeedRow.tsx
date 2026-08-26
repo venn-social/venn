@@ -70,12 +70,22 @@ export function FeedRow({ post, actions, viewerId = null }: FeedRowProps) {
           // The minimum is for the other case: a cover whose URL has died
           // renders at zero height and takes the whole card down to a line
           // of text. Losing the picture is unavoidable; losing the post is
-          // not.
+          // not. The surface behind shows either side of a narrow cover,
+          // which is what keeps a column of different shapes tidy.
           className="flex min-h-[120px] items-center justify-center overflow-hidden rounded-md bg-(--color-surface-strong)"
         >
           {post.media.coverUrl ? (
             // eslint-disable-next-line @next/next/no-img-element -- see the Phase 3 spec on next/image
-            <img src={post.media.coverUrl} alt="" loading="lazy" className="h-auto w-full" />
+            <img
+              src={post.media.coverUrl}
+              alt=""
+              loading="lazy"
+              // Capped at the height covers used to be, but never cropped
+              // to it. A tall poster shrinks to fit and stays tall; a wide
+              // still shrinks and stays wide. Every pixel of the artwork
+              // is still there, and no two posts are the same shape.
+              className="max-h-[200px] w-auto max-w-full"
+            />
           ) : (
             <span className="px-4 py-10 text-center text-(--color-text-secondary)">
               {post.media.title}
