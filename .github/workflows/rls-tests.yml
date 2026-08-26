@@ -84,6 +84,7 @@ jobs:
         run: |
           psql -h localhost -U postgres -c 'create database hall_of_fame_test'
           sudo cp supabase/migrations/20260826120000_hall_of_fame.sql /mig.sql
+          sudo cp supabase/migrations/20260827120000_reorder_hall.sql /mig2.sql
           psql -h localhost -U postgres -d hall_of_fame_test \
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/hall_of_fame_test.sql

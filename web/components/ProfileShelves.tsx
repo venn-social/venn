@@ -2,19 +2,20 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { MediaCover } from "@/components/MediaCover";
 import { MediaKindFilter, type KindFilter } from "@/components/MediaKindFilter";
 import { MediaOverflowMenu } from "@/components/MediaOverflowMenu";
 import { RatingChips } from "@/components/RatingChips";
 import { ratingToPost, type RatingChoice } from "@/lib/compose";
+import { reorderHall } from "@/lib/hallOfFame";
 import {
+  movedLibraryOrder,
   removeFromLibrary,
   reorderLibrary,
   updatePostRating,
   type LibraryItem
 } from "@/lib/library";
-import { useGridReorder } from "@/components/useGridReorder";
 import type { MediaKind } from "@/lib/media";
 import { createClient } from "@/lib/supabase/client";
 
@@ -84,11 +85,26 @@ export function ProfileShelves({
   const [busyId, setBusyId] = useState<string | null>(null);
   /** The item whose rating is being edited, if any. */
   const [editingId, setEditingId] = useState<string | null>(null);
+  /**
+   * The cover picked up for reordering, if any. Chosen from its own ⋯
+   * menu rather than by dragging: a drag is invisible until you try it,
+   * and on a grid of covers it competes with the tap that opens one.
+   */
+  const [movingId, setMovingId] = useState<string | null>(null);
 
   const items = shelf === "hall" ? hall : shelf === "collection" ? collection : watchlist;
   // The hall has no empty state: its tab only exists when it has items, so
   // there is no way to arrive at an empty one.
   const emptyMessage = shelf === "watchlist" ? emptyWatchlist : emptyCollection;
+
+  useEffect(() => {
+    if (!movingId) return;
+    function onKey(event: KeyboardEvent) {
+      if (event.key === "Escape") setMovingId(null);
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [movingId]);
 
   const available = useMemo(
     () => new Set<MediaKind>(items.map((item) => item.media.kind)),
@@ -96,23 +112,26 @@ export function ProfileShelves({
   );
   const visible = kind ? items.filter((item) => item.media.kind === kind) : items;
 
-  // Reordering is only coherent over the whole shelf: dragging inside a
-  // filtered view would write positions that ignore the hidden items.
+  // Reordering is only coherent over the whole shelf: moving something
+  // inside a filtered view would write positions that ignore the hidden
+  // items.
   const reorderable = canEdit && kind === null;
-  const reorder = useGridReorder({
-    ids: visible.map((item) => item.id),
-    enabled: reorderable,
-    onCommit: (order) => void handleReorder(order)
-  });
+  const ordered = visible;
 
-  const byId = new Map(visible.map((item) => [item.id, item]));
-  const ordered = reorder.order
-    .map((id) => byId.get(id))
-    .filter((item): item is LibraryItem => item !== undefined);
+  /** Put the held cover where `toIndex` is, and write the new order. */
+  function placeAt(toIndex: number) {
+    if (!movingId) return;
+    const order = movedLibraryOrder(ordered, movingId, toIndex);
+    setMovingId(null);
+    void handleReorder(order);
+  }
 
   async function handleReorder(order: string[]) {
     try {
-      await reorderLibrary(createClient(), order);
+      // The hall is sorted by its own column, so it reorders through its
+      // own function. Sending a hall order to reorderLibrary writes the
+      // shelves' column instead, which reads as the drag being rejected.
+      await (shelf === "hall" ? reorderHall : reorderLibrary)(createClient(), order);
       router.refresh();
     } catch {
       // The grid keeps the arrangement on screen; a refresh would snap it
@@ -182,6 +201,22 @@ export function ProfileShelves({
 
       <MediaKindFilter selected={kind} onSelect={setKind} available={available} />
 
+      {movingId && (
+        // The mode has to announce itself. Picking "Reorder" out of a menu
+        // and then finding every cover behaves differently is otherwise a
+        // surprise with no explanation on screen.
+        <div className="flex items-center gap-3 text-sm">
+          <span className="text-(--color-text-primary)">Tap where it should go</span>
+          <button
+            type="button"
+            onClick={() => setMovingId(null)}
+            className="text-(--color-text-secondary) hover:text-(--color-text-primary)"
+          >
+            Cancel
+          </button>
+        </div>
+      )}
+
       {visible.length === 0 ? (
         <p className="pt-1 text-(--color-text-secondary)">
           {items.length === 0 ? emptyMessage : "Nothing of that type here yet."}
@@ -191,29 +226,33 @@ export function ProfileShelves({
           {ordered.map((item, index) => (
             <li
               key={item.id}
-              data-reorder-index={index}
-              {...(reorderable ? reorder.handlers(item.id) : {})}
-              className={[
-                "group relative",
-                reorderable ? "touch-none" : "",
-                reorder.draggingId === item.id ? "opacity-50" : ""
-              ].join(" ")}
+              className={["group relative", movingId === item.id ? "opacity-40" : ""].join(" ")}
             >
-              <Link
-                href={`/media/${item.media.id}`}
-                // A completed drag must not also navigate.
-                onClick={(event) => {
-                  if (reorder.consumedClick()) event.preventDefault();
-                }}
-              >
-                <MediaCover media={item.media} />
-              </Link>
+              {movingId && movingId !== item.id ? (
+                // While something is held, every other cover is a place to
+                // put it rather than a link to open it.
+                <button
+                  type="button"
+                  onClick={() => placeAt(index)}
+                  aria-label={`Move here, before ${item.media.title}`}
+                  className="block w-full rounded-sm ring-2 ring-(--color-accent)/40 ring-offset-2 ring-offset-(--color-background) transition hover:ring-(--color-accent)"
+                >
+                  <MediaCover media={item.media} />
+                </button>
+              ) : (
+                <Link href={`/media/${item.media.id}`}>
+                  <MediaCover media={item.media} />
+                </Link>
+              )}
               {canEdit && (
                 <MediaOverflowMenu
                   label={`Options for ${item.media.title}`}
                   busy={busyId === item.id}
                   actions={[
                     { label: "Edit", onSelect: () => setEditingId(item.id) },
+                    ...(reorderable && ordered.length > 1
+                      ? [{ label: "Reorder", onSelect: () => setMovingId(item.id) }]
+                      : []),
                     {
                       label: "Remove",
                       destructive: true,
