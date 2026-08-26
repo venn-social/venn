@@ -4,6 +4,7 @@ import { useState } from "react";
 import { LANGUAGES, type LanguageCode } from "@/lib/language";
 import { updateLanguage } from "@/lib/profile";
 import { createClient } from "@/lib/supabase/client";
+import { FIELD_CLASS } from "@/lib/formField";
 
 interface LanguagePickerProps {
   userId: string;
@@ -46,15 +47,14 @@ export function LanguagePicker({ userId, initialLanguage }: LanguagePickerProps)
         Search language
       </label>
       <p className="text-sm text-(--color-text-secondary)">
-        What the catalog is searched in. Titles other people have already logged stay as they
-        were.
+        What the catalog is searched in. Titles other people have already logged stay as they were.
       </p>
       <select
         id="language"
         value={language}
         disabled={saving}
         onChange={(event) => void handleChange(event.target.value as LanguageCode)}
-        className="rounded-sm border border-(--color-separator) bg-(--color-surface-strong) px-3 py-2 text-(--color-text-primary) disabled:opacity-50"
+        className={`${FIELD_CLASS} disabled:opacity-50`}
       >
         {LANGUAGES.map((option) => (
           <option key={option.code} value={option.code}>

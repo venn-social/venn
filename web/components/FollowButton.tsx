@@ -64,11 +64,18 @@ export function FollowButton({ followerId, followeeId, initialStatus }: FollowBu
       type="button"
       onClick={handleClick}
       disabled={isPending}
-      className={
+      // A hairline on the page's own ground either way. The accent fill
+      // made Follow the loudest thing on someone's profile, above the
+      // person and above what they like, which is not the order of
+      // importance. The two states differ by weight of text, not by a
+      // block of colour.
+      className={[
+        "rounded-pill border border-(--color-separator) bg-(--color-background)",
+        "px-4 py-1.5 text-sm transition-colors disabled:opacity-50",
         isPrimary
-          ? "rounded-pill bg-(--color-accent) px-4 py-2 font-semibold text-(--color-on-accent) disabled:opacity-50"
-          : "rounded-pill border border-(--color-separator) bg-(--color-surface-strong) px-4 py-2 font-semibold text-(--color-text-primary) disabled:opacity-50"
-      }
+          ? "font-semibold text-(--color-text-primary) hover:border-(--color-text-secondary)"
+          : "text-(--color-text-secondary) hover:text-(--color-text-primary)"
+      ].join(" ")}
     >
       {label}
     </button>

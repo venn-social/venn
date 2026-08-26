@@ -22,7 +22,7 @@ private enum VennLayout {
 ///   where there's nothing to compare against.
 /// - `.pair` — two lobes whose **area tracks each collection's size** and
 ///   which sit closer together the more the two people share. A "NN% match"
-///   (Jaccard) headline sits above, and a three-row legend below.
+///   (Jaccard) headline sits above. The counts live in the diagram.
 ///
 /// Both modes share the same outer footprint so layout doesn't jump when
 /// navigating between profiles.
@@ -114,9 +114,12 @@ struct VennOverlap: View {
                 lobe(diameter: geometry.otherDiameter).position(x: otherX, y: centerY)
 
                 // The lens: the brand-accent other-lobe, masked to the viewer
-                // lobe, so only the intersection shows.
+                // lobe, so only the intersection shows. Translucent rather
+                // than solid — an opaque block reads as a third shape
+                // sitting on top of the two circles, where the whole idea
+                // is that it is the part they share.
                 Circle()
-                    .fill(Theme.Color.accent)
+                    .fill(Theme.Color.accent.opacity(0.35))
                     .frame(width: geometry.otherDiameter, height: geometry.otherDiameter)
                     .position(x: otherX, y: centerY)
                     .mask(
@@ -132,7 +135,7 @@ struct VennOverlap: View {
                     .position(x: otherX + geometry.otherRadius * 0.45, y: centerY)
 
                 if shared > 0 {
-                    sharedChip(shared).position(x: centerX, y: centerY)
+                    countText(shared).position(x: centerX, y: centerY)
                 }
             }
         }
@@ -141,7 +144,7 @@ struct VennOverlap: View {
     private func lobe(diameter: CGFloat) -> some View {
         Circle()
             .fill(Self.lobeFill)
-            .overlay(Circle().strokeBorder(Self.lobeStroke, lineWidth: 1.5))
+            .overlay(Circle().strokeBorder(Self.lobeStroke, lineWidth: 1))
             .frame(width: diameter, height: diameter)
     }
 
@@ -152,20 +155,6 @@ struct VennOverlap: View {
             .foregroundStyle(Theme.Color.textPrimary)
     }
 
-    /// The shared count, as a brand-blue chip pinned over the lens. A chip
-    /// (rather than raw text in the lens) keeps the number readable even when
-    /// a low match makes the lens a thin sliver.
-    private func sharedChip(_ shared: Int) -> some View {
-        Text(verbatim: "\(shared)")
-            .font(Theme.Font.title3.weight(.bold))
-            .monospacedDigit()
-            .foregroundStyle(Theme.Color.onAccent)
-            .padding(.horizontal, Theme.Spacing.sm)
-            .padding(.vertical, Theme.Spacing.xxs)
-            .background(Capsule().fill(Theme.Color.accent))
-            .overlay(Capsule().strokeBorder(Theme.Color.background, lineWidth: 2))
-    }
-
     // MARK: - Legend
 
     @ViewBuilder private var legend: some View {
@@ -174,32 +163,11 @@ struct VennOverlap: View {
             Text(only.label)
                 .font(Theme.Font.callout)
                 .foregroundStyle(Theme.Color.textSecondary)
-        case let .pair(yours, theirs, shared):
-            VStack(spacing: Theme.Spacing.xs) {
-                legendRow(label: yours.label, count: yours.count - shared)
-                legendRow(label: "in common", count: shared, emphasised: true)
-                legendRow(label: theirs.label, count: theirs.count - shared)
-            }
-        }
-    }
-
-    private func legendRow(
-        label: LocalizedStringKey,
-        count: Int,
-        emphasised: Bool = false
-    ) -> some View {
-        HStack(spacing: Theme.Spacing.sm) {
-            Circle()
-                .fill(emphasised ? Theme.Color.accent : Theme.Color.graphite.opacity(0.55))
-                .frame(width: 8, height: 8)
-            Text(label)
-                .font(emphasised ? Theme.Font.body.weight(.semibold) : Theme.Font.body)
-                .foregroundStyle(Theme.Color.textPrimary)
-            Spacer()
-            Text(verbatim: "\(count)")
-                .font(emphasised ? Theme.Font.body.weight(.semibold) : Theme.Font.body)
-                .foregroundStyle(Theme.Color.textSecondary)
-                .monospacedDigit()
+        case .pair:
+            // Nothing. The three numbers this used to list are already
+            // drawn inside the diagram, and naming them again underneath
+            // was the bulk of the text on the page.
+            EmptyView()
         }
     }
 
@@ -223,7 +191,7 @@ struct VennOverlap: View {
 
     // MARK: - Lobe colors
 
-    private static let lobeFill = Theme.Color.graphite.opacity(0.08)
+    private static let lobeFill = Theme.Color.graphite.opacity(0.05)
     private static let lobeStroke = Theme.Color.graphite.opacity(0.45)
 }
 

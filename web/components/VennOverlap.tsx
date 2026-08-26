@@ -4,12 +4,10 @@ import { tasteMatchPercent, type OverlapSummary } from "@/lib/overlap";
 const DIAGRAM_WIDTH = 360;
 
 interface VennOverlapProps {
-  viewerLabel: string;
-  otherLabel: string;
   summary: OverlapSummary;
 }
 
-export function VennOverlap({ viewerLabel, otherLabel, summary }: VennOverlapProps) {
+export function VennOverlap({ summary }: VennOverlapProps) {
   const { viewerTotal, otherTotal, sharedTotal, kinds } = summary;
   const percent = tasteMatchPercent(sharedTotal, viewerTotal, otherTotal);
   const geometry = pairGeometry(viewerTotal, otherTotal, sharedTotal);
@@ -52,29 +50,33 @@ export function VennOverlap({ viewerLabel, otherLabel, summary }: VennOverlapPro
           cy={centerY}
           r={geometry.viewerRadius}
           fill="var(--color-graphite)"
-          fillOpacity={0.08}
+          fillOpacity={0.05}
           stroke="var(--color-graphite)"
-          strokeOpacity={0.45}
-          strokeWidth={1.5}
+          strokeOpacity={0.3}
+          strokeWidth={1}
         />
         <circle
           cx={otherX}
           cy={centerY}
           r={geometry.otherRadius}
           fill="var(--color-graphite)"
-          fillOpacity={0.08}
+          fillOpacity={0.05}
           stroke="var(--color-graphite)"
-          strokeOpacity={0.45}
-          strokeWidth={1.5}
+          strokeOpacity={0.3}
+          strokeWidth={1}
         />
 
-        {/* The lens: the other lobe filled solid accent, clipped to the
-            viewer lobe's shape, so only the intersection shows. */}
+        {/* The lens: the other lobe clipped to the viewer lobe's shape, so
+            only the intersection shows. Translucent rather than solid —
+            an opaque block reads as a third shape sitting on top of the
+            two circles, where the whole idea is that it is the part they
+            share. */}
         <circle
           cx={otherX}
           cy={centerY}
           r={geometry.otherRadius}
           fill="var(--color-accent)"
+          fillOpacity={0.35}
           clipPath="url(#venn-lens-clip)"
         />
 
@@ -100,75 +102,29 @@ export function VennOverlap({ viewerLabel, otherLabel, summary }: VennOverlapPro
         </text>
 
         {sharedTotal > 0 && (
-          <g>
-            <rect
-              x={centerX - 16}
-              y={centerY - 12}
-              width={32}
-              height={24}
-              rx={12}
-              fill="var(--color-accent)"
-              stroke="var(--color-background)"
-              strokeWidth={2}
-            />
-            <text
-              x={centerX}
-              y={centerY}
-              textAnchor="middle"
-              dominantBaseline="middle"
-              fontWeight={700}
-              fill="var(--color-on-accent)"
-            >
-              {sharedTotal}
-            </text>
-          </g>
+          <text
+            x={centerX}
+            y={centerY}
+            textAnchor="middle"
+            dominantBaseline="middle"
+            fontWeight={700}
+            fill="var(--color-text-primary)"
+          >
+            {sharedTotal}
+          </text>
         )}
       </svg>
 
-      <div className="flex flex-col gap-1">
-        <LegendRow label={viewerLabel} count={viewerTotal - sharedTotal} />
-        <LegendRow label="in common" count={sharedTotal} emphasized />
-        <LegendRow label={otherLabel} count={otherTotal - sharedTotal} />
-      </div>
-
       {sharedKinds.length > 0 && (
-        <div className="flex flex-col gap-1">
-          {sharedKinds.map((k) => (
-            <div key={k.kind} className="flex items-center justify-between text-sm">
-              <span className="text-(--color-text-primary)">
-                {k.kind.charAt(0).toUpperCase() + k.kind.slice(1)}s in common
-              </span>
-              <span className="font-semibold text-(--color-text-secondary)">{k.sharedCount}</span>
-            </div>
-          ))}
-        </div>
+        // One line, not a table. The diagram has already said how much is
+        // shared; this only says what kind of thing it was, and the legend
+        // it replaced named three numbers the diagram was already showing.
+        <p className="text-center text-sm text-(--color-text-secondary)">
+          {sharedKinds
+            .map((k) => `${k.sharedCount} ${k.kind}${k.sharedCount === 1 ? "" : "s"}`)
+            .join(" · ")}
+        </p>
       )}
-    </div>
-  );
-}
-
-function LegendRow({
-  label,
-  count,
-  emphasized = false
-}: {
-  label: string;
-  count: number;
-  emphasized?: boolean;
-}) {
-  return (
-    <div className="flex items-center gap-2">
-      <span
-        className="h-2 w-2 rounded-full"
-        style={{
-          backgroundColor: emphasized ? "var(--color-accent)" : "var(--color-graphite)",
-          opacity: emphasized ? 1 : 0.55
-        }}
-      />
-      <span className={`flex-1 text-(--color-text-primary) ${emphasized ? "font-semibold" : ""}`}>
-        {label}
-      </span>
-      <span className="text-(--color-text-secondary)">{count}</span>
     </div>
   );
 }

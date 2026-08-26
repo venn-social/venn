@@ -8,6 +8,7 @@ import { uploadAvatar } from "@/lib/onboarding";
 import { sanitizeBio, sanitizeDisplayName } from "@/lib/sanitize";
 import { updateProfile } from "@/lib/profile";
 import { createClient } from "@/lib/supabase/client";
+import { FIELD_CLASS } from "@/lib/formField";
 
 const BIO_LIMIT = 160;
 
@@ -144,7 +145,7 @@ export function ProfileEditForm({
           onChange={(event) => setDisplayName(event.target.value)}
           placeholder="Your name"
           autoComplete="name"
-          className="rounded-sm border border-(--color-separator) bg-(--color-surface-strong) px-3 py-2 text-(--color-text-primary) outline-none"
+          className={FIELD_CLASS}
         />
       </label>
 
@@ -155,7 +156,7 @@ export function ProfileEditForm({
           onChange={(event) => setBio(event.target.value)}
           placeholder="A short bio"
           rows={4}
-          className="resize-none rounded-sm border border-(--color-separator) bg-(--color-surface-strong) px-3 py-2 text-(--color-text-primary) outline-none"
+          className={`${FIELD_CLASS} resize-none`}
         />
         <span
           className={
