@@ -62,13 +62,15 @@ export function FeedRow({ post, actions, viewerId = null }: FeedRowProps) {
         <Link
           href={`/media/${post.media.id}`}
           // No fixed height, and nothing cropped. Artwork arrives in every
-          // shape there is — a square album, a tall poster, a wide still —
+          // shape there is — a square sleeve, a tall poster, a wide still —
           // and forcing them all through one letterbox threw away the part
-          // of the image that made it worth looking at. The feed is now as
+          // of the image that made it worth looking at. The feed is as
           // uneven as the things in it.
-          // A minimum height, because a cover whose URL has died renders at
-          // zero and takes the whole card down to a line of text. Losing
-          // the picture is unavoidable; losing the post is not.
+          //
+          // The minimum is for the other case: a cover whose URL has died
+          // renders at zero height and takes the whole card down to a line
+          // of text. Losing the picture is unavoidable; losing the post is
+          // not.
           className="flex min-h-[120px] items-center justify-center overflow-hidden rounded-md bg-(--color-surface-strong)"
         >
           {post.media.coverUrl ? (

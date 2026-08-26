@@ -1,5 +1,4 @@
 import { redirect } from "next/navigation";
-import { FeedColumns } from "@/components/FeedColumns";
 import { FeedModeShell } from "@/components/FeedModeShell";
 import { FeedPagination } from "@/components/FeedPagination";
 import { FeedRow } from "@/components/FeedRow";
@@ -73,27 +72,24 @@ export default async function FeedPage() {
     >
       {/* Extra room at the foot: the layout switch floats over the page,
           and without it the switch would sit on top of the last post. */}
-      <main className="mx-auto flex max-w-lg flex-col gap-8 px-4 pt-8 pb-28 lg:max-w-4xl">
-        <FeedColumns>
-          {posts.map((post) => (
-            <FeedRow
-              key={post.id}
-              post={post}
-              viewerId={user.id}
-              actions={
-                <PostActions
-                  postId={post.id}
-                  userId={user.id}
-                  postAuthorId={post.author.id}
-                  likeCount={likes[post.id]?.likeCount ?? 0}
-                  likedByMe={likes[post.id]?.likedByMe ?? false}
-                  commentCount={commentCounts[post.id] ?? 0}
-                />
-              }
-            />
-          ))}
-        </FeedColumns>
-
+      <main className="mx-auto flex max-w-lg flex-col gap-10 px-4 pt-8 pb-28 lg:max-w-2xl">
+        {posts.map((post) => (
+          <FeedRow
+            key={post.id}
+            post={post}
+            viewerId={user.id}
+            actions={
+              <PostActions
+                postId={post.id}
+                userId={user.id}
+                postAuthorId={post.author.id}
+                likeCount={likes[post.id]?.likeCount ?? 0}
+                likedByMe={likes[post.id]?.likedByMe ?? false}
+                commentCount={commentCounts[post.id] ?? 0}
+              />
+            }
+          />
+        ))}
         <FeedPagination
           viewerId={user.id}
           initialCursor={lastPost.createdAt.toISOString()}

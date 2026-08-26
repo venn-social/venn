@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { FeedColumns } from "@/components/FeedColumns";
 import { FeedRow } from "@/components/FeedRow";
 import { PostActions } from "@/components/PostActions";
 import { fetchCommentCounts } from "@/lib/comments";
@@ -104,27 +103,25 @@ export function FeedPagination({
 
   return (
     <>
-      <FeedColumns>
-        {posts.map((post) => (
-          <FeedRow
-            key={post.id}
-            post={post}
-            viewerId={viewerId}
-            actions={
-              viewerId ? (
-                <PostActions
-                  postId={post.id}
-                  userId={viewerId}
-                  postAuthorId={post.author.id}
-                  likeCount={likes[post.id]?.likeCount ?? 0}
-                  likedByMe={likes[post.id]?.likedByMe ?? false}
-                  commentCount={commentCounts[post.id] ?? 0}
-                />
-              ) : undefined
-            }
-          />
-        ))}
-      </FeedColumns>
+      {posts.map((post) => (
+        <FeedRow
+          key={post.id}
+          post={post}
+          viewerId={viewerId}
+          actions={
+            viewerId ? (
+              <PostActions
+                postId={post.id}
+                userId={viewerId}
+                postAuthorId={post.author.id}
+                likeCount={likes[post.id]?.likeCount ?? 0}
+                likedByMe={likes[post.id]?.likedByMe ?? false}
+                commentCount={commentCounts[post.id] ?? 0}
+              />
+            ) : undefined
+          }
+        />
+      ))}
 
       {failed && (
         <button
