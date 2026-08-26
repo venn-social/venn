@@ -42,7 +42,7 @@ export default async function ProfilePage() {
   ]);
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-lg flex-col gap-4 px-4 py-8">
+    <main className="mx-auto flex min-h-screen max-w-lg lg:max-w-4xl xl:max-w-6xl flex-col gap-4 px-4 py-8">
       <div className="flex items-start gap-3">
         <Avatar name={profile.displayName ?? profile.username} avatarUrl={profile.avatarUrl} />
         <div className="flex flex-col gap-0.5">

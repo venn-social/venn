@@ -20,7 +20,7 @@ export default async function ListsPage() {
     lists = await fetchListsFor(supabase, user.id);
   } catch {
     return (
-      <main className="mx-auto flex min-h-screen max-w-lg flex-col gap-4 px-4 py-8">
+      <main className="mx-auto flex min-h-screen max-w-lg lg:max-w-2xl flex-col gap-4 px-4 py-8">
         <h1 className="text-xl font-semibold text-(--color-text-primary)">Lists</h1>
         <p className="text-(--color-text-secondary)">Couldn&apos;t load your lists.</p>
       </main>
@@ -28,7 +28,7 @@ export default async function ListsPage() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-lg flex-col gap-6 px-4 py-8">
+    <main className="mx-auto flex min-h-screen max-w-lg lg:max-w-2xl flex-col gap-6 px-4 py-8">
       <div className="flex flex-col gap-1">
         <h1 className="text-xl font-semibold text-(--color-text-primary)">Lists</h1>
         <p className="text-(--color-text-secondary)">

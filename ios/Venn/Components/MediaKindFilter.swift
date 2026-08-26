@@ -1,7 +1,11 @@
 import SwiftUI
 
-/// Chip row for narrowing a shelf to one media kind. Sits directly under
-/// `ShelfTabs`, and mirrors web's `MediaKindFilter.tsx` chip for chip.
+/// Tab row for narrowing a shelf to one media kind. Sits directly under
+/// `ShelfTabs`, and mirrors web's `MediaKindFilter.tsx` tab for tab.
+///
+/// Underline tabs rather than filled chips, like every other tab row on
+/// both platforms: filled pills read as competing actions, and this is one
+/// choice among a few.
 ///
 /// Only kinds actually present are offered. With four kinds and usually
 /// one or two on a shelf, a row of chips that all lead to an empty grid is
@@ -18,7 +22,7 @@ struct MediaKindFilter: View {
     var body: some View {
         if kinds.count > 1 {
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: Theme.Spacing.xs) {
+                HStack(spacing: Theme.Spacing.lg) {
                     chip(title: "All", isSelected: selection == nil) { selection = nil }
                     ForEach(kinds, id: \.self) { kind in
                         chip(title: kind.pluralDisplayName, isSelected: selection == kind) {
@@ -35,15 +39,19 @@ struct MediaKindFilter: View {
     private func chip(title: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(title)
-                .font(Theme.Font.caption.weight(.medium))
-                .foregroundStyle(isSelected ? Theme.Color.onAccent : Theme.Color.textSecondary)
-                .padding(.horizontal, Theme.Spacing.md)
-                .padding(.vertical, Theme.Spacing.xs)
-                .background(
-                    isSelected ? Theme.Color.accent : Theme.Color.surface,
-                    in: .capsule
+                .font(
+                    isSelected
+                        ? Theme.Font.footnote.weight(.semibold)
+                        : Theme.Font.footnote
                 )
-                .contentShape(.capsule)
+                .foregroundStyle(isSelected ? Theme.Color.textPrimary : Theme.Color.textSecondary)
+                .padding(.bottom, Theme.Spacing.xs)
+                .overlay(alignment: .bottom) {
+                    Rectangle()
+                        .fill(isSelected ? Theme.Color.accent : .clear)
+                        .frame(height: 2)
+                }
+                .contentShape(.rect)
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(isSelected ? [.isSelected] : [])

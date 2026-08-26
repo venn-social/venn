@@ -26,7 +26,7 @@ export default async function NotificationsPage() {
     notifications = await fetchNotifications(supabase);
   } catch {
     return (
-      <main className="mx-auto flex min-h-screen max-w-lg flex-col gap-4 px-4 py-8">
+      <main className="mx-auto flex min-h-screen max-w-lg lg:max-w-2xl flex-col gap-4 px-4 py-8">
         <h1 className="text-xl font-semibold text-(--color-text-primary)">Activity</h1>
         <p className="text-(--color-text-secondary)">Couldn&apos;t load your activity.</p>
       </main>
@@ -47,7 +47,7 @@ export default async function NotificationsPage() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-lg flex-col gap-4 py-8">
+    <main className="mx-auto flex min-h-screen max-w-lg lg:max-w-2xl flex-col gap-4 py-8">
       <h1 className="px-4 text-xl font-semibold text-(--color-text-primary)">Activity</h1>
 
       {notifications.length === 0 ? (

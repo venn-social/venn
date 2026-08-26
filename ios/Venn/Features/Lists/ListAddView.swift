@@ -27,7 +27,7 @@ struct ListAddView: View {
             Screen(padding: EdgeInsets()) {
                 ScrollView {
                     VStack(alignment: .leading, spacing: Theme.Spacing.lg) {
-                        SearchField(text: $query, prompt: "Search the catalog")
+                        SearchField(text: $query, prompt: "Search for anything")
                         kindPicker
                         results
 

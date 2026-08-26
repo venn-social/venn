@@ -116,7 +116,7 @@ export function AddToList({ listId, nextPosition }: AddToListProps) {
         type="text"
         value={query}
         onChange={(event) => setQuery(event.target.value)}
-        placeholder="Search to add"
+        placeholder="Search for anything"
         disabled={adding}
         className="rounded-sm border border-(--color-separator) bg-(--color-surface-strong) px-3 py-2 text-(--color-text-primary) outline-none disabled:opacity-60"
       />

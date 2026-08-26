@@ -26,7 +26,7 @@ export default async function SettingsPage() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-lg flex-col gap-4 px-4 py-8">
+    <main className="mx-auto flex min-h-screen max-w-lg lg:max-w-2xl flex-col gap-4 px-4 py-8">
       <h1 className="text-xl font-semibold text-(--color-text-primary)">Settings</h1>
 
       <PrivacyToggle userId={user.id} initialIsPrivate={profile.isPrivate} />

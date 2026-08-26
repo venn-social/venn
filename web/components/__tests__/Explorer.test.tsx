@@ -108,7 +108,7 @@ describe("Explorer", () => {
   it("finds people and links each to their profile", async () => {
     render(<Explorer />);
     fireEvent.click(screen.getByRole("tab", { name: "People" }));
-    fireEvent.change(screen.getByPlaceholderText(/Search movies/), { target: { value: "maya" } });
+    fireEvent.change(screen.getByPlaceholderText(/Search for anything/), { target: { value: "maya" } });
 
     const link = await screen.findByRole("link", { name: /Maya Okonkwo/ });
     expect(link.getAttribute("href")).toBe("/maya");
@@ -118,7 +118,7 @@ describe("Explorer", () => {
     searchProfiles.mockResolvedValue([]);
     render(<Explorer />);
     fireEvent.click(screen.getByRole("tab", { name: "People" }));
-    fireEvent.change(screen.getByPlaceholderText(/Search movies/), { target: { value: "zzz" } });
+    fireEvent.change(screen.getByPlaceholderText(/Search for anything/), { target: { value: "zzz" } });
 
     expect(await screen.findByText("No one found")).toBeDefined();
   });
@@ -127,7 +127,7 @@ describe("Explorer", () => {
     // It used to push /composer?q=<title>, which re-ran the search you had
     // just done and made you pick the same thing again to read about it.
     render(<Explorer />);
-    fireEvent.change(screen.getByPlaceholderText(/Search movies/), {
+    fireEvent.change(screen.getByPlaceholderText(/Search for anything/), {
       target: { value: "past lives" }
     });
 

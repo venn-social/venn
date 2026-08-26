@@ -39,7 +39,7 @@ beforeEach(() => {
 });
 
 async function pickTheMovie() {
-  fireEvent.change(screen.getByPlaceholderText("Search movies, TV, music, books"), { target: { value: "past lives" } });
+  fireEvent.change(screen.getByPlaceholderText("Search for anything"), { target: { value: "past lives" } });
   fireEvent.click(await screen.findByRole("button", { name: /Past Lives/ }));
 }
 

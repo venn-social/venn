@@ -34,7 +34,7 @@ export default async function ComposerPage({ searchParams }: ComposerPageProps) 
   }
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-lg flex-col px-4 py-8">
+    <main className="mx-auto flex min-h-screen max-w-lg lg:max-w-2xl flex-col px-4 py-8">
       <Composer
         userId={user.id}
         initialKind={initialKind}

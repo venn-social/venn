@@ -31,7 +31,11 @@ export function MediaKindFilter({ selected, onSelect, available }: MediaKindFilt
   if (shown.length <= 2) return null;
 
   return (
-    <div role="tablist" aria-label="Filter by type" className="flex flex-wrap gap-2">
+    <div
+      role="tablist"
+      aria-label="Filter by type"
+      className="flex gap-4 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+    >
       {shown.map((filter) => {
         const active = selected === filter.kind;
         return (
@@ -41,10 +45,13 @@ export function MediaKindFilter({ selected, onSelect, available }: MediaKindFilt
             role="tab"
             aria-selected={active}
             onClick={() => onSelect(filter.kind)}
+            // Underline tabs, like every other set of tabs on the site.
+            // Filled pills read as competing actions; this is one choice
+            // among a few.
             className={
               active
-                ? "rounded-pill bg-(--color-accent) px-3 py-1 text-sm font-semibold text-(--color-on-accent)"
-                : "rounded-pill bg-(--color-surface) px-3 py-1 text-sm text-(--color-text-secondary) hover:text-(--color-text-primary)"
+                ? "shrink-0 border-b-2 border-(--color-accent) pb-1.5 text-sm font-semibold text-(--color-text-primary)"
+                : "shrink-0 border-b-2 border-transparent pb-1.5 text-sm text-(--color-text-secondary) hover:text-(--color-text-primary)"
             }
           >
             {filter.label}

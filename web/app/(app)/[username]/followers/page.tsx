@@ -37,7 +37,7 @@ export default async function FollowersPage({ params }: FollowersPageProps) {
   const followers = isLocked ? [] : await fetchFollowers(supabase, profile.id);
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-lg flex-col gap-2 px-4 py-8">
+    <main className="mx-auto flex min-h-screen max-w-lg lg:max-w-2xl flex-col gap-2 px-4 py-8">
       <h1 className="text-xl font-semibold text-(--color-text-primary)">Followers</h1>
 
       {isLocked ? (

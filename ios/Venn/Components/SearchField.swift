@@ -47,6 +47,6 @@ struct SearchField: View {
 }
 
 #Preview {
-    SearchField(text: .constant(""), prompt: "Search movies, music, books")
+    SearchField(text: .constant(""), prompt: "Search for anything")
         .padding(Theme.Spacing.lg)
 }

@@ -29,7 +29,7 @@ export default async function FeedPage() {
     posts = await fetchFeedPage(supabase, { limit: FEED_PAGE_SIZE });
   } catch {
     return (
-      <main className="mx-auto flex max-w-lg flex-col gap-4 px-4 py-8">
+      <main className="mx-auto flex max-w-lg lg:max-w-2xl flex-col gap-4 px-4 py-8">
         <p className="text-(--color-text-secondary)">Couldn&apos;t load the feed.</p>
       </main>
     );
@@ -40,7 +40,7 @@ export default async function FeedPage() {
     // Explorer tab and the composer, neither of which exists on web yet —
     // restored when they ship (docs/TECH_DEBT.md).
     return (
-      <main className="mx-auto flex max-w-lg flex-col gap-2 px-4 py-16 text-center">
+      <main className="mx-auto flex max-w-lg lg:max-w-2xl flex-col gap-2 px-4 py-16 text-center">
         <h1 className="text-lg font-semibold text-(--color-text-primary)">Quiet for now</h1>
         <p className="text-(--color-text-secondary)">Your feed shows people you follow.</p>
       </main>
@@ -72,7 +72,7 @@ export default async function FeedPage() {
     >
       {/* Extra room at the foot: the layout switch floats over the page,
           and without it the switch would sit on top of the last post. */}
-      <main className="mx-auto flex max-w-lg flex-col gap-10 px-4 pt-8 pb-28">
+      <main className="mx-auto flex max-w-lg lg:max-w-2xl flex-col gap-10 px-4 pt-8 pb-28">
         {posts.map((post) => (
           <FeedRow
             key={post.id}
