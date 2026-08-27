@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { FeedRow } from "@/components/FeedRow";
-import { PostActions } from "@/components/PostActions";
+import { FeedPostCard } from "@/components/FeedPostCard";
 import { fetchCommentCounts } from "@/lib/comments";
 import { FEED_PAGE_SIZE, fetchFeedPage, type FeedPost } from "@/lib/feed";
 import { fetchLikeInfo, type LikeInfo } from "@/lib/likes";
@@ -70,7 +70,7 @@ export function FeedPagination({
     try {
       const next = await fetchFeedPage(createClient(), {
         before: new Date(cursor),
-        limit: FEED_PAGE_SIZE,
+        limit: FEED_PAGE_SIZE
       });
 
       // A short page means the feed is exhausted. This counts rows kept
@@ -103,25 +103,21 @@ export function FeedPagination({
 
   return (
     <>
-      {posts.map((post) => (
-        <FeedRow
-          key={post.id}
-          post={post}
-          viewerId={viewerId}
-          actions={
-            viewerId ? (
-              <PostActions
-                postId={post.id}
-                userId={viewerId}
-                postAuthorId={post.author.id}
-                likeCount={likes[post.id]?.likeCount ?? 0}
-                likedByMe={likes[post.id]?.likedByMe ?? false}
-                commentCount={commentCounts[post.id] ?? 0}
-              />
-            ) : undefined
-          }
-        />
-      ))}
+      {posts.map((post) =>
+        // Signed out there is nothing to like *with*, so the plain row.
+        viewerId ? (
+          <FeedPostCard
+            key={post.id}
+            post={post}
+            userId={viewerId}
+            likeCount={likes[post.id]?.likeCount ?? 0}
+            likedByMe={likes[post.id]?.likedByMe ?? false}
+            commentCount={commentCounts[post.id] ?? 0}
+          />
+        ) : (
+          <FeedRow key={post.id} post={post} viewerId={viewerId} />
+        )
+      )}
 
       {failed && (
         <button
