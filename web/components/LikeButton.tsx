@@ -10,6 +10,8 @@ interface LikeButtonProps {
   userId: string;
   initialCount: number;
   initialLiked: boolean;
+  /** Glyph size in px. Smaller on a cover than under a post. */
+  size?: number;
 }
 
 /**
@@ -21,7 +23,7 @@ interface LikeButtonProps {
  * wait for a round trip before the heart fills would be latency for no
  * information. On failure it reverts.
  */
-export function LikeButton({ postId, userId, initialCount, initialLiked }: LikeButtonProps) {
+export function LikeButton({ postId, userId, initialCount, initialLiked, size }: LikeButtonProps) {
   const [liked, setLiked] = useState(initialLiked);
   const [count, setCount] = useState(initialCount);
   const [isPending, startTransition] = useTransition();
@@ -55,9 +57,12 @@ export function LikeButton({ postId, userId, initialCount, initialLiked }: LikeB
       disabled={isPending}
       aria-pressed={liked}
       aria-label={liked ? "Unlike this post" : "Like this post"}
-      className="flex items-center gap-1.5 text-sm text-(--color-text-secondary) transition-colors hover:text-(--color-text-primary) disabled:opacity-60"
+      // Type size is inherited rather than set here: the same button is
+      // rendered at body size under a post and at caption size on a cover,
+      // and the tally has to match the line it sits on either way.
+      className="flex items-center gap-1.5 text-(--color-text-secondary) transition-colors hover:text-(--color-text-primary) disabled:opacity-60"
     >
-      <HeartIcon filled={liked} className={liked ? "text-(--color-like)" : ""} />
+      <HeartIcon size={size} filled={liked} className={liked ? "text-(--color-like)" : ""} />
       {count > 0 && <span className="tabular-nums">{count}</span>}
     </button>
   );

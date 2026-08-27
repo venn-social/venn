@@ -9,6 +9,9 @@ import { fetchComments, type PostComment } from "@/lib/comments";
 import type { FeedPost } from "@/lib/feed";
 import { createClient } from "@/lib/supabase/client";
 
+/** Sized to the metadata line the controls share, not to body text. */
+const CONTROL_GLYPH = 15;
+
 interface FeedPostCardProps {
   post: FeedPost;
   /** The signed-in user: they like, they comment, they see the artwork menu. */
@@ -80,12 +83,13 @@ export function FeedPostCard({
       post={post}
       viewerId={userId}
       overlay={
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <LikeButton
             postId={postId}
             userId={userId}
             initialCount={likeCount}
             initialLiked={likedByMe}
+            size={CONTROL_GLYPH}
           />
           <button
             type="button"
@@ -97,9 +101,9 @@ export function FeedPostCard({
             // reader needs them. "0 comments" written out was the loudest
             // thing on a quiet post.
             aria-label={shown === 1 ? "1 comment" : `${shown} comments`}
-            className="flex items-center gap-1.5 text-sm text-(--color-text-secondary) transition-colors hover:text-(--color-text-primary)"
+            className="flex items-center gap-1 text-(--color-text-secondary) transition-colors hover:text-(--color-text-primary)"
           >
-            <CommentIcon />
+            <CommentIcon size={CONTROL_GLYPH} />
             {shown > 0 && <span className="tabular-nums">{shown}</span>}
           </button>
         </div>

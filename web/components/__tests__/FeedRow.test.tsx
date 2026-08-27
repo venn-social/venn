@@ -86,6 +86,24 @@ describe("FeedRow", () => {
     expect(screen.getByRole("link", { name: /Ada/ }).getAttribute("href")).toBe("/ada");
   });
 
+  it("prints the title, the creator and the rating on the artwork", () => {
+    const { container } = render(<FeedRow post={post({ rating: 4.5 })} />);
+    const cover = container.querySelector("img")?.closest(".relative");
+    for (const text of ["Past Lives", "2023 · Celine Song", "4.5"]) {
+      expect(cover?.contains(screen.getByText(text))).toBe(true);
+    }
+  });
+
+  it("names the cover link with the title, which is no longer a link itself", () => {
+    render(<FeedRow post={post()} />);
+    // One link to the detail page, not two. The title used to be the
+    // second, and dropping it without naming this one would have left a
+    // link a screen reader could only announce as "link".
+    const links = screen.getAllByRole("link", { name: "Past Lives" });
+    expect(links).toHaveLength(1);
+    expect(links[0].getAttribute("href")).toBe("/media/m1");
+  });
+
   // The two social slots are in different parents on purpose. Asserting
   // where each lands is the only thing standing between the layout and a
   // future refactor quietly dropping a comment thread on top of the art.
