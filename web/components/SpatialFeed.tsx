@@ -170,7 +170,12 @@ export function SpatialFeed({ initialPosts, initialCursor, initialHasMore }: Spa
       top: element.scrollTop
     };
     moved.current = false;
-    element.setPointerCapture(event.pointerId);
+    // Deliberately *not* capturing the pointer yet. A captured pointer
+    // sends its click to the capturing element, so capturing here sent
+    // every click to this container instead of the card under it — the
+    // covers were unopenable, silently, because the anchor never saw the
+    // click at all. Capture happens below, once the gesture is actually a
+    // drag and there is no click left to lose.
   }
 
   function onPointerMove(event: React.PointerEvent<HTMLDivElement>) {
@@ -181,7 +186,18 @@ export function SpatialFeed({ initialPosts, initialCursor, initialHasMore }: Spa
     const dx = event.clientX - start.x;
     const dy = event.clientY - start.y;
     // A few pixels of slack, so a slightly shaky click is still a click.
-    if (Math.abs(dx) > DRAG_SLOP || Math.abs(dy) > DRAG_SLOP) moved.current = true;
+    if (!moved.current && (Math.abs(dx) > DRAG_SLOP || Math.abs(dy) > DRAG_SLOP)) {
+      moved.current = true;
+      // Now it is a drag: hold the pointer so leaving the plane, or
+      // crossing a card, does not drop it mid-gesture.
+      event.currentTarget.setPointerCapture(event.pointerId);
+    }
+
+    // Nothing moves until it is a drag. Panning by the two pixels a hand
+    // wobbles during a click is invisible, but the scroll it causes makes
+    // the browser cancel the click — so the cover would not open and
+    // nothing on screen would explain why.
+    if (!moved.current) return;
 
     element.scrollLeft = start.left - dx;
     element.scrollTop = start.top - dy;

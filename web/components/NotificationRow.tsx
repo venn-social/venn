@@ -1,10 +1,6 @@
 import Link from "next/link";
 import { Avatar } from "@/components/Avatar";
-import {
-  notificationHref,
-  notificationSummary,
-  type AppNotification
-} from "@/lib/notifications";
+import { notificationHref, notificationSummary, type AppNotification } from "@/lib/notifications";
 import { shortRelativeTime } from "@/lib/relativeTime";
 
 interface NotificationRowProps {
@@ -23,11 +19,8 @@ export function NotificationRow({ notification }: NotificationRowProps) {
   const name = notification.actor.displayName ?? notification.actor.username;
 
   return (
-    <li className={notification.readAt ? "" : "bg-(--color-surface-strong)"}>
-      <Link
-        href={notificationHref(notification)}
-        className="flex items-start gap-3 px-4 py-3"
-      >
+    <li className={notification.readAt ? "" : "rounded-2xl bg-(--color-surface)"}>
+      <Link href={notificationHref(notification)} className="flex items-start gap-3 px-4 py-3">
         <Avatar name={name} avatarUrl={notification.actor.avatarUrl} size={36} />
 
         <div className="flex min-w-0 flex-col gap-0.5">

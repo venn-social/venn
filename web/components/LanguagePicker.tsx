@@ -42,7 +42,7 @@ export function LanguagePicker({ userId, initialLanguage }: LanguagePickerProps)
   }
 
   return (
-    <div className="flex flex-col gap-2 rounded-lg border border-(--color-separator) p-4">
+    <div className="flex flex-col gap-2 border-t border-(--color-separator) py-3">
       <label htmlFor="language" className="font-medium text-(--color-text-primary)">
         Search language
       </label>
