@@ -46,33 +46,40 @@ function Svg({ size = 18, className, children }: IconProps & { children: React.R
 export function HeartIcon({ filled = false, ...props }: FillableIconProps) {
   return (
     <Svg {...props}>
+      {/* Two full circles meeting in a rounded point, rather than a heart
+          drawn from straight-ish sides. The lobes are wider and the tip is
+          a curve rather than a corner, so it reads as soft at 18px, which
+          is the only size it is ever drawn at. */}
       <path
-        d="M12 20.6 3.9 12.9a5.1 5.1 0 0 1 0-7.3 5.1 5.1 0 0 1 7.2 0l.9.9.9-.9a5.1 5.1 0 0 1 7.2 0 5.1 5.1 0 0 1 0 7.3L12 20.6Z"
+        d="M12 20.4c-.4 0-.7-.2-1-.4-3-2.4-5-4.1-6.2-5.7C3.6 12.6 3 11.2 3 9.7 3 7 5 5 7.6 5c1.7 0 3.2.8 4.4 2.3C13.2 5.8 14.7 5 16.4 5 19 5 21 7 21 9.7c0 1.5-.6 2.9-1.8 4.6-1.2 1.6-3.2 3.3-6.2 5.7-.3.2-.6.4-1 .4Z"
         fill={filled ? "currentColor" : "none"}
         stroke="currentColor"
         strokeWidth={filled ? 0 : 1.8}
+        strokeLinecap="round"
         strokeLinejoin="round"
       />
     </Svg>
   );
 }
 
-/** Comments. Mirrors iOS's `bubble.right`. */
 export function CommentIcon(props: IconProps) {
   return (
     <Svg {...props}>
+      {/* A rounded bubble with a soft tail, not a rectangle with a notch.
+          The old one was a 1.8px-radius box, which at this size read as a
+          window rather than speech. */}
       <path
-        d="M20.2 4H3.8A1.8 1.8 0 0 0 2 5.8v9.4A1.8 1.8 0 0 0 3.8 17H6v4l4.7-4h9.5a1.8 1.8 0 0 0 1.8-1.8V5.8A1.8 1.8 0 0 0 20.2 4Z"
+        d="M12 4.2c-4.6 0-8.3 3-8.3 6.7 0 2.1 1.2 4 3.1 5.2.2.2.3.4.2.7l-.7 2.5c-.1.4.3.7.7.5l3-1.5c.2-.1.4-.1.6 0 .5.1 1 .2 1.4.2 4.6 0 8.3-3 8.3-6.7 0-3.7-3.7-6.6-8.3-6.6Z"
         fill="none"
         stroke="currentColor"
         strokeWidth={1.8}
+        strokeLinecap="round"
         strokeLinejoin="round"
       />
     </Svg>
   );
 }
 
-/** Ratings. Mirrors iOS's `star.fill`. */
 export function StarIcon({ filled = true, ...props }: FillableIconProps) {
   return (
     <Svg {...props}>
