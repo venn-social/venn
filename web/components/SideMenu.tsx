@@ -34,25 +34,22 @@ const ITEMS = [
 ] as const;
 
 /**
- * How far the icons sit from the button they came out of.
+ * The angle between neighbouring positions on the ring.
  *
- * Close enough that the four read as one control rather than four things
- * scattered near each other, and far enough that 40px icons do not touch.
+ * The radius is not a constant any more — it is measured, so that the ⋯
+ * button lands exactly on one of the ring's positions. See `ring` below.
  */
-const RADIUS = 112;
-/** Icon diameter, and the margin kept between the wheel and the edges. */
-const ICON = 40;
-/** Height of the nav the wheel must stay clear of. */
-const NAV = 56;
-const EDGE = 10;
+const STEP = 40;
 /**
- * The arc they occupy, in degrees either side of straight down.
- *
- * Downward, because an arc that swept up put the last icon back under the
- * nav it came from — the one place it must not go.
+ * The ring never draws tighter than this, however close the button is.
+ * The wordmark and the button are only about sixty pixels apart, and five
+ * positions of that size on a sixty-pixel ring touch each other.
  */
-const ARC_START = -38;
-const ARC_END = 38;
+const MIN_RADIUS = 88;
+/** Icon diameter, and the margin kept between the wheel and the edges. */
+const ICON = 32;
+const EDGE = 10;
+
 /** Gap between each icon leaving the centre. The spin. */
 const STAGGER_MS = 55;
 
@@ -67,6 +64,8 @@ export function SideMenu({ unreadCount = 0 }: { unreadCount?: number }) {
   /** Where the wheel comes out of, measured when it opens. */
   const [origin, setOrigin] = useState({ x: 0, y: 0 });
   const [viewport, setViewport] = useState({ width: 0, height: 0 });
+  /** Where the ⋯ button sits, which is the ring's first position. */
+  const [button, setButton] = useState<{ x: number; y: number } | null>(null);
   /** Set a frame after opening, so the icons animate from the centre out. */
   const [unfurled, setUnfurled] = useState(false);
   const toggle = useRef<HTMLButtonElement>(null);
@@ -90,8 +89,19 @@ export function SideMenu({ unreadCount = 0 }: { unreadCount?: number }) {
   }, [open]);
 
   function show() {
-    const box = toggle.current?.getBoundingClientRect();
-    if (box) setOrigin({ x: box.left + box.width / 2, y: box.top + box.height / 2 });
+    // Two measurements, because the ring is defined by both: it is centred
+    // on the wordmark, and its radius is the distance out to the ⋯ button.
+    // That is what puts the button on the ring rather than beside it.
+    const markBox = document.getElementById("venn-mark")?.getBoundingClientRect();
+    const toggleBox = toggle.current?.getBoundingClientRect();
+    const centre = markBox ?? toggleBox;
+    if (centre) setOrigin({ x: centre.left + centre.width / 2, y: centre.top + centre.height / 2 });
+    if (markBox && toggleBox) {
+      setButton({
+        x: toggleBox.left + toggleBox.width / 2,
+        y: toggleBox.top + toggleBox.height / 2
+      });
+    }
     setViewport({ width: window.innerWidth, height: window.innerHeight });
     setUnfurled(false);
     setOpen(true);
@@ -108,11 +118,32 @@ export function SideMenu({ unreadCount = 0 }: { unreadCount?: number }) {
   // it entirely. Sliding the whole fan keeps the spacing; clamping each
   // icon separately, which is what this replaced, collapsed them into a
   // pile against the edge.
-  const reach = Math.sin((Math.max(-ARC_START, ARC_END) * Math.PI) / 180) * RADIUS;
+  // The ring passes through the ⋯ button. Its radius is the distance from
+  // the wordmark out to that button, and its first position is the angle
+  // the button already sits at — so the button *is* slot zero, and the
+  // four icons take the slots after it.
+  const ring = (() => {
+    const fallback = { radius: 96, start: -90 };
+    if (!button) return fallback;
+    const dx = button.x - origin.x;
+    const dy = button.y - origin.y;
+    const radius = Math.max(Math.hypot(dx, dy), MIN_RADIUS);
+    if (!Number.isFinite(radius)) return fallback;
+    // Angles are measured from straight down, clockwise, matching the
+    // sin/cos convention the positions are built with below. The angle is
+    // the button's own, so slot zero points at it even where the ring has
+    // been opened out past it for room.
+    return { radius, start: (Math.atan2(dx, dy) * 180) / Math.PI };
+  })();
+
+  const reach = ring.radius;
   const margin = reach + EDGE + ICON / 2;
   const hub = {
     x: viewport.width > margin * 2 ? clamp(origin.x, margin, viewport.width - margin) : origin.x,
-    y: Math.max(origin.y, NAV + EDGE + ICON / 2)
+    // Not pushed below the nav any more. Wrapping the wordmark means the
+    // outer icons sit level with it, over the bar rather than under it —
+    // which is what makes the wheel look attached to the mark.
+    y: origin.y
   };
 
   return (
@@ -150,12 +181,14 @@ export function SideMenu({ unreadCount = 0 }: { unreadCount?: number }) {
 
             <div id="side-menu" className="pointer-events-none fixed inset-0 z-40">
               {ITEMS.map((item, index) => {
-                const spread = ARC_START + ((ARC_END - ARC_START) * index) / (ITEMS.length - 1);
+                // Slot zero is the ⋯ button itself, so the icons start at
+                // one and step round from there.
+                const spread = ring.start + STEP * (index + 1);
                 const radians = (spread * Math.PI) / 180;
                 // Measured from straight down, so the wheel opens into the
                 // page rather than off the top of it.
-                const x = hub.x + Math.sin(radians) * RADIUS;
-                const y = hub.y + Math.cos(radians) * RADIUS;
+                const x = hub.x + Math.sin(radians) * ring.radius;
+                const y = hub.y + Math.cos(radians) * ring.radius;
                 const active = pathname === item.href;
                 const badged = item.href === "/notifications" && liveUnread > 0;
 
