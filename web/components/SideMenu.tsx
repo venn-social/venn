@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { BellIcon, ChartIcon, GearIcon, ListIcon, MenuIcon } from "@/components/Icon";
+import { BellIcon, GearIcon, ListIcon, MenuIcon, RewindIcon } from "@/components/Icon";
 import { useUnreadCount } from "@/components/useUnreadCount";
 
 /**
@@ -30,7 +30,7 @@ const ITEMS = [
   { href: "/settings", label: "Settings", Icon: GearIcon },
   { href: "/lists", label: "Lists", Icon: ListIcon },
   { href: "/notifications", label: "Activity", Icon: BellIcon },
-  { href: "/profile/year", label: "Last 12 Months", Icon: ChartIcon }
+  { href: "/profile/year", label: "Last 12 Months", Icon: RewindIcon }
 ] as const;
 
 /**
@@ -38,14 +38,24 @@ const ITEMS = [
  *
  * The radius is not a constant any more — it is measured, so that the ⋯
  * button lands exactly on one of the ring's positions. See `ring` below.
+ *
+ * Thirty-eight rather than forty for two reasons, both arithmetic. Five
+ * slots on a fifty-nine pixel ring leave 2·r·sin(19°) ≈ 38px between
+ * neighbouring centres, which 32px icons clear and 40px ones do not. And
+ * it keeps the last slot low enough that its icon clears the nav's tab
+ * labels on a 360px screen, where the wheel is at its most cramped.
  */
-const STEP = 40;
+const STEP = 38;
 /**
- * The ring never draws tighter than this, however close the button is.
- * The wordmark and the button are only about sixty pixels apart, and five
- * positions of that size on a sixty-pixel ring touch each other.
+ * A floor, not the working value.
+ *
+ * It used to be 88, which was larger than the fifty-nine pixels actually
+ * separating the wordmark from the ⋯ — so the clamp always won, the ring
+ * was half again wider than it needed to be, and the button it was
+ * supposed to pass through sat inside it rather than on it. Now the
+ * measurement wins and this only catches a layout that has collapsed.
  */
-const MIN_RADIUS = 88;
+const MIN_RADIUS = 52;
 /** Icon diameter, and the margin kept between the wheel and the edges. */
 const ICON = 32;
 const EDGE = 10;
@@ -123,7 +133,7 @@ export function SideMenu({ unreadCount = 0 }: { unreadCount?: number }) {
   // the button already sits at — so the button *is* slot zero, and the
   // four icons take the slots after it.
   const ring = (() => {
-    const fallback = { radius: 96, start: -90 };
+    const fallback = { radius: 64, start: -90 };
     if (!button) return fallback;
     const dx = button.x - origin.x;
     const dy = button.y - origin.y;
@@ -210,7 +220,7 @@ export function SideMenu({ unreadCount = 0 }: { unreadCount?: number }) {
                       transitionDelay: `${index * STAGGER_MS}ms`
                     }}
                     className={[
-                      "pointer-events-auto absolute flex h-10 w-10 items-center justify-center",
+                      "pointer-events-auto absolute flex h-8 w-8 items-center justify-center",
                       "rounded-pill border border-(--color-separator) bg-(--color-background) shadow-lg",
                       // Reduce Motion gets the icons without the spin — the
                       // wheel is decoration, the four links are not.
@@ -218,7 +228,7 @@ export function SideMenu({ unreadCount = 0 }: { unreadCount?: number }) {
                       active ? "text-(--color-accent)" : "text-(--color-text-primary)"
                     ].join(" ")}
                   >
-                    <item.Icon size={19} />
+                    <item.Icon size={17} />
                     {badged && (
                       <span
                         aria-hidden="true"

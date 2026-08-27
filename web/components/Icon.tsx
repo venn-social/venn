@@ -294,16 +294,35 @@ export function BookmarkIcon({ filled = false, ...props }: FillableIconProps) {
 export function GearIcon(props: IconProps) {
   return (
     <Svg {...props}>
+      {/* A cog, not a set of sliders — which is what this drew before, and
+          why the settings link never looked like settings. Eight teeth as
+          short radial strokes rather than a toothed outline: an outline
+          with real teeth turns to mush at the nineteen pixels this is
+          actually rendered at. */}
+      <circle cx="12" cy="12" r="6.6" fill="none" stroke="currentColor" strokeWidth={2} />
+      <circle cx="12" cy="12" r="2.4" fill="none" stroke="currentColor" strokeWidth={2} />
       <path
-        d="M4 7h16M4 12h16M4 17h16"
+        d="M18.60 12.00L21.30 12.00 M16.67 16.67L18.58 18.58 M12.00 18.60L12.00 21.30 M7.33 16.67L5.42 18.58 M5.40 12.00L2.70 12.00 M7.33 7.33L5.42 5.42 M12.00 5.40L12.00 2.70 M16.67 7.33L18.58 5.42"
         fill="none"
         stroke="currentColor"
         strokeWidth={2}
         strokeLinecap="round"
       />
-      <circle cx="9" cy="7" r="2" fill="currentColor" />
-      <circle cx="15" cy="12" r="2" fill="currentColor" />
-      <circle cx="8" cy="17" r="2" fill="currentColor" />
+    </Svg>
+  );
+}
+
+/** Last 12 Months. Rewind: the year, played back. */
+export function RewindIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path
+        d="M11 6.5 4.5 12 11 17.5ZM20 6.5 13.5 12 20 17.5Z"
+        fill="currentColor"
+        stroke="currentColor"
+        strokeWidth={2}
+        strokeLinejoin="round"
+      />
     </Svg>
   );
 }
