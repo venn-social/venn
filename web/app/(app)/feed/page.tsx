@@ -77,7 +77,6 @@ export default async function FeedPage() {
             key={post.id}
             post={post}
             userId={user.id}
-            likeCount={likes[post.id]?.likeCount ?? 0}
             likedByMe={likes[post.id]?.likedByMe ?? false}
             commentCount={commentCounts[post.id] ?? 0}
           />

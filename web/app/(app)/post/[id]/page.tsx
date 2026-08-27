@@ -49,12 +49,7 @@ export default async function PostPage({ params }: PostPageProps) {
       <FeedRow post={post} />
 
       <div className="flex items-center gap-4 border-y border-(--color-separator) py-3 text-sm">
-        <LikeButton
-          postId={post.id}
-          userId={user.id}
-          initialCount={like.likeCount}
-          initialLiked={like.likedByMe}
-        />
+        <LikeButton postId={post.id} userId={user.id} initialLiked={like.likedByMe} />
       </div>
 
       <CommentThread

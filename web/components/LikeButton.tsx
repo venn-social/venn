@@ -8,13 +8,18 @@ import { createClient } from "@/lib/supabase/client";
 interface LikeButtonProps {
   postId: string;
   userId: string;
-  initialCount: number;
   initialLiked: boolean;
   /** Glyph size in px. Smaller on a cover than under a post. */
   size?: number;
 }
 
 /**
+ * A heart, and nothing else.
+ *
+ * The tally is gone deliberately. A count next to a like is a scoreboard,
+ * and a scoreboard changes what people post; the one thing the button has
+ * to say is whether *you* liked this, which the fill says on its own.
+ *
  * Optimistic on both directions, unlike FollowButton.
  *
  * Following someone has an outcome the client can't predict — a private
@@ -23,17 +28,13 @@ interface LikeButtonProps {
  * wait for a round trip before the heart fills would be latency for no
  * information. On failure it reverts.
  */
-export function LikeButton({ postId, userId, initialCount, initialLiked, size }: LikeButtonProps) {
+export function LikeButton({ postId, userId, initialLiked, size }: LikeButtonProps) {
   const [liked, setLiked] = useState(initialLiked);
-  const [count, setCount] = useState(initialCount);
   const [isPending, startTransition] = useTransition();
 
   function handleClick() {
     const wasLiked = liked;
-    const previousCount = count;
-
     setLiked(!wasLiked);
-    setCount(wasLiked ? Math.max(0, previousCount - 1) : previousCount + 1);
 
     startTransition(async () => {
       try {
@@ -45,7 +46,6 @@ export function LikeButton({ postId, userId, initialCount, initialLiked, size }:
         }
       } catch {
         setLiked(wasLiked);
-        setCount(previousCount);
       }
     });
   }
@@ -57,13 +57,9 @@ export function LikeButton({ postId, userId, initialCount, initialLiked, size }:
       disabled={isPending}
       aria-pressed={liked}
       aria-label={liked ? "Unlike this post" : "Like this post"}
-      // Type size is inherited rather than set here: the same button is
-      // rendered at body size under a post and at caption size on a cover,
-      // and the tally has to match the line it sits on either way.
-      className="flex items-center gap-1.5 text-(--color-text-secondary) transition-colors hover:text-(--color-text-primary) disabled:opacity-60"
+      className="flex items-center text-(--color-text-secondary) transition-colors hover:text-(--color-text-primary) disabled:opacity-60"
     >
       <HeartIcon size={size} filled={liked} className={liked ? "text-(--color-like)" : ""} />
-      {count > 0 && <span className="tabular-nums">{count}</span>}
     </button>
   );
 }
