@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { BellIcon, GearIcon, ListIcon, MenuIcon, RewindIcon } from "@/components/Icon";
+import { BellIcon, GearIcon, HistoryIcon, ListIcon, MenuIcon } from "@/components/Icon";
 import { useUnreadCount } from "@/components/useUnreadCount";
 
 /**
@@ -15,67 +15,51 @@ import { useUnreadCount } from "@/components/useUnreadCount";
  * and nowhere else — the profile page no longer links Settings or Last 12
  * Months either, so there is exactly one way to each.
  *
- * Four icons on an arc rather than a drawer down the side. A drawer is a
- * lot of chrome for four links, and it covers the page to show them; the
- * wheel is the four links and nothing else. They unfurl in sequence from
- * the button that opened them, which is where they visibly came from and
- * where closing puts them back.
+ * Four icons in a column under the button rather than a drawer down the
+ * side. A drawer is a lot of chrome for four links, and it covers the page
+ * to show them; this is the four links and nothing else. They roll down in
+ * sequence out of the button that opened them, which is where they visibly
+ * came from and where closing puts them back.
+ *
+ * They were on an arc around the wordmark before. The arc was the more
+ * interesting shape and the worse control: its geometry depended on the
+ * distance between two elements in the nav, so every slot's position was
+ * arithmetic that a change to the nav's padding could quietly break, and
+ * the outermost icon had to be kept from landing on the tab labels at
+ * narrow widths. A column has one number in it.
  *
  * Rendered into the body. The nav carries a backdrop-blur, and a
  * backdrop-filter makes an element the containing block for its fixed
- * descendants — positioned in place, the wheel would be measured against
- * the nav's own box rather than the viewport.
+ * descendants — positioned in place, this would be measured against the
+ * nav's own box rather than the viewport.
  */
 const ITEMS = [
   { href: "/settings", label: "Settings", Icon: GearIcon },
   { href: "/lists", label: "Lists", Icon: ListIcon },
   { href: "/notifications", label: "Activity", Icon: BellIcon },
-  { href: "/profile/year", label: "Last 12 Months", Icon: RewindIcon }
+  { href: "/profile/year", label: "Last 12 Months", Icon: HistoryIcon }
 ] as const;
 
+/** Centre-to-centre gap down the column: a 32px icon and 8px of air. */
+const SPACING = 40;
 /**
- * The angle between neighbouring positions on the ring.
+ * How far the first icon falls before the rest follow it down.
  *
- * The radius is not a constant any more — it is measured, so that the ⋯
- * button lands exactly on one of the ring's positions. See `ring` below.
- *
- * Thirty-eight rather than forty for two reasons, both arithmetic. Five
- * slots on a fifty-nine pixel ring leave 2·r·sin(19°) ≈ 38px between
- * neighbouring centres, which 32px icons clear and 40px ones do not. And
- * it keeps the last slot low enough that its icon clears the nav's tab
- * labels on a 360px screen, where the wheel is at its most cramped.
+ * Deliberately more than SPACING. The column reads as hanging off the nav
+ * rather than crowding it, and half a nav's height of clear air is what
+ * separates "these came out of the button" from "these are part of the
+ * bar".
  */
-const STEP = 38;
-/**
- * A floor, not the working value.
- *
- * It used to be 88, which was larger than the fifty-nine pixels actually
- * separating the wordmark from the ⋯ — so the clamp always won, the ring
- * was half again wider than it needed to be, and the button it was
- * supposed to pass through sat inside it rather than on it. Now the
- * measurement wins and this only catches a layout that has collapsed.
- */
-const MIN_RADIUS = 52;
-/** Icon diameter, and the margin kept between the wheel and the edges. */
-const ICON = 32;
-const EDGE = 10;
+const DROP = 56;
 
 /** Gap between each icon leaving the centre. The spin. */
 const STAGGER_MS = 55;
 
-/** Keeps a value inside a range, however the arithmetic came out. */
-function clamp(value: number, low: number, high: number): number {
-  return Math.min(high, Math.max(low, value));
-}
-
 export function SideMenu({ unreadCount = 0 }: { unreadCount?: number }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  /** Where the wheel comes out of, measured when it opens. */
+  /** The button's own centre, measured when it opens. */
   const [origin, setOrigin] = useState({ x: 0, y: 0 });
-  const [viewport, setViewport] = useState({ width: 0, height: 0 });
-  /** Where the ⋯ button sits, which is the ring's first position. */
-  const [button, setButton] = useState<{ x: number; y: number } | null>(null);
   /** Set a frame after opening, so the icons animate from the centre out. */
   const [unfurled, setUnfurled] = useState(false);
   const toggle = useRef<HTMLButtonElement>(null);
@@ -99,20 +83,10 @@ export function SideMenu({ unreadCount = 0 }: { unreadCount?: number }) {
   }, [open]);
 
   function show() {
-    // Two measurements, because the ring is defined by both: it is centred
-    // on the wordmark, and its radius is the distance out to the ⋯ button.
-    // That is what puts the button on the ring rather than beside it.
-    const markBox = document.getElementById("venn-mark")?.getBoundingClientRect();
-    const toggleBox = toggle.current?.getBoundingClientRect();
-    const centre = markBox ?? toggleBox;
-    if (centre) setOrigin({ x: centre.left + centre.width / 2, y: centre.top + centre.height / 2 });
-    if (markBox && toggleBox) {
-      setButton({
-        x: toggleBox.left + toggleBox.width / 2,
-        y: toggleBox.top + toggleBox.height / 2
-      });
-    }
-    setViewport({ width: window.innerWidth, height: window.innerHeight });
+    // Measured rather than assumed: the column is fixed-positioned in a
+    // portal, so it needs viewport coordinates, and the nav is sticky.
+    const box = toggle.current?.getBoundingClientRect();
+    if (box) setOrigin({ x: box.left + box.width / 2, y: box.top + box.height / 2 });
     setUnfurled(false);
     setOpen(true);
   }
@@ -121,40 +95,6 @@ export function SideMenu({ unreadCount = 0 }: { unreadCount?: number }) {
     setUnfurled(false);
     setOpen(false);
   }
-
-  // Where the fan is centred. Normally the button, but slid inward when
-  // that would put part of the arc off the screen — the button sits near
-  // the left edge, and on a phone the leftmost icon's natural place is off
-  // it entirely. Sliding the whole fan keeps the spacing; clamping each
-  // icon separately, which is what this replaced, collapsed them into a
-  // pile against the edge.
-  // The ring passes through the ⋯ button. Its radius is the distance from
-  // the wordmark out to that button, and its first position is the angle
-  // the button already sits at — so the button *is* slot zero, and the
-  // four icons take the slots after it.
-  const ring = (() => {
-    const fallback = { radius: 64, start: -90 };
-    if (!button) return fallback;
-    const dx = button.x - origin.x;
-    const dy = button.y - origin.y;
-    const radius = Math.max(Math.hypot(dx, dy), MIN_RADIUS);
-    if (!Number.isFinite(radius)) return fallback;
-    // Angles are measured from straight down, clockwise, matching the
-    // sin/cos convention the positions are built with below. The angle is
-    // the button's own, so slot zero points at it even where the ring has
-    // been opened out past it for room.
-    return { radius, start: (Math.atan2(dx, dy) * 180) / Math.PI };
-  })();
-
-  const reach = ring.radius;
-  const margin = reach + EDGE + ICON / 2;
-  const hub = {
-    x: viewport.width > margin * 2 ? clamp(origin.x, margin, viewport.width - margin) : origin.x,
-    // Not pushed below the nav any more. Wrapping the wordmark means the
-    // outer icons sit level with it, over the bar rather than under it —
-    // which is what makes the wheel look attached to the mark.
-    y: origin.y
-  };
 
   return (
     <>
@@ -191,14 +131,9 @@ export function SideMenu({ unreadCount = 0 }: { unreadCount?: number }) {
 
             <div id="side-menu" className="pointer-events-none fixed inset-0 z-40">
               {ITEMS.map((item, index) => {
-                // Slot zero is the ⋯ button itself, so the icons start at
-                // one and step round from there.
-                const spread = ring.start + STEP * (index + 1);
-                const radians = (spread * Math.PI) / 180;
-                // Measured from straight down, so the wheel opens into the
-                // page rather than off the top of it.
-                const x = hub.x + Math.sin(radians) * ring.radius;
-                const y = hub.y + Math.cos(radians) * ring.radius;
+                // Straight down from the button, in its own column.
+                const x = origin.x;
+                const y = origin.y + DROP + SPACING * index;
                 const active = pathname === item.href;
                 const badged = item.href === "/notifications" && liveUnread > 0;
 
@@ -215,7 +150,10 @@ export function SideMenu({ unreadCount = 0 }: { unreadCount?: number }) {
                       top: y,
                       transform: unfurled
                         ? "translate(-50%, -50%) rotate(0deg) scale(1)"
-                        : `translate(-50%, -50%) translate(${origin.x - x}px, ${origin.y - y}px) rotate(-120deg) scale(0.3)`,
+                        : // Rolled up inside the button: no travel of its
+                          // own yet, turned back and small. Releasing all
+                          // four a beat apart is what reads as rolling out.
+                          `translate(-50%, -50%) translate(0px, ${origin.y - y}px) rotate(-120deg) scale(0.3)`,
                       opacity: unfurled ? 1 : 0,
                       transitionDelay: `${index * STAGGER_MS}ms`
                     }}

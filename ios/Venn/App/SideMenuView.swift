@@ -33,9 +33,10 @@ enum SideMenuDestination: String, CaseIterable, Identifiable {
         switch self {
         case .lists: "list.bullet"
         case .activity: "bell"
-        // Rewind, not a bar chart: the screen is the year played back,
-        // and a chart promised statistics it does not show. Matches web.
-        case .yearInReview: "backward.fill"
+        // An arrow wound back, not a bar chart: the screen is the year
+        // played back, and a chart promised statistics it does not show.
+        // Matches web's own circular arrow.
+        case .yearInReview: "arrow.counterclockwise"
         case .settings: "gearshape"
         }
     }

@@ -312,15 +312,26 @@ export function GearIcon(props: IconProps) {
   );
 }
 
-/** Last 12 Months. Rewind: the year, played back. */
-export function RewindIcon(props: IconProps) {
+/** Last 12 Months. An arrow round a circle: the year, wound back. */
+export function HistoryIcon(props: IconProps) {
   return (
     <Svg {...props}>
+      {/* Nearly a full turn, anticlockwise, with the head at the top left
+          where the gap is. Drawn as an arc rather than a circle plus a
+          separate arrow so the head sits exactly on the path's end. */}
       <path
-        d="M11 6.5 4.5 12 11 17.5ZM20 6.5 13.5 12 20 17.5Z"
-        fill="currentColor"
+        d="M3.5 8.5A9 9 0 1 1 3 12"
+        fill="none"
         stroke="currentColor"
         strokeWidth={2}
+        strokeLinecap="round"
+      />
+      <path
+        d="M8.5 8.5H3.2V3.2"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={2}
+        strokeLinecap="round"
         strokeLinejoin="round"
       />
     </Svg>

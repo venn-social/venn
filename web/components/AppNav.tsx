@@ -49,10 +49,7 @@ export function AppNav({ unreadCount = 0, userId = null }: AppNavProps) {
         <li>
           <SideMenu unreadCount={unreadCount} />
         </li>
-        {/* The wheel opens around this, so it needs to be findable. */}
-        <li id="venn-mark" className="mr-auto font-semibold text-(--color-text-primary)">
-          venn
-        </li>
+        <li className="mr-auto font-semibold text-(--color-text-primary)">venn</li>
         {TABS.map((tab) => {
           const active = pathname === tab.href;
           return (
