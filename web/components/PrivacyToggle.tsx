@@ -41,14 +41,17 @@ export function PrivacyToggle({ userId, initialIsPrivate }: PrivacyToggleProps) 
   }
 
   return (
-    <div className="flex flex-col gap-2 rounded-md bg-(--color-surface) p-4">
+    <div className="flex flex-col gap-2 py-3">
       <label className="flex items-start gap-3">
         <input
           type="checkbox"
           checked={isPrivate}
           disabled={saving}
           onChange={(event) => void handleChange(event.target.checked)}
-          className="mt-1 h-4 w-4 shrink-0 accent-(--color-accent)"
+          // Rounded to match everything around it. A native checkbox is
+          // a hard square by default, which was the last corner left on
+          // this screen.
+          className="mt-1 h-4 w-4 shrink-0 rounded-sm accent-(--color-accent)"
         />
         <span className="flex flex-col gap-0.5">
           <span className="font-medium text-(--color-text-primary)">Private account</span>
