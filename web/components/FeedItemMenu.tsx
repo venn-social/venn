@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { BookmarkIcon, CheckIcon } from "@/components/Icon";
 import { MediaOverflowMenu } from "@/components/MediaOverflowMenu";
 import { logFromFeed, saveToWatchlist } from "@/lib/library";
 import { createClient } from "@/lib/supabase/client";
@@ -44,9 +45,17 @@ export function FeedItemMenu({ mediaId, mediaTitle, viewerId }: FeedItemMenuProp
       <MediaOverflowMenu
         label={`Options for ${mediaTitle}`}
         busy={busy}
+        // The rating owns the right-hand corner now, and the artwork
+        // already carries a scrim for these to sit on.
+        align="left"
+        presentation="icons"
         actions={[
           {
             label: "Log",
+            // The same two glyphs the media page uses for the same two
+            // shelves — a tick for what you have taken in, a bookmark for
+            // what you mean to.
+            icon: <CheckIcon size={17} />,
             onSelect: () =>
               void run(
                 () => logFromFeed(createClient(), { authorId: viewerId, mediaId }),
@@ -55,6 +64,7 @@ export function FeedItemMenu({ mediaId, mediaTitle, viewerId }: FeedItemMenuProp
           },
           {
             label: "Add to Watchlist",
+            icon: <BookmarkIcon size={17} />,
             onSelect: () =>
               void run(
                 () => saveToWatchlist(createClient(), { authorId: viewerId, mediaId }),
@@ -67,7 +77,14 @@ export function FeedItemMenu({ mediaId, mediaTitle, viewerId }: FeedItemMenuProp
       {done && (
         // Announced rather than just shown: the only visible change is on a
         // page the user is not looking at.
-        <p role="status" className="pt-1 text-xs text-(--color-text-secondary)">
+        //
+        // Absolute, because the artwork's scrim is pinned to the bottom of
+        // this container — a message in the flow would grow the container
+        // and drag the scrim off the picture with it.
+        <p
+          role="status"
+          className="absolute left-2 top-9 z-10 max-w-[70%] text-xs text-white drop-shadow-[0_1px_3px_rgb(0_0_0/0.7)]"
+        >
           {done}
         </p>
       )}

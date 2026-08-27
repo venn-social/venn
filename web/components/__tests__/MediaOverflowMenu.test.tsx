@@ -5,18 +5,42 @@ import { MediaOverflowMenu } from "@/components/MediaOverflowMenu";
 describe("MediaOverflowMenu", () => {
   it("keeps its actions hidden until opened", () => {
     render(
-      <MediaOverflowMenu label="Options for Drive" actions={[{ label: "Edit", onSelect: vi.fn() }]} />
+      <MediaOverflowMenu
+        label="Options for Drive"
+        actions={[{ label: "Edit", onSelect: vi.fn() }]}
+      />
     );
     expect(screen.queryByRole("menuitem")).toBeNull();
-    expect(screen.getByRole("button", { name: "Options for Drive" }).getAttribute("aria-expanded")).toBe(
-      "false"
-    );
+    expect(
+      screen.getByRole("button", { name: "Options for Drive" }).getAttribute("aria-expanded")
+    ).toBe("false");
   });
 
   it("names itself after the artwork it belongs to", () => {
     // A grid of identical "More" buttons is unusable with a screen reader.
     render(<MediaOverflowMenu label="Options for Drive" actions={[]} />);
     expect(screen.getByRole("button", { name: "Options for Drive" })).toBeTruthy();
+  });
+
+  it("shows glyphs instead of words in the icons presentation", () => {
+    const onSelect = vi.fn();
+    render(
+      <MediaOverflowMenu
+        label="Options"
+        presentation="icons"
+        actions={[{ label: "Log", icon: <svg data-testid="tick" />, onSelect }]}
+      />
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Options" }));
+
+    // The word is gone from the screen but not from the accessible name:
+    // a glyph nobody can name is a glyph nobody can use.
+    const item = screen.getByRole("menuitem", { name: "Log" });
+    expect(item.textContent).toBe("");
+    expect(screen.getByTestId("tick")).toBeTruthy();
+
+    fireEvent.click(item);
+    expect(onSelect).toHaveBeenCalledOnce();
   });
 
   it("runs the chosen action and closes", () => {

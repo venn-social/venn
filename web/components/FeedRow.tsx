@@ -70,6 +70,17 @@ export function FeedRow({ post, actions, overlay, viewerId = null }: FeedRowProp
         {viewerId && viewerId !== post.author.id && (
           <FeedItemMenu mediaId={post.media.id} mediaTitle={post.media.title} viewerId={viewerId} />
         )}
+        {/* A second, shorter scrim at the top. It carries the rating, and
+            it is also what lets the ⋯ drop its black pill: both sit on it
+            rather than on whatever the artwork happens to be. */}
+        <div className="pointer-events-none absolute inset-x-0 top-0 z-[1] flex h-14 items-start justify-end rounded-t-md bg-gradient-to-b from-black/55 to-transparent p-2">
+          {post.rating !== null && (
+            <span className="flex shrink-0 items-center gap-1 text-xs font-semibold tabular-nums text-white drop-shadow-[0_1px_3px_rgb(0_0_0/0.6)]">
+              <StarIcon size={12} className="text-(--color-accent)" />
+              {post.rating.toFixed(1)}
+            </span>
+          )}
+        </div>
         <Link
           href={`/media/${post.media.id}`}
           // The title used to be a second link underneath. Now that it is
@@ -124,16 +135,9 @@ export function FeedRow({ post, actions, overlay, viewerId = null }: FeedRowProp
               not, so the alternative to clamping is a scrim that grows
               until it swallows the artwork it is captioning. */}
           <h2 className="line-clamp-1 text-sm font-semibold">{post.media.title}</h2>
-          {(metadata || post.rating !== null || overlay) && (
+          {(metadata || overlay) && (
             <div className="flex items-center gap-1.5 text-xs">
               {metadata && <p className="line-clamp-1 text-white/70">{metadata}</p>}
-              {metadata && post.rating !== null && <span className="text-white/40">·</span>}
-              {post.rating !== null && (
-                <span className="flex shrink-0 items-center gap-1 font-semibold tabular-nums">
-                  <StarIcon size={12} className="text-(--color-accent)" />
-                  {post.rating.toFixed(1)}
-                </span>
-              )}
               {overlay && <div className="pointer-events-auto ml-auto">{overlay}</div>}
             </div>
           )}
