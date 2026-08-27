@@ -1,9 +1,8 @@
 import { redirect } from "next/navigation";
 import { FeedModeShell } from "@/components/FeedModeShell";
 import { FeedPagination } from "@/components/FeedPagination";
-import { FeedRow } from "@/components/FeedRow";
 import { SpatialFeed } from "@/components/SpatialFeed";
-import { PostActions } from "@/components/PostActions";
+import { FeedPostCard } from "@/components/FeedPostCard";
 import { fetchCommentCounts } from "@/lib/comments";
 import { fetchLikeInfo } from "@/lib/likes";
 import { FEED_PAGE_SIZE, fetchFeedPage } from "@/lib/feed";
@@ -72,22 +71,15 @@ export default async function FeedPage() {
     >
       {/* Extra room at the foot: the layout switch floats over the page,
           and without it the switch would sit on top of the last post. */}
-      <main className="mx-auto flex max-w-lg lg:max-w-2xl flex-col gap-10 px-4 pt-8 pb-28">
+      <main className="mx-auto flex max-w-lg lg:max-w-2xl flex-col gap-6 px-4 pt-8 pb-28">
         {posts.map((post) => (
-          <FeedRow
+          <FeedPostCard
             key={post.id}
             post={post}
-            viewerId={user.id}
-            actions={
-              <PostActions
-                postId={post.id}
-                userId={user.id}
-                postAuthorId={post.author.id}
-                likeCount={likes[post.id]?.likeCount ?? 0}
-                likedByMe={likes[post.id]?.likedByMe ?? false}
-                commentCount={commentCounts[post.id] ?? 0}
-              />
-            }
+            userId={user.id}
+            likeCount={likes[post.id]?.likeCount ?? 0}
+            likedByMe={likes[post.id]?.likedByMe ?? false}
+            commentCount={commentCounts[post.id] ?? 0}
           />
         ))}
         <FeedPagination

@@ -46,12 +46,11 @@ function Svg({ size = 18, className, children }: IconProps & { children: React.R
 export function HeartIcon({ filled = false, ...props }: FillableIconProps) {
   return (
     <Svg {...props}>
-      {/* Two full circles meeting in a rounded point, rather than a heart
-          drawn from straight-ish sides. The lobes are wider and the tip is
-          a curve rather than a corner, so it reads as soft at 18px, which
-          is the only size it is ever drawn at. */}
+      {/* A plain heart, drawn plump. Wide round lobes, sides that curve
+          the whole way down rather than running straight, and a tip that
+          is the meeting of two curves instead of a corner. */}
       <path
-        d="M12 20.4c-.4 0-.7-.2-1-.4-3-2.4-5-4.1-6.2-5.7C3.6 12.6 3 11.2 3 9.7 3 7 5 5 7.6 5c1.7 0 3.2.8 4.4 2.3C13.2 5.8 14.7 5 16.4 5 19 5 21 7 21 9.7c0 1.5-.6 2.9-1.8 4.6-1.2 1.6-3.2 3.3-6.2 5.7-.3.2-.6.4-1 .4Z"
+        d="M12 20.6c-.5 0-.9-.2-1.3-.5C7.3 17.3 2.6 13.4 2.6 9.2 2.6 6.3 4.9 4 7.8 4c1.7 0 3.3.8 4.2 2.1C12.9 4.8 14.5 4 16.2 4c2.9 0 5.2 2.3 5.2 5.2 0 4.2-4.7 8.1-8.1 10.9-.4.3-.8.5-1.3.5Z"
         fill={filled ? "currentColor" : "none"}
         stroke="currentColor"
         strokeWidth={filled ? 0 : 1.8}
@@ -62,17 +61,17 @@ export function HeartIcon({ filled = false, ...props }: FillableIconProps) {
   );
 }
 
-export function CommentIcon(props: IconProps) {
+export function CommentIcon({ filled = false, ...props }: FillableIconProps) {
   return (
     <Svg {...props}>
-      {/* A rounded bubble with a soft tail, not a rectangle with a notch.
-          The old one was a 1.8px-radius box, which at this size read as a
-          window rather than speech. */}
+      {/* A plain speech bubble, drawn round: an oval body rather than a
+          rounded rectangle, and a tail that grows out of the curve instead
+          of being a triangle stuck to it. */}
       <path
-        d="M12 4.2c-4.6 0-8.3 3-8.3 6.7 0 2.1 1.2 4 3.1 5.2.2.2.3.4.2.7l-.7 2.5c-.1.4.3.7.7.5l3-1.5c.2-.1.4-.1.6 0 .5.1 1 .2 1.4.2 4.6 0 8.3-3 8.3-6.7 0-3.7-3.7-6.6-8.3-6.6Z"
-        fill="none"
+        d="M12 4.4c-4.8 0-8.6 3.2-8.6 7.2 0 2.2 1.2 4.2 3 5.5-.1 1.4-.6 2.7-1.6 3.7 1.9-.2 3.6-.9 4.9-2 .7.1 1.5.2 2.3.2 4.8 0 8.6-3.2 8.6-7.4 0-4-3.8-7.2-8.6-7.2Z"
+        fill={filled ? "currentColor" : "none"}
         stroke="currentColor"
-        strokeWidth={1.8}
+        strokeWidth={filled ? 0 : 1.8}
         strokeLinecap="round"
         strokeLinejoin="round"
       />

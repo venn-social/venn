@@ -18,7 +18,7 @@ function post(overrides: Partial<FeedPost> = {}): FeedPost {
       primaryCreator: "Celine Song",
       coverUrl: "https://example.test/cover.jpg",
       externalSource: "tmdb" as const,
-      externalId: "1",
+      externalId: "1"
     },
     author: {
       id: "u1",
@@ -27,10 +27,10 @@ function post(overrides: Partial<FeedPost> = {}): FeedPost {
       avatarUrl: null,
       bio: null,
       isPrivate: false,
-    language: "en" as const,
-      createdAt: "2026-01-01T00:00:00Z",
+      language: "en" as const,
+      createdAt: "2026-01-01T00:00:00Z"
     },
-    ...overrides,
+    ...overrides
   };
 }
 
@@ -84,6 +84,47 @@ describe("FeedRow", () => {
   it("links the author to their profile", () => {
     render(<FeedRow post={post()} />);
     expect(screen.getByRole("link", { name: /Ada/ }).getAttribute("href")).toBe("/ada");
+  });
+
+  it("prints the title, the creator and the rating on the artwork", () => {
+    const { container } = render(<FeedRow post={post({ rating: 4.5 })} />);
+    const cover = container.querySelector("img")?.closest(".relative");
+    for (const text of ["Past Lives", "2023 · Celine Song", "4.5"]) {
+      expect(cover?.contains(screen.getByText(text))).toBe(true);
+    }
+  });
+
+  it("names the cover link with the title, which is no longer a link itself", () => {
+    render(<FeedRow post={post()} />);
+    // One link to the detail page, not two. The title used to be the
+    // second, and dropping it without naming this one would have left a
+    // link a screen reader could only announce as "link".
+    const links = screen.getAllByRole("link", { name: "Past Lives" });
+    expect(links).toHaveLength(1);
+    expect(links[0].getAttribute("href")).toBe("/media/m1");
+  });
+
+  // The two social slots are in different parents on purpose. Asserting
+  // where each lands is the only thing standing between the layout and a
+  // future refactor quietly dropping a comment thread on top of the art.
+  it("lays the overlay over the artwork, not under the post", () => {
+    const { container } = render(<FeedRow post={post()} overlay={<span>controls</span>} />);
+    const cover = container.querySelector("img")?.closest(".relative");
+    expect(cover?.contains(screen.getByText("controls"))).toBe(true);
+  });
+
+  it("puts the foot slot below the caption, outside the artwork", () => {
+    const { container } = render(
+      <FeedRow post={post({ caption: "Devastating." })} actions={<span>thread</span>} />
+    );
+    const cover = container.querySelector("img")?.closest(".relative");
+    const thread = screen.getByText("thread");
+    expect(cover?.contains(thread)).toBe(false);
+    // After the caption, so an open thread reads as the end of the post.
+    expect(
+      screen.getByText("Devastating.").compareDocumentPosition(thread) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
   });
 
   it("falls back to the title when the media has no cover", () => {
