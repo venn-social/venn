@@ -101,31 +101,12 @@ struct FeedView: View {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: Theme.Spacing.xxl) {
                     ForEach(posts) { feedPost in
-                        // The row is no longer one big link: the cover and
-                        // title open the title, and the comment tally opens
-                        // the conversation. Matches web, and means a like
-                        // no longer costs a screen transition.
-                        VStack(alignment: .leading, spacing: Theme.Spacing.md) {
-                            FeedRow(
-                                feedPost: feedPost,
-                                viewerID: signedInUserID,
-                                onLibraryAction: signedInUserID.map { viewerID in
-                                    { action in
-                                        Task {
-                                            await viewModel.performQuickAction(
-                                                action,
-                                                mediaID: feedPost.media.id,
-                                                viewerID: viewerID
-                                            )
-                                        }
-                                    }
-                                }
-                            )
-                            if let viewerID = signedInUserID {
-                                actions(for: feedPost, viewerID: viewerID, viewModel: viewModel)
-                            }
-                        }
-                        .vennScrollDepth()
+                        // The row is no longer one big link: the cover
+                        // opens the title, and the comment tally opens the
+                        // conversation. Matches web, and means a like no
+                        // longer costs a screen transition.
+                        post(feedPost, viewModel: viewModel)
+                            .vennScrollDepth()
                     }
                     // Lazy footer: appears only when scrolled to, so its
                     // .task IS the infinite-scroll trigger. Hidden once the
@@ -146,26 +127,34 @@ struct FeedView: View {
         }
     }
 
-    /// Like button, comment tally, and the thread when it is expanded.
+    /// One post: the card when there is somebody to like it, the bare row
+    /// when there is not.
     ///
     /// Deliberately *not* given a fresh identity when the counts arrive:
-    /// `PostActionsView` now watches `info` and reseeds itself. Re-creating
-    /// it would collapse an open comment thread and throw away the comments
-    /// it had loaded, every time the counts landed or the feed refreshed.
-    private func actions(
-        for feedPost: FeedPost,
-        viewerID: UUID,
-        viewModel: FeedViewModel
-    ) -> some View {
-        let social = viewModel.social(for: feedPost.id)
-        return PostActionsView(
-            postID: feedPost.post.id,
-            userID: viewerID,
-            info: social.likes,
-            commentCount: social.commentCount,
-            service: SocialService(client: clientProvider.client),
-            postDestination: feedPost
-        )
+    /// `FeedPostCardView` watches `info` and reseeds itself. Re-creating it
+    /// would collapse an open comment thread and throw away the comments it
+    /// had loaded, every time the counts landed or the feed refreshed.
+    @ViewBuilder
+    private func post(_ feedPost: FeedPost, viewModel: FeedViewModel) -> some View {
+        if let viewerID = signedInUserID {
+            FeedPostCardView(
+                feedPost: feedPost,
+                viewerID: viewerID,
+                info: viewModel.social(for: feedPost.id).likes,
+                commentCount: viewModel.social(for: feedPost.id).commentCount,
+                service: SocialService(client: clientProvider.client)
+            ) { action in
+                Task {
+                    await viewModel.performQuickAction(
+                        action,
+                        mediaID: feedPost.media.id,
+                        viewerID: viewerID
+                    )
+                }
+            }
+        } else {
+            FeedRow(feedPost: feedPost)
+        }
     }
 
     private var emptyView: some View {
