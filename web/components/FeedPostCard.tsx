@@ -16,7 +16,6 @@ interface FeedPostCardProps {
   post: FeedPost;
   /** The signed-in user: they like, they comment, they see the artwork menu. */
   userId: string;
-  likeCount: number;
   likedByMe: boolean;
   commentCount: number;
 }
@@ -43,13 +42,7 @@ interface FeedPostCardProps {
  * and still server-renders its comments — notifications link straight to
  * it, and it is the only shareable address a conversation has.
  */
-export function FeedPostCard({
-  post,
-  userId,
-  likeCount,
-  likedByMe,
-  commentCount
-}: FeedPostCardProps) {
+export function FeedPostCard({ post, userId, likedByMe, commentCount }: FeedPostCardProps) {
   const postId = post.id;
   const [expanded, setExpanded] = useState(false);
   const [comments, setComments] = useState<PostComment[] | null>(null);
@@ -87,7 +80,6 @@ export function FeedPostCard({
           <LikeButton
             postId={postId}
             userId={userId}
-            initialCount={likeCount}
             initialLiked={likedByMe}
             size={CONTROL_GLYPH}
           />

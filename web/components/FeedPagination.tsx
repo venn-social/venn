@@ -110,7 +110,6 @@ export function FeedPagination({
             key={post.id}
             post={post}
             userId={viewerId}
-            likeCount={likes[post.id]?.likeCount ?? 0}
             likedByMe={likes[post.id]?.likedByMe ?? false}
             commentCount={commentCounts[post.id] ?? 0}
           />
