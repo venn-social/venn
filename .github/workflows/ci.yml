@@ -37,8 +37,35 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v7
+      # Pinned, not `brew install swiftlint`.
+      #
+      # Unpinned, CI follows Homebrew. On 2026-09-10 that took it to 0.65.1
+      # while every developer machine was still on 0.63.2, and 0.65 added
+      # `legacy_swiftui_aspect_ratio` as a *default* rule. Seven untouched
+      # call sites became errors under --strict, so `main` and every open
+      # pull request went red at once — including two Dependabot lockfile
+      # bumps containing no Swift at all. None of it was visible locally,
+      # because locally the rule did not exist.
+      #
+      # The version lives in `.swiftlint-version` so `make lint` can check
+      # itself against the same number. Upgrading is now a pull request that
+      # cleans up its own fallout, rather than a Tuesday.
       - name: Install SwiftLint
-        run: brew install swiftlint
+        run: |
+          version="$(cat .swiftlint-version)"
+          curl -fsSL -o /tmp/swiftlint.zip \
+            "https://github.com/realm/SwiftLint/releases/download/${version}/portable_swiftlint.zip"
+          unzip -oq /tmp/swiftlint.zip -d /tmp/swiftlint
+          echo "/tmp/swiftlint" >> "$GITHUB_PATH"
+      - name: Confirm the pinned version is what runs
+        run: |
+          expected="$(cat .swiftlint-version)"
+          actual="$(swiftlint version)"
+          if [ "$expected" != "$actual" ]; then
+            echo "::error::Expected SwiftLint $expected, got $actual"
+            exit 1
+          fi
+          echo "SwiftLint $actual"
       - run: swiftlint lint --strict
 
   format-check:
@@ -133,6 +160,20 @@ jobs:
         run: cd ios && xcodegen generate
       - name: Prepare test simulator
         run: bash scripts/ci-select-simulator.sh
+      # Retry a failing test once before calling the suite red.
+      #
+      # These are network-bound journeys against real Supabase, and what
+      # fails is almost never an assertion. Observed across six runs on
+      # 2026-09-11: `Invalid device state`, `Mach error -308 (server died)`,
+      # `kAXErrorIPCTimeout`, and a timeout on a test that needs 71s of a
+      # 30s budget when the machine is busy. A different test each time.
+      #
+      # This masks a genuinely flaky assertion, which is the cost. It is
+      # worth paying because the alternative is worse: a red Tests job that
+      # is usually noise is one nobody reads, and it already produced a
+      # wrong first diagnosis on pull request 214. The real fix is seeding
+      # the data these journeys need instead of querying it live — logged
+      # as its own row rather than pretended away.
       - name: Run tests
         env:
           # Forward CI=true into the simulator test process so the snapshot
@@ -151,6 +192,8 @@ jobs:
             -derivedDataPath build/DerivedData \
             -resultBundlePath build/test-results.xcresult \
             -enableCodeCoverage YES \
+            -retry-tests-on-failure \
+            -test-iterations 2 \
             test | xcbeautify --is-ci
       # When snapshot tests fail, the suite (configured with
       # `record: .failed`) writes the freshly-rendered images into

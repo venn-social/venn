@@ -44,6 +44,12 @@ packages: project ## Resolve + download SPM dependencies (Supabase, Sentry, Post
 		-derivedDataPath $(DERIVED_DATA)
 
 lint: ## Run SwiftLint in strict mode (warnings fail).
+	@expected="$$(cat .swiftlint-version)"; actual="$$(swiftlint version 2>/dev/null)"; \
+	if [ -n "$$actual" ] && [ "$$expected" != "$$actual" ]; then \
+		echo "⚠ SwiftLint $$actual locally, $$expected in CI."; \
+		echo "  A rule added between the two is invisible here and fails there."; \
+		echo "  brew upgrade swiftlint, or match $$expected exactly."; \
+	fi
 	swiftlint lint --strict
 
 format: ## Auto-format all Swift files in place.
@@ -67,6 +73,9 @@ periphery: project ## Scan for dead code (unused functions, types, properties).
 codegen: ## Regenerate Swift types from the Supabase schema (requires SUPABASE_DB_URL in .env).
 	npm run db:types
 
+# `-retry-tests-on-failure` runs a failing test once more before the suite
+# is called red. The UI journeys hit real Supabase and what fails is almost
+# never an assertion — see the note in .github/workflows/ci.yml and row 39.
 test: project ## Run XCTest suites in the iOS simulator.
 	set -o pipefail && $(XCODEBUILD) \
 		-project $(PROJECT) \
@@ -74,6 +83,8 @@ test: project ## Run XCTest suites in the iOS simulator.
 		-destination '$(DESTINATION)' \
 		-derivedDataPath $(DERIVED_DATA) \
 		-enableCodeCoverage YES \
+		-retry-tests-on-failure \
+		-test-iterations 2 \
 		test | $(XCBEAUTIFY)
 
 build: project ## Build the app for the simulator (no tests).
