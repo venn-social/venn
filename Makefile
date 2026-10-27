@@ -56,6 +56,12 @@ format: ## Auto-format all Swift files in place.
 	swiftformat ios
 
 format-check: ## Fail if any Swift file is unformatted.
+	@expected="$$(cat .swiftformat-version)"; actual="$$(swiftformat --version 2>/dev/null)"; \
+	if [ -n "$$actual" ] && [ "$$expected" != "$$actual" ]; then \
+		echo "⚠ SwiftFormat $$actual locally, $$expected in CI."; \
+		echo "  A rule change between the two passes here and fails there."; \
+		echo "  Match $$expected exactly, or upgrade the pin deliberately."; \
+	fi
 	swiftformat --lint ios
 
 docs: project ## Build DocC docs into build/Venn.doccarchive (open in Xcode).
