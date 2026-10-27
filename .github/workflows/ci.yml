@@ -73,8 +73,29 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v7
+      # Pinned, not `brew install swiftformat`. Same reasoning as SwiftLint
+      # above, and the same failure: on 2026-10-26 the runner image moved to
+      # 0.64.0, `wrapAttributes` changed behaviour, and thirty files that were
+      # correctly formatted became errors. Three open Dependabot PRs went red
+      # on code none of them touched. Logged in advance as row 40 — this is
+      # that row coming true.
       - name: Install SwiftFormat
-        run: brew install swiftformat
+        run: |
+          version="$(cat .swiftformat-version)"
+          curl -fsSL -o /tmp/swiftformat.zip \
+            "https://github.com/nicklockwood/SwiftFormat/releases/download/${version}/swiftformat.zip"
+          unzip -oq /tmp/swiftformat.zip -d /tmp/swiftformat-bin
+          chmod +x /tmp/swiftformat-bin/swiftformat
+          echo "/tmp/swiftformat-bin" >> "$GITHUB_PATH"
+      - name: Confirm the pinned version is what runs
+        run: |
+          expected="$(cat .swiftformat-version)"
+          actual="$(swiftformat --version)"
+          if [ "$expected" != "$actual" ]; then
+            echo "::error::Expected SwiftFormat $expected, got $actual"
+            exit 1
+          fi
+          echo "SwiftFormat $actual"
       - run: swiftformat --lint ios
 
   prettier-check:
