@@ -101,24 +101,40 @@ export function FeedPostCard({ post, userId, likedByMe, commentCount }: FeedPost
         </div>
       }
       actions={
-        expanded ? (
-          <div id={`comments-${postId}`} className="border-t border-(--color-separator) pt-3">
-            {loading && <p className="text-sm text-(--color-text-secondary)">Loading comments…</p>}
-            {failed && (
-              <p className="text-sm text-(--color-text-secondary)">
-                Couldn&apos;t load the comments. Try again.
-              </p>
-            )}
-            {comments !== null && (
-              <CommentThread
-                postId={postId}
-                userId={userId}
-                postAuthorId={post.author.id}
-                initialComments={comments}
-              />
-            )}
+        // Always mounted, so opening and closing can be animated. The grid
+        // row goes 0fr → 1fr, which transitions to the content's real height
+        // without anyone having to measure it or guess a max-height that is
+        // wrong for a thread with nine replies in it.
+        //
+        // The negative margin cancels the article's own gap while collapsed,
+        // so a closed thread costs exactly nothing rather than eight pixels
+        // of mystery space under every post.
+        <div
+          className={`grid transition-[grid-template-rows] duration-300 ease-out motion-reduce:transition-none ${
+            expanded ? "grid-rows-[1fr]" : "-mt-2 grid-rows-[0fr]"
+          }`}
+        >
+          <div className="overflow-hidden">
+            <div id={`comments-${postId}`} className="pt-1">
+              {loading && (
+                <p className="text-sm text-(--color-text-secondary)">Loading comments…</p>
+              )}
+              {failed && (
+                <p className="text-sm text-(--color-text-secondary)">
+                  Couldn&apos;t load the comments. Try again.
+                </p>
+              )}
+              {comments !== null && (
+                <CommentThread
+                  postId={postId}
+                  userId={userId}
+                  postAuthorId={post.author.id}
+                  initialComments={comments}
+                />
+              )}
+            </div>
           </div>
-        ) : undefined
+        </div>
       }
     />
   );

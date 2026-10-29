@@ -73,9 +73,17 @@ export function FeedRow({ post, actions, overlay, viewerId = null }: FeedRowProp
         {/* A second, shorter scrim at the top. It carries the rating, and
             it is also what lets the ⋯ drop its black pill: both sit on it
             rather than on whatever the artwork happens to be. */}
-        <div className="pointer-events-none absolute inset-x-0 top-0 z-[1] flex h-14 items-start justify-end rounded-t-md bg-gradient-to-b from-black/55 to-transparent p-2">
+        <div className="pointer-events-none absolute inset-x-0 top-0 z-[1] flex h-16 items-start justify-end rounded-t-md bg-gradient-to-b from-black/70 via-black/25 to-transparent p-2">
           {post.rating !== null && (
-            <span className="flex shrink-0 items-center gap-1 text-xs font-semibold tabular-nums text-white drop-shadow-[0_1px_3px_rgb(0_0_0/0.6)]">
+            // Two shadows rather than one, and no bigger than before. A tight
+            // dark edge so a pale cover cannot wash the figure out, and a
+            // wider halo so a busy one cannot swallow it — the same pair that
+            // rescued the bare glyphs. Written as a filter because two
+            // drop-shadow utilities do not stack.
+            <span
+              className="flex shrink-0 items-center gap-1 text-xs font-semibold tabular-nums text-white
+                [filter:drop-shadow(0_1px_2px_rgb(0_0_0/0.9))_drop-shadow(0_0_6px_rgb(0_0_0/0.55))]"
+            >
               <StarIcon size={12} className="text-(--color-accent)" />
               {post.rating.toFixed(1)}
             </span>

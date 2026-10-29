@@ -15,6 +15,18 @@ import { sanitizeCaption } from "@/lib/sanitize";
 import { createClient } from "@/lib/supabase/client";
 import { FIELD_CLASS } from "@/lib/formField";
 
+/**
+ * How every action in a thread looks.
+ *
+ * Deliberately not a filled pill. An accent button is the loudest thing on
+ * a page and "Post" is not the loudest thing you do here — it sits inches
+ * from a like and a comment control that are both just a glyph and a word.
+ * Matching them keeps the thread quiet enough to read.
+ */
+const QUIET_BUTTON =
+  "text-xs font-medium text-(--color-text-secondary) transition-colors " +
+  "hover:text-(--color-text-primary) disabled:opacity-40 disabled:hover:text-(--color-text-secondary)";
+
 interface CommentThreadProps {
   postId: string;
   /** The signed-in viewer. */
@@ -147,7 +159,7 @@ export function CommentThread({
         <Avatar name={name} avatarUrl={comment.author.avatarUrl} size={isReply ? 24 : 32} />
         <div className="flex flex-1 flex-col gap-0.5">
           <div className="flex items-baseline gap-2">
-            <span className="text-sm font-medium text-(--color-text-primary)">{name}</span>
+            <span className="text-xs font-semibold text-(--color-text-primary)">{name}</span>
             <span className="text-xs text-(--color-text-secondary)">
               {shortRelativeTime(comment.createdAt)}
             </span>
@@ -210,7 +222,7 @@ export function CommentThread({
                 <button
                   type="submit"
                   disabled={draft.trim().length === 0 || draft.trim() === comment.body}
-                  className="rounded-pill bg-(--color-accent) px-3 py-1 text-sm font-semibold text-(--color-on-accent) disabled:opacity-50"
+                  className={QUIET_BUTTON}
                 >
                   Save
                 </button>
@@ -224,7 +236,7 @@ export function CommentThread({
               </span>
             </form>
           ) : (
-            <p className="text-(--color-text-primary)">{comment.body}</p>
+            <p className="text-sm text-(--color-text-primary)">{comment.body}</p>
           )}
         </div>
       </li>
@@ -232,17 +244,17 @@ export function CommentThread({
   }
 
   return (
-    <section className="flex flex-col gap-4">
-      <h2 className="font-semibold text-(--color-text-primary)">
+    <section className="flex flex-col gap-3">
+      <h2 className="text-xs font-semibold text-(--color-text-secondary)">
         {comments.length === 0
           ? "Comments"
           : `${comments.length} ${comments.length === 1 ? "comment" : "comments"}`}
       </h2>
 
       {comments.length === 0 ? (
-        <p className="text-(--color-text-secondary)">No comments yet. Say something.</p>
+        <p className="text-sm text-(--color-text-secondary)">No comments yet. Say something.</p>
       ) : (
-        <ul className="flex flex-col gap-4">
+        <ul className="flex flex-col gap-3">
           {toThreads(comments).map(({ comment, replies }) => (
             <li key={comment.id} className="flex flex-col gap-3">
               <ul>{renderComment(comment, false)}</ul>
@@ -267,14 +279,14 @@ export function CommentThread({
                     <button
                       type="submit"
                       disabled={replyDraft.trim().length === 0}
-                      className="rounded-pill bg-(--color-accent) px-3 py-1 text-sm font-semibold text-(--color-on-accent) disabled:opacity-50"
+                      className={QUIET_BUTTON}
                     >
                       Reply
                     </button>
                     <button
                       type="button"
                       onClick={() => setReplyingTo(null)}
-                      className="text-sm font-semibold text-(--color-text-secondary)"
+                      className={QUIET_BUTTON}
                     >
                       Cancel
                     </button>
@@ -300,11 +312,11 @@ export function CommentThread({
           rows={2}
           className={`${FIELD_CLASS} resize-none`}
         />
-        {error && <p className="text-sm text-red-500">{error}</p>}
+        {error && <p className="text-xs text-red-500">{error}</p>}
         <button
           type="submit"
           disabled={submitting || body.trim().length === 0}
-          className="self-start rounded-pill bg-(--color-accent) px-4 py-2 text-sm font-semibold text-(--color-on-accent) disabled:opacity-50"
+          className={`self-start py-1 ${QUIET_BUTTON}`}
         >
           {submitting ? "Posting…" : "Post"}
         </button>
