@@ -5,7 +5,7 @@ import Testing
 /// The import star scale. Mirrors web's `lib/import/__tests__/rating.test.ts`
 /// — if the two disagree, the same export lands differently per platform.
 struct ImportRatingTests {
-    private typealias Choice = ComposerViewModel.RatingChoice
+    typealias Choice = ComposerViewModel.RatingChoice
 
     @Test(arguments: [
         (5.0, Choice?.some(.love)),
