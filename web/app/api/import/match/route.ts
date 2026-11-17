@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { searchOpenLibrary } from "@/lib/catalog/openLibrary";
 import { searchTMDB } from "@/lib/catalog/tmdb";
 import {
   MAX_MATCH_REQUEST,
@@ -11,7 +12,9 @@ import { sanitizeSearchQuery } from "@/lib/sanitize";
 import { createClient } from "@/lib/supabase/server";
 
 /** Kinds an import can match today. */
-const IMPORT_KINDS = ["movie"] as const;
+const IMPORT_KINDS = ["movie", "book"] as const;
+
+const ISBN = /^(\d{13}|\d{9}[\dX])$/;
 
 /**
  * Matches a batch of import rows against the catalog. Server-side for the
@@ -43,16 +46,18 @@ export async function POST(request: NextRequest) {
   }
 
   const apiKey = process.env.TMDB_API_KEY;
-  if (!apiKey) {
+  if (!apiKey && entries.some((entry) => entry.kind !== "book")) {
     return NextResponse.json({ error: "Movie matching needs a TMDB API key." }, { status: 502 });
   }
 
   // English on purpose: Letterboxd exports carry English/original titles,
   // and matching compares titles, so asking TMDB for a translation would
-  // turn exact matches into misses.
+  // turn exact matches into misses. Open Library takes no language.
   const lookup: CatalogLookup = {
     search: (kind, query) =>
-      searchTMDB(kind === "show" ? "show" : "movie", query, apiKey, DEFAULT_LANGUAGE)
+      kind === "book"
+        ? searchOpenLibrary(query)
+        : searchTMDB(kind === "show" ? "show" : "movie", query, apiKey ?? "", DEFAULT_LANGUAGE)
   };
   return NextResponse.json({ matches: await matchEntries(entries, lookup) });
 }
@@ -63,18 +68,30 @@ function parseEntries(body: unknown): MatchableEntry[] | null {
 
   const entries: MatchableEntry[] = [];
   for (const item of raw) {
-    const { kind, title, year } = (item ?? {}) as Record<string, unknown>;
+    const { kind, title, year, creator, isbn } = (item ?? {}) as Record<string, unknown>;
     if (!IMPORT_KINDS.includes(kind as (typeof IMPORT_KINDS)[number])) return null;
     if (typeof title !== "string") return null;
     const cleaned = sanitizeSearchQuery(title);
     if (!cleaned.valid || !cleaned.value) return null;
     if (year !== null && year !== undefined && !Number.isInteger(year)) return null;
+
+    let cleanedCreator: string | null = null;
+    if (typeof creator === "string") {
+      const result = sanitizeSearchQuery(creator);
+      if (!result.valid) return null;
+      cleanedCreator = result.value || null;
+    }
+    // Only digits reach the "isbn:" query, so nothing else can be smuggled
+    // into Open Library's search syntax.
+    if (isbn !== null && isbn !== undefined && (typeof isbn !== "string" || !ISBN.test(isbn)))
+      return null;
+
     entries.push({
       kind: kind as MatchableEntry["kind"],
       title: cleaned.value,
       year: (year as number | null | undefined) ?? null,
-      creator: null,
-      isbn: null
+      creator: cleanedCreator,
+      isbn: (isbn as string | null | undefined) ?? null
     });
   }
   return entries;
