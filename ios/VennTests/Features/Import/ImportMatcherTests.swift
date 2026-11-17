@@ -59,4 +59,40 @@ struct ImportMatcherTests {
         #expect(ImportMatcher.bestMatch(title: "Dune", year: 1999, candidates: results) == nil)
         #expect(ImportMatcher.bestMatch(title: "", year: 2021, candidates: results) == nil)
     }
+
+    // MARK: - Books
+
+    private func book(_ id: String, _ title: String, _ author: String?) -> MediaCandidate {
+        MediaCandidate(
+            title: title,
+            primaryCreator: author,
+            year: nil,
+            coverURL: nil,
+            overview: nil,
+            externalID: id,
+            externalSource: .openlibrary,
+            kind: .book
+        )
+    }
+
+    @Test
+    func bookTitleKeyDropsSeriesAndSubtitle() {
+        #expect(ImportMatcher.bookTitleKey("Catching Fire (The Hunger Games, #2)") == "catching fire")
+        #expect(ImportMatcher.bookTitleKey("Sapiens: A Brief History of Humankind") == "sapiens")
+        #expect(ImportMatcher.bookTitleKey("The Way of Kings (The Stormlight Archive, #1.5)") == "way of kings")
+        #expect(ImportMatcher.bookTitleKey("Love (in theory)") == "love in theory")
+    }
+
+    @Test
+    func bookMatchRequiresTheAuthorsSurnameWhenBothHaveOne() {
+        let results = [
+            book("W1", "Middlemarch", "Someone Else"),
+            book("W2", "Middlemarch: A Study of Provincial Life", "George Eliot"),
+        ]
+        #expect(ImportMatcher.bestBookMatch(title: "Middlemarch", author: "George Eliot", candidates: results)?
+            .externalID == "W2")
+        #expect(ImportMatcher.bestBookMatch(title: "Middlemarch", author: nil, candidates: results)?.externalID == "W1")
+        #expect(ImportMatcher
+            .bestBookMatch(title: "Daniel Deronda", author: "George Eliot", candidates: results) == nil)
+    }
 }

@@ -21,6 +21,10 @@ struct ImportRowProblem: Equatable {
     enum Reason: Equatable {
         case missingTitle
         case titleTooLong
+        /// A Goodreads exclusive shelf other than read, to-read or
+        /// currently-reading (e.g. "did-not-finish"), whose meaning venn
+        /// cannot represent without guessing.
+        case unsupportedShelf
     }
 
     let file: String
