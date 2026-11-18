@@ -52,4 +52,34 @@ enum ImportMatcher {
             return !other.isEmpty && (other.contains(key) || key.contains(other))
         }
     }
+
+    /// "Catching Fire (The Hunger Games, #2)" → "Catching Fire".
+    static func withoutSeries(_ title: String) -> String {
+        title.replacing(/\s*\([^)]*#\s*[\d.]+\)\s*$/, with: "")
+    }
+
+    /// The part of a book title that identifies it across catalogs:
+    /// Goodreads appends the series and editions disagree about subtitles,
+    /// so both are dropped before comparing.
+    static func bookTitleKey(_ title: String) -> String {
+        let main = withoutSeries(title).split(separator: ":", maxSplits: 1).first.map(String.init) ?? ""
+        return normalizedTitle(main)
+    }
+
+    /// The Open Library result a Goodreads row refers to by title and
+    /// author, or nil. ISBN lookups do not come through here — an ISBN hit
+    /// is already the book. The author check uses the surname only, because
+    /// catalogs disagree about initials and middle names; it is skipped when
+    /// either side has no author. Mirrors web's `bestBookMatch`.
+    static func bestBookMatch(title: String, author: String?, candidates: [MediaCandidate]) -> MediaCandidate? {
+        let key = bookTitleKey(title)
+        guard !key.isEmpty else { return nil }
+        let surname = author.flatMap { normalizedTitle($0).split(separator: " ").last.map(String.init) } ?? ""
+
+        return candidates.first { candidate in
+            guard bookTitleKey(candidate.title) == key else { return false }
+            guard !surname.isEmpty, let creator = candidate.primaryCreator else { return true }
+            return normalizedTitle(creator).split(separator: " ").contains { $0 == surname }
+        }
+    }
 }

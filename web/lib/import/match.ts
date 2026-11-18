@@ -59,3 +59,42 @@ export function bestMatch(
 
   return sameTitle[0] ?? null;
 }
+
+/**
+ * The part of a book title that identifies it across catalogs: Goodreads
+ * appends the series ("Catching Fire (The Hunger Games, #2)") and editions
+ * disagree about subtitles, so both are dropped before comparing.
+ */
+export function bookTitleKey(title: string): string {
+  return normalizeTitle(withoutSeries(title).split(":")[0]);
+}
+
+/** "Catching Fire (The Hunger Games, #2)" → "Catching Fire". */
+export function withoutSeries(title: string): string {
+  return title.replace(/\s*\([^)]*#\s*[\d.]+\)\s*$/, "");
+}
+
+/**
+ * Picks the Open Library result a Goodreads row refers to by title and
+ * author, or null. ISBN lookups do not come through here — an ISBN hit is
+ * already the book. The author check uses the surname only, because
+ * catalogs disagree about initials and middle names ("J.K. Rowling" vs
+ * "J. K. Rowling"); it is skipped when either side has no author.
+ */
+export function bestBookMatch(
+  title: string,
+  author: string | null,
+  candidates: MediaCandidate[]
+): MediaCandidate | null {
+  const key = bookTitleKey(title);
+  if (!key) return null;
+  const surname = author ? (normalizeTitle(author).split(" ").pop() ?? "") : "";
+
+  return (
+    candidates.find((candidate) => {
+      if (bookTitleKey(candidate.title) !== key) return false;
+      if (!surname || !candidate.primaryCreator) return true;
+      return normalizeTitle(candidate.primaryCreator).split(" ").includes(surname);
+    }) ?? null
+  );
+}

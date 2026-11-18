@@ -23,7 +23,12 @@ export interface ImportRowProblem {
   file: string;
   /** 1-based line in the file, counting the header as line 1. */
   line: number;
-  reason: "missingTitle" | "titleTooLong";
+  /**
+   * unsupportedShelf: a Goodreads exclusive shelf other than read, to-read or
+   * currently-reading (e.g. "did-not-finish"), whose meaning venn cannot
+   * represent without guessing.
+   */
+  reason: "missingTitle" | "titleTooLong" | "unsupportedShelf";
 }
 
 export interface ParsedExport {
