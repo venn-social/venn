@@ -20,16 +20,31 @@ final class RecommendationsViewModel {
         self.catalog = catalog
     }
 
+    /// Full reload through the `.loading` state. Safe to call on retry.
     func load() async {
         state = .loading
+        await refresh()
+    }
+
+    /// Refetches in place (pull-to-refresh). If the fetch fails while
+    /// shelves are already on screen, they stay: yanking visible content
+    /// for a transient network blip is worse than keeping it.
+    func refresh() async {
         do {
             let feed = try await service.feed()
             state = await .loaded(shelves(for: feed))
         } catch let error as AppError {
-            state = .error(LoadErrorReason(error))
+            fail(LoadErrorReason(error))
         } catch {
-            state = .error(.unknown)
+            fail(.unknown)
         }
+    }
+
+    private func fail(_ reason: LoadErrorReason) {
+        if case .loaded = state {
+            return
+        }
+        state = .error(reason)
     }
 
     /// Catalog failures cost one shelf each, never the page: the providers

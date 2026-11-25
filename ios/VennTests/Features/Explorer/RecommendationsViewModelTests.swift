@@ -65,6 +65,55 @@ struct RecommendationsViewModelTests {
         #expect(catalog.trendingCalls == 1)
     }
 
+    @Test
+    func refreshPicksUpNewShelves() async {
+        let catalog = FakeCatalogSimilarService()
+        let viewModel = RecommendationsViewModel(
+            service: FakeRecommendationService(feed: .empty),
+            catalog: catalog
+        )
+        await viewModel.load()
+        #expect(viewModel.state == .loaded([]))
+
+        catalog.trendingResult = (1...4).map { FakeCatalogSimilarService.candidate("\($0)") }
+        await viewModel.refresh()
+
+        guard case let .loaded(shelves) = viewModel.state else {
+            Issue.record("expected a loaded state")
+            return
+        }
+        #expect(shelves.map(\.source) == [.trending])
+    }
+
+    @Test
+    func aFailedRefreshKeepsTheShelvesOnScreen() async {
+        let catalog = FakeCatalogSimilarService()
+        catalog.trendingResult = (1...4).map { FakeCatalogSimilarService.candidate("\($0)") }
+        let service = FakeRecommendationService(feed: .empty)
+        let viewModel = RecommendationsViewModel(service: service, catalog: catalog)
+        await viewModel.load()
+        let shown = viewModel.state
+
+        service.error = AppError.network
+        await viewModel.refresh()
+
+        #expect(viewModel.state == shown)
+    }
+
+    @Test
+    func aFailedRefreshWithNothingOnScreenIsAnError() async {
+        let service = FakeRecommendationService(feed: .empty)
+        service.error = AppError.network
+        let viewModel = RecommendationsViewModel(
+            service: service,
+            catalog: FakeCatalogSimilarService()
+        )
+
+        await viewModel.refresh()
+
+        #expect(viewModel.state == .error(.offline))
+    }
+
     private static let feedWithOneSeed = RecommendationFeed(
         sections: [],
         seeds: [

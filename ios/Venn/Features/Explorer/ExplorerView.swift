@@ -56,6 +56,7 @@ struct ExplorerView: View {
                     .padding(.bottom, Theme.Spacing.xxxl)
                 }
                 .scrollContentBackground(.hidden)
+                .refreshable { await recommendations?.refresh() }
                 .tracksGlassSkyParallax()
             }
             .toolbar(.hidden, for: .navigationBar)
