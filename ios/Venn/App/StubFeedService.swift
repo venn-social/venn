@@ -16,25 +16,34 @@ import Foundation
     /// with the same keyset contract as `FeedService`; the quick actions
     /// succeed without writing anything.
     struct StubFeedService: FeedServicing {
-        static let posts: [FeedPost] = [
-            post(
-                index: 0,
+        static let posts: [FeedPost] = fixtures.enumerated().map { index, fixture in
+            post(index: index, fixture: fixture)
+        }
+
+        private struct Fixture {
+            let title: String
+            let kind: MediaKind
+            let creator: String
+            let year: Int
+            let caption: String?
+        }
+
+        private static let fixtures: [Fixture] = [
+            Fixture(
                 title: "Past Lives",
                 kind: .movie,
                 creator: "Celine Song",
                 year: 2023,
                 caption: "Quietly devastating. Stayed with me for days."
             ),
-            post(
-                index: 1,
+            Fixture(
                 title: "Tomorrow, and Tomorrow, and Tomorrow",
                 kind: .book,
                 creator: "Gabrielle Zevin",
                 year: 2022,
                 caption: nil
             ),
-            post(
-                index: 2,
+            Fixture(
                 title: "Blonde",
                 kind: .album,
                 creator: "Frank Ocean",
@@ -58,11 +67,7 @@ import Foundation
         /// post `index` is `index` hours older than the newest.
         private static func post(
             index: Int,
-            title: String,
-            kind: MediaKind,
-            creator: String,
-            year: Int,
-            caption: String?
+            fixture: Fixture
         ) -> FeedPost {
             let postID = fixedID(prefix: "a", index: index)
             let mediaID = fixedID(prefix: "b", index: index)
@@ -74,15 +79,15 @@ import Foundation
                     mediaID: mediaID,
                     action: .logged,
                     rating: nil,
-                    caption: caption,
+                    caption: fixture.caption,
                     createdAt: createdAt
                 ),
                 media: Media(
                     id: mediaID,
-                    kind: kind,
-                    title: title,
-                    year: year,
-                    primaryCreator: creator,
+                    kind: fixture.kind,
+                    title: fixture.title,
+                    year: fixture.year,
+                    primaryCreator: fixture.creator,
                     coverURL: nil,
                     externalID: nil,
                     externalSource: nil,
