@@ -169,13 +169,24 @@ struct FeedView: View {
 
     private func ensureLoaded() async {
         if viewModel == nil {
-            let viewModel = FeedViewModel(
-                service: FeedService(client: clientProvider.client),
-                socialService: SocialService(client: clientProvider.client)
-            )
+            let viewModel = makeViewModel()
             self.viewModel = viewModel
             await viewModel.load()
         }
+    }
+
+    private func makeViewModel() -> FeedViewModel {
+        #if DEBUG
+            // UI tests: fixed posts, and no social service so like and
+            // comment counts don't reach the network either.
+            if StubServices.isEnabled {
+                return FeedViewModel(service: StubFeedService())
+            }
+        #endif
+        return FeedViewModel(
+            service: FeedService(client: clientProvider.client),
+            socialService: SocialService(client: clientProvider.client)
+        )
     }
 }
 

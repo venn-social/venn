@@ -13,8 +13,6 @@ final class VennUITests: XCTestCase {
     // directly into each tab via the `-preview<Tab>` arg the app
     // already supports sidesteps that flake and is honestly a cleaner
     // test shape — each tab is asserted in isolation, no order coupling.
-    // The full-flow tab-switching journey lands back when stub services
-    // are wired via launch arg (see Notion follow-up).
 
     // The remote no longer carries demo content (the remove_demo_seed
     // migration retired it) — production data is real and therefore not
@@ -29,6 +27,16 @@ final class VennUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Home"].waitForExistence(timeout: 12))
         XCTAssertTrue(app.buttons["Search"].exists)
         XCTAssertTrue(app.buttons["Profile"].exists)
+    }
+
+    @MainActor
+    func testFeedRendersStubPosts() {
+        // `-useStubServices` swaps FeedService for an in-memory stub
+        // (StubFeedService), so the content is fixed and assertable.
+        let app = launchApp(extraArgs: ["-designPreview", "-useStubServices"])
+        XCTAssertTrue(app.staticTexts["Past Lives"].waitForExistence(timeout: 30))
+        XCTAssertTrue(app.staticTexts["2023 · Celine Song"].exists)
+        XCTAssertTrue(app.staticTexts["Quietly devastating. Stayed with me for days."].exists)
     }
 
     @MainActor
